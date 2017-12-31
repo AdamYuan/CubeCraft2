@@ -54,10 +54,10 @@ void World::Update(const glm::ivec3 &center)
 	s_center = center;
 	//remove all chunks out of the range
 	for(auto iter = SuperChunk.begin(); iter != SuperChunk.end(); ) {
-		if (iter->first.x < center.x - CHUNK_LOADING_RANGE ||
-			iter->first.x > center.x + CHUNK_LOADING_RANGE ||
-			iter->first.z < center.z - CHUNK_LOADING_RANGE ||
-			iter->first.z > center.z + CHUNK_LOADING_RANGE)
+		if (iter->first.x < center.x - CHUNK_DELETING_RANGE ||
+			iter->first.x > center.x + CHUNK_DELETING_RANGE ||
+			iter->first.z < center.z - CHUNK_DELETING_RANGE ||
+			iter->first.z > center.z + CHUNK_DELETING_RANGE)
 			iter = SuperChunk.erase(iter);
 		else
 			++iter;
@@ -82,12 +82,14 @@ void World::Update(const glm::ivec3 &center)
 		Mutex.unlock();
 	}
 
+	//update render list
 	if(s_meshChanged)
 	{
 		RenderVector.clear();
 		for(const auto &chk : SuperChunk)
 		{
-			if(!chk.second->VertexBuffer->Empty())
+			if(!chk.second->VertexBuffer->Empty() &&
+					glm::distance((glm::vec3)chk.second->Position, (glm::vec3)center) < CHUNK_LOADING_RANGE + 1.0f)
 				RenderVector.push_back(chk.first);
 		}
 	}
@@ -148,19 +150,19 @@ void World::UpdateChunkSunLightingList()
 			++iter;
 	}
 
-	glm::ivec2 pos;
-	for(pos.x = s_center.x - CHUNK_LOADING_RANGE + 1; pos.x < s_center.x + CHUNK_LOADING_RANGE; ++pos.x)
-		for(pos.y = s_center.z - CHUNK_LOADING_RANGE + 1; pos.y < s_center.z + CHUNK_LOADING_RANGE; ++pos.y)
+	glm::ivec2 iter;
+	for(iter.x = s_center.x - CHUNK_LOADING_RANGE + 1; iter.x < s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
+		for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
 		{
-			glm::ivec3 i(pos.x, 0, pos.y);
-			if(!GetChunk(i)->FirstSunLighted && !SunLightingInfoMap.count(pos))
+			glm::ivec3 i(iter.x, 0, iter.y);
+			if(!GetChunk(i)->FirstSunLighted && !SunLightingInfoMap.count(iter))
 			{
 				bool flag = true;
 				ChunkPtr arr[WORLD_HEIGHT * 9];
 
 				int ind = 0;
-				for(i.x = pos.x-1; flag && i.x <= pos.x+1; ++i.x)
-					for(i.z = pos.y-1; i.z <= pos.y+1; ++i.z) {
+				for(i.x = iter.x-1; flag && i.x <= iter.x+1; ++i.x)
+					for(i.z = iter.y-1; i.z <= iter.y+1; ++i.z) {
 						i.y = 0;
 						if (!GetChunk(i)->LoadedTerrain) {
 							flag = false;
@@ -173,8 +175,8 @@ void World::UpdateChunkSunLightingList()
 
 				if(flag)
 				{
-					SunLightingVector.push_back(pos);
-					SunLightingInfoMap[pos] = std::make_unique<ChunkSunLightingInfo>(arr);
+					SunLightingVector.push_back(iter);
+					SunLightingInfoMap[iter] = std::make_unique<ChunkSunLightingInfo>(arr);
 				}
 			}
 		}

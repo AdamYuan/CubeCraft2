@@ -2,6 +2,7 @@
 #define SETTINGS_HPP
 
 #define CHUNK_LOADING_RANGE 10
+#define CHUNK_DELETING_RANGE 15
 
 #define CHUNK_SIZE 32
 #define WORLD_HEIGHT 8

@@ -428,7 +428,11 @@ void ChunkMeshingInfo::Process()
 							std::swap(v11.V, v10.V);
 						}
 
-						if (QuadLighting.AO[0] + QuadLighting.AO[2] > QuadLighting.AO[1] + QuadLighting.AO[3]) {
+						if (QuadLighting.AO[0] + QuadLighting.AO[2] +
+							QuadLighting.SunLight[0] + QuadLighting.SunLight[2]
+							>
+							QuadLighting.AO[1] + QuadLighting.AO[3] +
+							QuadLighting.SunLight[1] + QuadLighting.SunLight[3]) {
 							//11--------10
 							//|       / |
 							//|    /    |
