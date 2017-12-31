@@ -15,9 +15,8 @@
 
 struct LightBFSNode
 {
-	int Pos[3];
+	glm::ivec3 Pos;
 	DLightLevel Value;
-	bool Origin;
 };
 
 class Chunk
@@ -26,13 +25,11 @@ private:
 	Block Grid[CHUNK_INFO_SIZE];
 	DLightLevel Light[CHUNK_INFO_SIZE];
 
-	std::queue<LightBFSNode> LightList[2], LightRemovalList[2];
-
 	friend class ChunkLoadingInfo;
 	friend class ChunkMeshingInfo;
 	friend class ChunkSunLightingInfo;
 public:
-	bool InitializedSunlight, LoadedTerrain, Meshed;
+	bool InitializedSunlight, LoadedTerrain, Meshed, FirstSunLighted;
 	static inline int XYZ(const glm::ivec3 &pos);
 	static inline int XYZ(int x, int y, int z);
 	static inline bool IsValidPosition(const glm::ivec3 &pos);
@@ -109,11 +106,16 @@ public:
 class ChunkSunLightingInfo : public ChunkInfo
 {
 private:
-	LightLevel Grid[WORLD_HEIGHT * CHUNK_INFO_SIZE];
-	LightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE];
+	int Highest = 0;
+	bool CanPass[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
+	LightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
+
+	inline int LiXYZ(const glm::ivec3 &pos);
 
 public:
-	explicit ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT]);
+	explicit ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
+	void Process() override;
+	void ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 
 #endif // CHUNK_HPP

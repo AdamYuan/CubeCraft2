@@ -1,3 +1,5 @@
+#include <unordered_map>
+#include <glm/gtx/hash.hpp>
 #include "Chunk.hpp"
 #include "Resource.hpp"
 
@@ -20,11 +22,12 @@ bool Chunk::IsValidPosition(const glm::ivec3 &pos)
 }
 
 
-Chunk::Chunk(const glm::ivec3 &pos) : InitializedSunlight(false), LoadedTerrain(false), Meshed(true),
+Chunk::Chunk(const glm::ivec3 &pos) : InitializedSunlight(false), LoadedTerrain(false),
+									  Meshed(true), FirstSunLighted(true),
 									  Position(pos)
 {
 	std::fill(std::begin(Grid), std::end(Grid), Blocks::Air);
-	std::fill(std::begin(Light), std::end(Light), 0xff);
+	std::fill(std::begin(Light), std::end(Light), 0x00);
 
 	VertexBuffer = MyGL::NewVertexObject();
 }
@@ -106,6 +109,10 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 		std::copy(this->Result + i*CHUNK_INFO_SIZE,
 				  this->Result + i*CHUNK_INFO_SIZE + CHUNK_INFO_SIZE,
 				  chk[i]->Grid);
+
+		chk[i]->LoadedTerrain = true;
+		chk[i]->Meshed = false;
+		chk[i]->FirstSunLighted = false;
 	}
 }
 
@@ -479,7 +486,7 @@ void ChunkMeshingInfo::ApplyMesh(ChunkPtr chk)
 										Resource::ATTR_TEXCOORD, 3,
 										Resource::ATTR_CHUNK_FACE, 1,
 										Resource::ATTR_CHUNK_LIGHTING, 3);
-
+	chk->Meshed = true;
 	//std::cout << Result.size() << std::endl;
 }
 
@@ -685,10 +692,100 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	}
 }
 
-ChunkSunLightingInfo::ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT])
+ChunkSunLightingInfo::ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
+{
+	int index = 0;
+	for(int _=0; _<9; ++_)
+	{
+		for(int i=0; i<WORLD_HEIGHT; ++i)
+		{
+			for(int j=0; j<CHUNK_INFO_SIZE; ++j, ++index) {
+				CanPass[index] = BlockMethods::LightCanPass(chk[i + WORLD_HEIGHT*_]->Grid[j]);
+				if(!CanPass[index])
+					Highest = std::max(Highest, j / (CHUNK_SIZE*CHUNK_SIZE) + i*CHUNK_SIZE + 1);
+			}
+		}
+	}
+	if(Highest >= WORLD_HEIGHT_BLOCK)
+		Highest = WORLD_HEIGHT_BLOCK - 1;
+}
+
+void ChunkSunLightingInfo::Process()
+{
+	std::uninitialized_fill(std::begin(Result), std::end(Result), 0x0);
+
+	std::queue<LightBFSNode> SunLightQueue;
+
+	glm::ivec3 pos;
+	pos.y = Highest;
+	for(pos.x = -15; pos.x < CHUNK_SIZE + 15; ++pos.x)
+		for(pos.z = -15; pos.z < CHUNK_SIZE + 15; ++pos.z)
+		{
+			int index = LiXYZ(pos);
+			Result[index] = 15;
+			SunLightQueue.push({pos, 15});
+		}
+
+	while(!SunLightQueue.empty())
+	{
+		LightBFSNode node = SunLightQueue.front();
+		SunLightQueue.pop();
+
+		for(unsigned face=0; face<6; ++face)
+		{
+			if(face == Face::Top)
+				continue;
+
+			LightBFSNode neighbour = node;
+			neighbour.Pos[face>>1] += 1 - ((face&1)<<1);
+			int index = LiXYZ(neighbour.Pos);
+
+			//deal with out chunk situations
+			if(face != Face::Bottom)
+			{
+				neighbour.Value--;
+				if(neighbour.Pos[face>>1] < -15 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 15)
+					continue;
+			}
+			else
+			{
+				if(neighbour.Pos.y < 0)
+					continue;
+
+				else if(neighbour.Value != 15)
+					neighbour.Value --;
+			}
+
+			if(CanPass[index] && Result[index] < neighbour.Value)
+			{
+				Result[index] = neighbour.Value;
+				SunLightQueue.push(neighbour);
+			}
+		}
+	}
+
+	Done = true;
+}
+
+void ChunkSunLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
 	for(int i=0; i<WORLD_HEIGHT; ++i)
 	{
-		std::copy(chk[i]->Grid, chk[i]->Grid + CHUNK_INFO_SIZE, this->Grid + i*CHUNK_INFO_SIZE);
+		for(int j=0, index = 4*CHUNK_INFO_SIZE*WORLD_HEIGHT + i*CHUNK_INFO_SIZE; j<CHUNK_INFO_SIZE; ++j, ++index)
+			chk[i]->Light[j] = static_cast<DLightLevel>((chk[i]->Light[j] & 0x0F) | (Result[index] << 4));
+		chk[i]->FirstSunLighted = true;
+		chk[i]->Meshed = false;
 	}
+}
+
+//ALL OKEY
+int ChunkSunLightingInfo::LiXYZ(const glm::ivec3 &pos)
+{
+	glm::ivec3 p = pos;
+	p.x += CHUNK_SIZE, p.z += CHUNK_SIZE;
+
+	int i = (p.x / CHUNK_SIZE) * 3 + (p.z / CHUNK_SIZE);
+	p.x %= CHUNK_SIZE, p.z %= CHUNK_SIZE;
+
+	return Chunk::XYZ(p) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
 }

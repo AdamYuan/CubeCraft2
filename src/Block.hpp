@@ -20,12 +20,6 @@ typedef uint8_t LightLevel;
 //bits: SSSSTTTT
 typedef uint8_t DLightLevel;
 
-enum LightType
-{
-	Torchlight = 0,
-	Sunlight = 1
-};
-
 namespace BlockMethods
 {
 

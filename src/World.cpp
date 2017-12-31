@@ -12,12 +12,14 @@ bool World::s_meshChanged;
 World::World() : Running(true)
 {
 	RenderVector.reserve((CHUNK_LOADING_RANGE*2+1)*(CHUNK_LOADING_RANGE*2+1)*WORLD_HEIGHT);
-	unsigned ThreadsSupported = 2;
+	unsigned ThreadsSupported = 1;
 	std::cout << "Max thread support: " << ThreadsSupported << std::endl;
 	for(unsigned i=0; i<ThreadsSupported; ++i)
 	{
 		Threads.emplace_back(&World::ChunkLoadingWorker, this);
 		Threads.emplace_back(&World::ChunkMeshingWorker, this);
+		Threads.emplace_back(&World::ChunkSunLightingWorker, this);
+		Threads.emplace_back(&World::ChunkSunLightingWorker, this);
 	}
 }
 
@@ -70,10 +72,15 @@ void World::Update(const glm::ivec3 &center)
 					SetChunk(i);
 
 	//set lock
-	std::lock_guard<std::mutex> lock_guard(Mutex);
+	if(Mutex.try_lock())
+	{
+		UpdateChunkLoadingList();
+		UpdateChunkSunLightingList();
+		UpdateChunkMeshingList();
+		Cond.notify_all();
 
-	UpdateChunkLoadingList();
-	UpdateChunkMeshingList();
+		Mutex.unlock();
+	}
 
 	if(s_meshChanged)
 	{
@@ -84,8 +91,6 @@ void World::Update(const glm::ivec3 &center)
 				RenderVector.push_back(chk.first);
 		}
 	}
-
-	Cond.notify_all();
 }
 
 void World::UpdateChunkLoadingList()
@@ -97,13 +102,10 @@ void World::UpdateChunkLoadingList()
 			glm::ivec3 pos(iter->first.x, 0, iter->first.y);
 			if(SuperChunk.count(pos))
 			{
-				ChunkPtr arr[WORLD_HEIGHT] = {nullptr};
+				ChunkPtr arr[WORLD_HEIGHT];
 				for(; pos.y < WORLD_HEIGHT; pos.y++)
-				{
 					arr[pos.y] = GetChunk(pos);
-					arr[pos.y]->LoadedTerrain = true;
-					arr[pos.y]->Meshed = false;
-				}
+
 				iter->second->ApplyTerrain(arr);
 			}
 			iter = LoadingInfoMap.erase(iter);
@@ -125,9 +127,59 @@ void World::UpdateChunkLoadingList()
 	std::sort(LoadingVector.begin(), LoadingVector.end(), cmp2);
 }
 
-void World::UpdateChunkLightingList()
+void World::UpdateChunkSunLightingList()
 {
+	for(auto iter = SunLightingInfoMap.begin(); iter != SunLightingInfoMap.end(); )
+	{
+		if(iter->second->Done)
+		{
+			glm::ivec3 pos(iter->first.x, 0, iter->first.y);
+			if(SuperChunk.count(pos))
+			{
+				ChunkPtr arr[WORLD_HEIGHT];
+				for(; pos.y<WORLD_HEIGHT; ++pos.y)
+					arr[pos.y] = GetChunk(pos);
 
+				iter->second->ApplySunLight(arr);
+			}
+			iter = SunLightingInfoMap.erase(iter);
+		}
+		else
+			++iter;
+	}
+
+	glm::ivec2 pos;
+	for(pos.x = s_center.x - CHUNK_LOADING_RANGE + 1; pos.x < s_center.x + CHUNK_LOADING_RANGE; ++pos.x)
+		for(pos.y = s_center.z - CHUNK_LOADING_RANGE + 1; pos.y < s_center.z + CHUNK_LOADING_RANGE; ++pos.y)
+		{
+			glm::ivec3 i(pos.x, 0, pos.y);
+			if(!GetChunk(i)->FirstSunLighted && !SunLightingInfoMap.count(pos))
+			{
+				bool flag = true;
+				ChunkPtr arr[WORLD_HEIGHT * 9];
+
+				int ind = 0;
+				for(i.x = pos.x-1; flag && i.x <= pos.x+1; ++i.x)
+					for(i.z = pos.y-1; i.z <= pos.y+1; ++i.z) {
+						i.y = 0;
+						if (!GetChunk(i)->LoadedTerrain) {
+							flag = false;
+							break;
+						}
+						for (; i.y < WORLD_HEIGHT; i.y++) {
+							arr[ind++] = GetChunk(i);
+						}
+					}
+
+				if(flag)
+				{
+					SunLightingVector.push_back(pos);
+					SunLightingInfoMap[pos] = std::make_unique<ChunkSunLightingInfo>(arr);
+				}
+			}
+		}
+
+	std::sort(SunLightingVector.begin(), SunLightingVector.end(), cmp2);
 }
 
 void World::UpdateChunkMeshingList()
@@ -139,7 +191,6 @@ void World::UpdateChunkMeshingList()
 			if(SuperChunk.count(iter->first))
 			{
 				iter->second->ApplyMesh(GetChunk(iter->first));
-				GetChunk(iter->first)->Meshed = true;
 				s_meshChanged = true;
 
 				//std::cout << "Meshed: " << glm::to_string(iter->first) << std::endl;
@@ -164,14 +215,14 @@ void World::UpdateChunkMeshingList()
 		for(pos.z = s_center.z - CHUNK_LOADING_RANGE + 1; pos.z < s_center.z + CHUNK_LOADING_RANGE; ++pos.z)
 			for(pos.y = 0; pos.y < WORLD_HEIGHT; ++pos.y)
 			{
-				if(!GetChunk(pos)->Meshed && !MeshingInfoMap.count(pos))
+				if(GetChunk(pos)->FirstSunLighted && !GetChunk(pos)->Meshed && !MeshingInfoMap.count(pos))
 				{
 					bool flag = true;
 					for(int i=0; i<27; ++i)
 					{
 						neighbours[i] = GetChunk(pos + lookUp[i]);
 						//check that all the terrain are loaded
-						if(neighbours[i] && !neighbours[i]->LoadedTerrain)
+						if(neighbours[i] && (!neighbours[i]->LoadedTerrain || !neighbours[i]->FirstSunLighted))
 							flag = false;
 					}
 
@@ -189,7 +240,7 @@ void World::UpdateChunkMeshingList()
 bool World::cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
 {
 	return glm::length((glm::vec2)l - glm::vec2(s_center.x, s_center.z)) >
-			glm::length((glm::vec2)r - glm::vec2(s_center.x, s_center.z));
+		   glm::length((glm::vec2)r - glm::vec2(s_center.x, s_center.z));
 }
 bool World::cmp3(const glm::ivec3 &l, const glm::ivec3 &r)
 {
@@ -214,9 +265,22 @@ void World::ChunkLoadingWorker()
 	}
 }
 
-void World::ChunkLightingWorker()
+void World::ChunkSunLightingWorker()
 {
+	while(Running)
+	{
+		glm::ivec2 pos;
 
+		std::unique_lock<std::mutex> lk(Mutex);
+		Cond.wait(lk, [this]{return !Running || !SunLightingVector.empty();});
+		if(!Running)
+			return;
+		pos = SunLightingVector.back();
+		SunLightingVector.pop_back();
+		lk.unlock();
+
+		SunLightingInfoMap[pos]->Process();
+	}
 }
 
 void World::ChunkMeshingWorker()

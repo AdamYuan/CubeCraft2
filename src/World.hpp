@@ -28,11 +28,14 @@ private:
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLoadingInfo>> LoadingInfoMap;
 	std::vector<glm::ivec2> LoadingVector;
 
+	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkSunLightingInfo>> SunLightingInfoMap;
+	std::vector<glm::ivec2> SunLightingVector;
+
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
 	std::vector<glm::ivec3> MeshingVector;
 
 	void UpdateChunkLoadingList();
-	void UpdateChunkLightingList();
+	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
 
 	static glm::ivec3 s_center;
@@ -45,7 +48,7 @@ private:
 	std::mutex Mutex;
 	std::condition_variable Cond;
 	void ChunkLoadingWorker();
-	void ChunkLightingWorker();
+	void ChunkSunLightingWorker();
 	void ChunkMeshingWorker();
 	bool Running;
 
