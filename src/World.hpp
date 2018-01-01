@@ -66,11 +66,16 @@ public:
 	~World();
 
 	void SetChunk(const glm::ivec3 &pos);
-	inline ChunkPtr GetChunk(const glm::ivec3 &pos);
+	inline ChunkPtr GetChunk(const glm::ivec3 &pos) const;
 
 	void Update(const glm::ivec3 &center);
 
 	void Render(const glm::mat4 &projection, const glm::mat4 &view, const glm::vec3 &position);
+
+	void SetBlock(const glm::ivec3 &pos, Block blk);
+	Block GetBlock(const glm::ivec3 &pos) const;
+
+	static glm::ivec3 BlockPosToChunkPos(const glm::ivec3 &pos);
 };
 
 

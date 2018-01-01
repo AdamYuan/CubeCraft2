@@ -634,8 +634,7 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	else
 	{
 		std::fill(Grid + ExXYZ(-1, CHUNK_SIZE, -1), Grid + EXCHUNK_INFO_SIZE, Blocks::Air);
-		std::copy(Light + ExXYZ(-1, CHUNK_SIZE-1, -1), Light + ExXYZ(-1, CHUNK_SIZE, -1),
-				  Light + ExXYZ(-1, CHUNK_SIZE, -1));
+		std::fill(Light + ExXYZ(-1, CHUNK_SIZE, -1), Light + EXCHUNK_INFO_SIZE, 0xf0);
 	}
 
 	if(Position.y != 0)
@@ -742,15 +741,12 @@ void ChunkInitialLightingInfo::Process()
 
 		for(unsigned face=0; face<6; ++face)
 		{
-			if(face == Face::Top)
-				continue;
-
 			LightBFSNode neighbour = node;
 			neighbour.Pos[face>>1] += 1 - ((face&1)<<1);
 			int index = LiXYZ(neighbour.Pos);
 
 			//deal with out chunk situations
-			if(face != Face::Bottom)
+			if(face>>1 != 1)
 			{
 				neighbour.Value--;
 				if(neighbour.Pos[face>>1] < -14 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 14)
@@ -758,9 +754,10 @@ void ChunkInitialLightingInfo::Process()
 			}
 			else
 			{
-				if(neighbour.Pos.y < 0)
+				if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
 					continue;
-
+				else if(neighbour.Value == 15 && face == Face::Top)
+					continue;
 				else if(neighbour.Value != 15)
 					neighbour.Value --;
 			}

@@ -2,14 +2,16 @@
 #define APPLICATION_HPP
 
 #include <memory>
+
 #include <MyGL/VertexObject.hpp>
 #include <MyGL/Matrices.hpp>
 #include <MyGL/FrameRate.hpp>
 
-#include <GLFW/glfw3.h>
 
-#include "World.hpp"
 #include "Player.hpp"
+#include "World.hpp"
+
+#include <GLFW/glfw3.h>
 
 class Application
 {

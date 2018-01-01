@@ -38,13 +38,11 @@ void World::SetChunk(const glm::ivec3 &pos)
 	SuperChunk[pos] = std::make_unique<Chunk>(pos);
 }
 
-ChunkPtr World::GetChunk(const glm::ivec3 &pos)
+ChunkPtr World::GetChunk(const glm::ivec3 &pos) const
 {
-	if(!SuperChunk.count(pos)) {
-		//std::cout << "Accessing Undefined Chunk: " << glm::to_string(pos) << std::endl;
+	if(!SuperChunk.count(pos))
 		return nullptr;
-	}
-	return SuperChunk[pos].get();
+	return SuperChunk.at(pos).get();
 }
 
 void World::Update(const glm::ivec3 &center)
@@ -77,6 +75,10 @@ void World::Update(const glm::ivec3 &center)
 		UpdateChunkSunLightingList();
 		UpdateChunkMeshingList();
 
+		std::sort(LoadingVector.begin(), LoadingVector.end(), cmp2);
+		std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
+		std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
+
 		for(unsigned _=0; _<ThreadsSupport; ++_)
 			Cond.notify_one();
 
@@ -90,7 +92,7 @@ void World::Update(const glm::ivec3 &center)
 		for(const auto &chk : SuperChunk)
 		{
 			if(!chk.second->VertexBuffer->Empty() &&
-					glm::distance((glm::vec3)chk.second->Position, (glm::vec3)center) < CHUNK_LOADING_RANGE + 1.0f)
+			   glm::distance((glm::vec3)chk.second->Position, (glm::vec3)center) < CHUNK_LOADING_RANGE + 1.0f)
 				RenderVector.push_back(chk.first);
 		}
 	}
@@ -127,7 +129,6 @@ void World::UpdateChunkLoadingList()
 				LoadingVector.push_back(iter);
 			}
 		}
-	std::sort(LoadingVector.begin(), LoadingVector.end(), cmp2);
 }
 
 void World::UpdateChunkSunLightingList()
@@ -151,6 +152,7 @@ void World::UpdateChunkSunLightingList()
 			++iter;
 	}
 
+	int counter = 0;
 	glm::ivec2 iter;
 	for(iter.x = s_center.x - CHUNK_LOADING_RANGE + 1; iter.x < s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
 		for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
@@ -178,11 +180,14 @@ void World::UpdateChunkSunLightingList()
 				{
 					InitialLightingVector.push_back(iter);
 					InitialLightingInfoMap[iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
+
+					//limit the addition number because of its slow constructor
+					if(++counter >= MAX_ADDITION_THREAD)
+						return;
 				}
 			}
 		}
 
-	std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
 }
 
 void World::UpdateChunkMeshingList()
@@ -235,7 +240,6 @@ void World::UpdateChunkMeshingList()
 				}
 			}
 
-	std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
 }
 
 bool World::cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
@@ -256,7 +260,7 @@ void World::ChunkLoadingWorker()
 
 		std::unique_lock<std::mutex> lk(Mutex);
 		Cond.wait(lk, [this]{return !Running ||
-				(RunningThreads < ThreadsSupport && !LoadingVector.empty());});
+									(RunningThreads < ThreadsSupport && !LoadingVector.empty());});
 		if(!Running)
 			return;
 		pos = LoadingVector.back();
@@ -277,7 +281,7 @@ void World::ChunkInitialLightingWorker()
 
 		std::unique_lock<std::mutex> lk(Mutex);
 		Cond.wait(lk, [this]{return !Running ||
-				(RunningThreads < ThreadsSupport && !InitialLightingVector.empty());});
+									(RunningThreads < ThreadsSupport && !InitialLightingVector.empty());});
 		if(!Running)
 			return;
 		pos = InitialLightingVector.back();
@@ -300,7 +304,7 @@ void World::ChunkMeshingWorker()
 
 		std::unique_lock<std::mutex> lk(Mutex);
 		Cond.wait(lk, [this]{return !Running ||
-				(RunningThreads < ThreadsSupport && !MeshingVector.empty());});
+									(RunningThreads < ThreadsSupport && !MeshingVector.empty());});
 		if(!Running)
 			return;
 		pos = MeshingVector.back();
@@ -346,5 +350,32 @@ void World::Render(const glm::mat4 &projection, const glm::mat4 &view, const glm
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
+}
+
+void World::SetBlock(const glm::ivec3 &pos, Block blk)
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return;
+	chk->SetBlock(pos - chkPos*CHUNK_SIZE, blk);
+}
+
+Block World::GetBlock(const glm::ivec3 &pos) const
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return Blocks::Air;
+	return chk->GetBlock(pos - chkPos*CHUNK_SIZE);
+}
+
+glm::ivec3 World::BlockPosToChunkPos(const glm::ivec3 &pos)
+{
+	return glm::ivec3((pos.x + (pos.x < 0)) / CHUNK_SIZE - (pos.x < 0),
+					  (pos.y + (pos.y < 0)) / CHUNK_SIZE - (pos.y < 0),
+					  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
 }
 

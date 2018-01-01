@@ -9,16 +9,23 @@
 #include <MyGL/FrameRate.hpp>
 #include <GLFW/glfw3.h>
 
+#include "Util.hpp"
+
+class World;
+
 class Player
 {
 private:
+	const AABB BoundingBox;
 	MyGL::Camera Cam;
+	glm::vec3 HitTest(const World &wld, const glm::vec3 &origin, const glm::vec3 &velocity);
 public:
 
 	Player();
 	bool flying;
 
-	void Control(GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate);
+	void KeyControl(const World &wld, GLFWwindow *win, const MyGL::FrameRateManager &framerate);
+	void MouseControl(GLFWwindow *win, int width, int height);
 
 	glm::ivec3 GetChunkPosition() const;
 	glm::vec3 GetPosition() const;

@@ -2,7 +2,7 @@
 #define BLOCK_HPP
 
 #include <cinttypes>
-#include "Type.hpp"
+#include "Util.hpp"
 
 #define BLOCKS_NUM 4
 #define BLOCKS_TEXTURE_NUM 4
@@ -22,12 +22,12 @@ typedef uint8_t DLightLevel;
 
 namespace BlockMethods
 {
-
-extern int GetTexture(Block block, Face face);
-extern bool IsTransparent(Block block);
-extern bool LightCanPass(Block block);
-extern LightLevel GetLightLevel(Block block);
-
+	extern int GetTexture(Block block, Face face);
+	extern bool IsTransparent(Block block);
+	extern bool LightCanPass(Block block);
+	extern bool HaveHitbox(Block block);
+	extern LightLevel GetLightLevel(Block block);
+	extern AABB GetBlockAABB(const glm::ivec3 &pos);
 }
 
 #endif // BLOCK_HPP

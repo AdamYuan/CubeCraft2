@@ -67,6 +67,7 @@ void Application::InitWindow()
 
 void Application::Run()
 {
+	GamePlayer.SetPosition({GamePlayer.GetPosition().x, 150.0f, GamePlayer.GetPosition().z});
 	while(!glfwWindowShouldClose(Window))
 	{
 		//NEVER CHANGE THIS ORDER!!!!!!
@@ -124,7 +125,8 @@ void Application::LogicProcess()
 	}
 
 	if(control) {
-		GamePlayer.Control(Window, Width, Height, FramerateManager);
+		GamePlayer.MouseControl(Window, Width, Height);
+		GamePlayer.KeyControl(world, Window, FramerateManager);
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 	else
