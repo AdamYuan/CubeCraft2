@@ -15,7 +15,7 @@ Player::Player() : flying(true)
 
 void Player::Control(GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate)
 {
-	float dist = framerate.GetMovementDistance(3.0f);
+	float dist = framerate.GetMovementDistance(1.0f);
 
 	if(glfwGetKey(win, GLFW_KEY_W))
 		Cam.MoveForward(dist, 0);

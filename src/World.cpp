@@ -194,10 +194,8 @@ void World::UpdateChunkMeshingList()
 			{
 				iter->second->ApplyMesh(GetChunk(iter->first));
 				s_meshChanged = true;
-
 				//std::cout << "Meshed: " << glm::to_string(iter->first) << std::endl;
 			}
-
 			iter = MeshingInfoMap.erase(iter);
 		}
 		else

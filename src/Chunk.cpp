@@ -48,11 +48,12 @@ Block Chunk::GetBlock(const glm::ivec3 &pos) const
 ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos)
 {
 	this->Position = pos;
-	std::uninitialized_fill(std::begin(Result), std::end(Result), Blocks::Air);
 }
 
 void ChunkLoadingInfo::Process()
 {
+	std::fill(std::begin(Result), std::end(Result), Blocks::Air);
+
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	fastNoise->SetFractalOctaves(4);
@@ -69,6 +70,8 @@ void ChunkLoadingInfo::Process()
 		highest = std::max(highest, heights[index]);
 	}
 
+	FastNoiseSIMD::FreeNoiseSet(heightMap);
+
 	fastNoise->SetFrequency(0.012f);
 	fastNoise->SetFractalOctaves(1);
 	fastNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
@@ -76,7 +79,6 @@ void ChunkLoadingInfo::Process()
 	float* caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE,
 											   highest + 1, CHUNK_SIZE, CHUNK_SIZE);
 
-	FastNoiseSIMD::FreeNoiseSet(heightMap);
 
 	for (int y = 0; y <= highest; y++) {
 		int index = 0;
@@ -94,6 +96,8 @@ void ChunkLoadingInfo::Process()
 
 				if (y == heights[index])
 					Result[ind] = Blocks::Grass;
+				else if(y >= heights[index] - heights[index] / 70)
+					Result[ind] = Blocks::Dirt;
 				else
 					Result[ind] = Blocks::Stone;
 			}
@@ -340,7 +344,7 @@ void ChunkMeshingInfo::Process()
 				for (std::size_t i = 0; i < CHUNK_SIZE;) {
 					int QuadType = mask[counter];
 					if (QuadType) {
-						FaceLighting QuadLighting = *lightMask[counter];
+						const FaceLighting &QuadLighting = *lightMask[counter];
 						// Compute width
 						for (width = 1;
 							 QuadType == mask[counter + width] &&
@@ -700,30 +704,31 @@ ChunkSunLightingInfo::ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 {
 	int index = 0;
 	for(int _=0; _<9; ++_)
-	{
-		for(int i=0; i<WORLD_HEIGHT; ++i)
+		for(int i=0; i<WORLD_HEIGHT; ++i, index += CHUNK_INFO_SIZE)
 		{
-			for(int j=0; j<CHUNK_INFO_SIZE; ++j, ++index) {
-				CanPass[index] = BlockMethods::LightCanPass(chk[i + WORLD_HEIGHT*_]->Grid[j]);
-				if(!CanPass[index])
-					Highest = std::max(Highest, j / (CHUNK_SIZE*CHUNK_SIZE) + i*CHUNK_SIZE + 1);
-			}
+			int c = i + WORLD_HEIGHT*_;
+			std::copy(std::begin(chk[c]->Grid), std::end(chk[c]->Grid), Grid + index);
 		}
-	}
-	if(Highest >= WORLD_HEIGHT_BLOCK)
-		Highest = WORLD_HEIGHT_BLOCK - 1;
 }
 
 void ChunkSunLightingInfo::Process()
 {
-	std::uninitialized_fill(std::begin(Result), std::end(Result), 0x0);
+	//Get Highest Layer
+	for(int i=0; i<CHUNK_INFO_SIZE*WORLD_HEIGHT*9; ++i)
+		if(!CanPass(i))
+			Highest = std::max(Highest, (i % (CHUNK_INFO_SIZE*WORLD_HEIGHT)) / (CHUNK_SIZE*CHUNK_SIZE) + 1);
+
+	if(Highest >= WORLD_HEIGHT_BLOCK)
+		Highest = WORLD_HEIGHT_BLOCK - 1;
+
+	std::fill(std::begin(Result), std::end(Result), 0x0);
 
 	std::queue<LightBFSNode> SunLightQueue;
 
 	glm::ivec3 pos;
 	pos.y = Highest;
-	for(pos.x = -15; pos.x < CHUNK_SIZE + 15; ++pos.x)
-		for(pos.z = -15; pos.z < CHUNK_SIZE + 15; ++pos.z)
+	for(pos.x = -14; pos.x < CHUNK_SIZE + 14; ++pos.x)
+		for(pos.z = -14; pos.z < CHUNK_SIZE + 14; ++pos.z)
 		{
 			int index = LiXYZ(pos);
 			Result[index] = 15;
@@ -748,7 +753,7 @@ void ChunkSunLightingInfo::Process()
 			if(face != Face::Bottom)
 			{
 				neighbour.Value--;
-				if(neighbour.Pos[face>>1] < -15 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 15)
+				if(neighbour.Pos[face>>1] < -14 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 14)
 					continue;
 			}
 			else
@@ -760,7 +765,7 @@ void ChunkSunLightingInfo::Process()
 					neighbour.Value --;
 			}
 
-			if(CanPass[index] && Result[index] < neighbour.Value)
+			if(CanPass(index) && Result[index] < neighbour.Value)
 			{
 				Result[index] = neighbour.Value;
 				SunLightQueue.push(neighbour);
@@ -782,7 +787,6 @@ void ChunkSunLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
 	}
 }
 
-//ALL OKEY
 int ChunkSunLightingInfo::LiXYZ(const glm::ivec3 &pos)
 {
 	glm::ivec3 p = pos;
@@ -792,4 +796,9 @@ int ChunkSunLightingInfo::LiXYZ(const glm::ivec3 &pos)
 	p.x %= CHUNK_SIZE, p.z %= CHUNK_SIZE;
 
 	return Chunk::XYZ(p) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
+}
+
+bool ChunkSunLightingInfo::CanPass(int index)
+{
+	return BlockMethods::LightCanPass(Grid[index]);
 }

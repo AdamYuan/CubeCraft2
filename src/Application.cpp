@@ -10,7 +10,7 @@ void focusCallback(GLFWwindow*, int focused)
 	control = focused != 0;
 }
 static int sWidth, sHeight;
-static bool resized = false;
+static bool resized = false, showFramewire = false;
 void framebufferSizeCallback(GLFWwindow*, int width, int height)
 {
 	sWidth = width;
@@ -19,8 +19,13 @@ void framebufferSizeCallback(GLFWwindow*, int width, int height)
 }
 void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 {
-	if(key == GLFW_KEY_ESCAPE)
-		control = false;
+	if(action == GLFW_PRESS)
+	{
+		if(key == GLFW_KEY_ESCAPE)
+			control = false;
+		else if(key == GLFW_KEY_F)
+			showFramewire = !showFramewire;
+	}
 }
 
 Application::Application() : world()
@@ -83,6 +88,10 @@ void Application::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.6f, 0.8f, 1.0f, 1.0f);
 
+	if(showFramewire)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	world.Render(Matrices.Projection3d, ViewMatrix, GamePlayer.GetPosition());
 }
 

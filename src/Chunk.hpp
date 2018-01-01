@@ -107,9 +107,10 @@ class ChunkSunLightingInfo : public ChunkInfo
 {
 private:
 	int Highest = 0;
-	bool CanPass[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
+	Block Grid[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
 	LightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
 
+	inline bool CanPass(int index);
 	inline int LiXYZ(const glm::ivec3 &pos);
 
 public:
