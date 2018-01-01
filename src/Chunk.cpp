@@ -393,7 +393,7 @@ void ChunkMeshingInfo::Process()
 
 						ChunkRenderVertex
 								v00 = {vx, vy, vz,
-									   (float) du[u] + dv[u], (float) du[v] + dv[v],
+									   (float) (du[u] + dv[u]), (float) (du[v] + dv[v]),
 									   (float) QuadTex, (float) QuadFace,
 									   (float) QuadLighting.AO[0],
 									   (float) QuadLighting.SunLight[0], (float) QuadLighting.TorchLight[0]},
@@ -700,7 +700,7 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	}
 }
 
-ChunkSunLightingInfo::ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
+ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 {
 	int index = 0;
 	for(int _=0; _<9; ++_)
@@ -711,7 +711,7 @@ ChunkSunLightingInfo::ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 		}
 }
 
-void ChunkSunLightingInfo::Process()
+void ChunkInitialLightingInfo::Process()
 {
 	//Get Highest Layer
 	for(int i=0; i<CHUNK_INFO_SIZE*WORLD_HEIGHT*9; ++i)
@@ -721,7 +721,7 @@ void ChunkSunLightingInfo::Process()
 	if(Highest >= WORLD_HEIGHT_BLOCK)
 		Highest = WORLD_HEIGHT_BLOCK - 1;
 
-	std::fill(std::begin(Result), std::end(Result), 0x0);
+	std::fill(std::begin(Result), std::end(Result), 0x00);
 
 	std::queue<LightBFSNode> SunLightQueue;
 
@@ -731,7 +731,7 @@ void ChunkSunLightingInfo::Process()
 		for(pos.z = -14; pos.z < CHUNK_SIZE + 14; ++pos.z)
 		{
 			int index = LiXYZ(pos);
-			Result[index] = 15;
+			Result[index] = 15 << 4;
 			SunLightQueue.push({pos, 15});
 		}
 
@@ -765,9 +765,9 @@ void ChunkSunLightingInfo::Process()
 					neighbour.Value --;
 			}
 
-			if(CanPass(index) && Result[index] < neighbour.Value)
+			if(CanPass(index) && (Result[index] >> 4) < neighbour.Value)
 			{
-				Result[index] = neighbour.Value;
+				Result[index] = neighbour.Value << 4;
 				SunLightQueue.push(neighbour);
 			}
 		}
@@ -776,18 +776,18 @@ void ChunkSunLightingInfo::Process()
 	Done = true;
 }
 
-void ChunkSunLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
+void ChunkInitialLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
 	for(int i=0; i<WORLD_HEIGHT; ++i)
 	{
-		for(int j=0, index = 4*CHUNK_INFO_SIZE*WORLD_HEIGHT + i*CHUNK_INFO_SIZE; j<CHUNK_INFO_SIZE; ++j, ++index)
-			chk[i]->Light[j] = static_cast<DLightLevel>((chk[i]->Light[j] & 0x0F) | (Result[index] << 4));
+		int base = 4*CHUNK_INFO_SIZE*WORLD_HEIGHT + CHUNK_INFO_SIZE*i;
+		std::copy(Result + base, Result + base + CHUNK_INFO_SIZE, chk[i]->Light);
 		chk[i]->FirstSunLighted = true;
 		chk[i]->Meshed = false;
 	}
 }
 
-int ChunkSunLightingInfo::LiXYZ(const glm::ivec3 &pos)
+int ChunkInitialLightingInfo::LiXYZ(const glm::ivec3 &pos)
 {
 	glm::ivec3 p = pos;
 	p.x += CHUNK_SIZE, p.z += CHUNK_SIZE;
@@ -798,7 +798,7 @@ int ChunkSunLightingInfo::LiXYZ(const glm::ivec3 &pos)
 	return Chunk::XYZ(p) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
 }
 
-bool ChunkSunLightingInfo::CanPass(int index)
+bool ChunkInitialLightingInfo::CanPass(int index)
 {
 	return BlockMethods::LightCanPass(Grid[index]);
 }

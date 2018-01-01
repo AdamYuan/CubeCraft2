@@ -9,17 +9,16 @@
 glm::ivec3 World::s_center;
 bool World::s_meshChanged;
 
-World::World() : Running(true)
+World::World() : Running(true), ThreadsSupport(std::thread::hardware_concurrency() - 1),
+				 RunningThreads(0)
 {
 	RenderVector.reserve((CHUNK_LOADING_RANGE*2+1)*(CHUNK_LOADING_RANGE*2+1)*WORLD_HEIGHT);
-	unsigned ThreadsSupported = 1;
-	std::cout << "Max thread support: " << ThreadsSupported << std::endl;
-	for(unsigned i=0; i<ThreadsSupported; ++i)
+	std::cout << "Max thread support: " << ThreadsSupport << std::endl;
+	for(unsigned i=0; i<ThreadsSupport; ++i)
 	{
 		Threads.emplace_back(&World::ChunkLoadingWorker, this);
 		Threads.emplace_back(&World::ChunkMeshingWorker, this);
-		Threads.emplace_back(&World::ChunkSunLightingWorker, this);
-		Threads.emplace_back(&World::ChunkSunLightingWorker, this);
+		Threads.emplace_back(&World::ChunkInitialLightingWorker, this);
 	}
 }
 
@@ -77,7 +76,9 @@ void World::Update(const glm::ivec3 &center)
 		UpdateChunkLoadingList();
 		UpdateChunkSunLightingList();
 		UpdateChunkMeshingList();
-		Cond.notify_all();
+
+		for(unsigned _=0; _<ThreadsSupport; ++_)
+			Cond.notify_one();
 
 		Mutex.unlock();
 	}
@@ -131,7 +132,7 @@ void World::UpdateChunkLoadingList()
 
 void World::UpdateChunkSunLightingList()
 {
-	for(auto iter = SunLightingInfoMap.begin(); iter != SunLightingInfoMap.end(); )
+	for(auto iter = InitialLightingInfoMap.begin(); iter != InitialLightingInfoMap.end(); )
 	{
 		if(iter->second->Done)
 		{
@@ -144,7 +145,7 @@ void World::UpdateChunkSunLightingList()
 
 				iter->second->ApplySunLight(arr);
 			}
-			iter = SunLightingInfoMap.erase(iter);
+			iter = InitialLightingInfoMap.erase(iter);
 		}
 		else
 			++iter;
@@ -155,7 +156,7 @@ void World::UpdateChunkSunLightingList()
 		for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
 		{
 			glm::ivec3 i(iter.x, 0, iter.y);
-			if(!GetChunk(i)->FirstSunLighted && !SunLightingInfoMap.count(iter))
+			if(!GetChunk(i)->FirstSunLighted && !InitialLightingInfoMap.count(iter))
 			{
 				bool flag = true;
 				ChunkPtr arr[WORLD_HEIGHT * 9];
@@ -175,13 +176,13 @@ void World::UpdateChunkSunLightingList()
 
 				if(flag)
 				{
-					SunLightingVector.push_back(iter);
-					SunLightingInfoMap[iter] = std::make_unique<ChunkSunLightingInfo>(arr);
+					InitialLightingVector.push_back(iter);
+					InitialLightingInfoMap[iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
 				}
 			}
 		}
 
-	std::sort(SunLightingVector.begin(), SunLightingVector.end(), cmp2);
+	std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
 }
 
 void World::UpdateChunkMeshingList()
@@ -254,32 +255,40 @@ void World::ChunkLoadingWorker()
 		glm::ivec2 pos;
 
 		std::unique_lock<std::mutex> lk(Mutex);
-		Cond.wait(lk, [this]{return !Running || !LoadingVector.empty();});
+		Cond.wait(lk, [this]{return !Running ||
+				(RunningThreads < ThreadsSupport && !LoadingVector.empty());});
 		if(!Running)
 			return;
 		pos = LoadingVector.back();
 		LoadingVector.pop_back();
 		lk.unlock();
 
+		RunningThreads ++;
 		LoadingInfoMap[pos]->Process();
+		RunningThreads --;
 	}
 }
 
-void World::ChunkSunLightingWorker()
+void World::ChunkInitialLightingWorker()
 {
 	while(Running)
 	{
 		glm::ivec2 pos;
 
 		std::unique_lock<std::mutex> lk(Mutex);
-		Cond.wait(lk, [this]{return !Running || !SunLightingVector.empty();});
+		Cond.wait(lk, [this]{return !Running ||
+				(RunningThreads < ThreadsSupport && !InitialLightingVector.empty());});
 		if(!Running)
 			return;
-		pos = SunLightingVector.back();
-		SunLightingVector.pop_back();
+		pos = InitialLightingVector.back();
+		InitialLightingVector.pop_back();
 		lk.unlock();
 
-		SunLightingInfoMap[pos]->Process();
+		RunningThreads ++;
+
+		InitialLightingInfoMap[pos]->Process();
+
+		RunningThreads --;
 	}
 }
 
@@ -290,14 +299,19 @@ void World::ChunkMeshingWorker()
 		glm::ivec3 pos;
 
 		std::unique_lock<std::mutex> lk(Mutex);
-		Cond.wait(lk, [this]{return !Running || !MeshingVector.empty();});
+		Cond.wait(lk, [this]{return !Running ||
+				(RunningThreads < ThreadsSupport && !MeshingVector.empty());});
 		if(!Running)
 			return;
 		pos = MeshingVector.back();
 		MeshingVector.pop_back();
 		lk.unlock();
 
+		RunningThreads ++;
+
 		MeshingInfoMap[pos]->Process();
+
+		RunningThreads --;
 	}
 }
 

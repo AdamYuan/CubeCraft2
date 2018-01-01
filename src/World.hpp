@@ -19,6 +19,7 @@
 #include <vector>
 #include <unordered_map>
 #include <condition_variable>
+#include <atomic>
 
 class World
 {
@@ -28,8 +29,8 @@ private:
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLoadingInfo>> LoadingInfoMap;
 	std::vector<glm::ivec2> LoadingVector;
 
-	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkSunLightingInfo>> SunLightingInfoMap;
-	std::vector<glm::ivec2> SunLightingVector;
+	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkInitialLightingInfo>> InitialLightingInfoMap;
+	std::vector<glm::ivec2> InitialLightingVector;
 
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
 	std::vector<glm::ivec3> MeshingVector;
@@ -44,11 +45,15 @@ private:
 	inline static bool cmp3(const glm::ivec3 &l, const glm::ivec3 &r);
 
 	//multi threading stuff
+	unsigned ThreadsSupport;
+
+	std::atomic_uint RunningThreads;
+
 	std::vector<std::thread> Threads;
 	std::mutex Mutex;
 	std::condition_variable Cond;
 	void ChunkLoadingWorker();
-	void ChunkSunLightingWorker();
+	void ChunkInitialLightingWorker();
 	void ChunkMeshingWorker();
 	bool Running;
 

@@ -27,7 +27,7 @@ private:
 
 	friend class ChunkLoadingInfo;
 	friend class ChunkMeshingInfo;
-	friend class ChunkSunLightingInfo;
+	friend class ChunkInitialLightingInfo;
 public:
 	bool InitializedSunlight, LoadedTerrain, Meshed, FirstSunLighted;
 	static inline int XYZ(const glm::ivec3 &pos);
@@ -103,18 +103,18 @@ public:
 };
 
 
-class ChunkSunLightingInfo : public ChunkInfo
+class ChunkInitialLightingInfo : public ChunkInfo
 {
 private:
 	int Highest = 0;
 	Block Grid[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
-	LightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
+	DLightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
 
 	inline bool CanPass(int index);
 	inline int LiXYZ(const glm::ivec3 &pos);
 
 public:
-	explicit ChunkSunLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
+	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
 	void Process() override;
 	void ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
