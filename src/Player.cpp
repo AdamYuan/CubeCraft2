@@ -11,7 +11,7 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player() : flying(true), BoundingBox({-0.3, -1.4, -0.3}, {0.3, 0.2, 0.3})
+Player::Player() : flying(true), BoundingBox({-0.25, -1.5, -0.25}, {0.25, 0.25, 0.25})
 {
 
 }
@@ -88,20 +88,14 @@ glm::vec3 Player::HitTest(const World &wld, const glm::vec3 &origin, const glm::
 	glm::ivec3 Min = glm::floor(newPos + BoundingBox.Min);
 	glm::ivec3 Max = glm::floor(newPos + BoundingBox.Max);
 
-	std::vector<std::pair<int, int>> faces;
+	std::vector<int> faces;
 
-	if(velocity.y < 0)
-		faces.emplace_back(1, 1);
-	else if(velocity.y > 0)
-		faces.emplace_back(1, -1);
-	if(velocity.z < 0)
-		faces.emplace_back(2, 1);
-	else if(velocity.z > 0)
-		faces.emplace_back(2, -1);
-	if(velocity.x < 0)
-		faces.emplace_back(0, 1);
-	else if(velocity.x > 0)
-		faces.emplace_back(0, -1);
+	if(velocity.y != 0)
+		faces.push_back(1);
+	if(velocity.z != 0)
+		faces.push_back(2);
+	if(velocity.x != 0)
+		faces.push_back(0);
 
 	glm::ivec3 iter;
 	for(iter.x = Min.x; !faces.empty() && iter.x <= Max.x; ++iter.x)
@@ -117,16 +111,14 @@ glm::vec3 Player::HitTest(const World &wld, const glm::vec3 &origin, const glm::
 					BlockMethods::HaveHitbox(wld.GetBlock(iter)))
 					for(auto i = faces.begin(); i != faces.end(); ++i)
 					{
-						//TODO: DEBUG
+						//TODO: DEBUG ( SOMETHING WRONG WITH THE AXIS ORDER )
 						AABB _now = old;
-						_now.Min[i->first] += velocity[i->first];
-						_now.Max[i->first] += velocity[i->first];
+						_now.Min[*i] += velocity[*i];
+						_now.Max[*i] += velocity[*i];
 
-						if (_now.Intersect(BlockMethods::GetBlockAABB(iter))) {
-
-							newPos[i->first] = (float)iter[i->first] + (float)i->second -
-									(i->second > 0 ?
-									 BoundingBox.Min[i->first] : BoundingBox.Max[i->first] - 1);
+						if (_now.Intersect(BlockMethods::GetBlockAABB(iter)))
+						{
+							newPos[*i] -= velocity[*i];
 
 							faces.erase(i);
 							break;

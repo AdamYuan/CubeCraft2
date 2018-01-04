@@ -22,8 +22,8 @@ bool Chunk::IsValidPosition(const glm::ivec3 &pos)
 }
 
 
-Chunk::Chunk(const glm::ivec3 &pos) : InitializedSunlight(false), LoadedTerrain(false),
-									  Meshed(true), FirstSunLighted(true),
+Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
+									  InitializedMesh(false), InitializedLighting(false),
 									  Position(pos)
 {
 	std::fill(std::begin(Grid), std::end(Grid), Blocks::Air);
@@ -115,8 +115,6 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 				  chk[i]->Grid);
 
 		chk[i]->LoadedTerrain = true;
-		chk[i]->Meshed = false;
-		chk[i]->FirstSunLighted = false;
 	}
 }
 
@@ -494,7 +492,7 @@ void ChunkMeshingInfo::ApplyMesh(ChunkPtr chk)
 										Resource::ATTR_TEXCOORD, 3,
 										Resource::ATTR_CHUNK_FACE, 1,
 										Resource::ATTR_CHUNK_LIGHTING, 3);
-	chk->Meshed = true;
+	chk->InitializedMesh = true;
 	//std::cout << Result.size() << std::endl;
 }
 
@@ -779,20 +777,19 @@ void ChunkInitialLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
 	{
 		int base = 4*CHUNK_INFO_SIZE*WORLD_HEIGHT + CHUNK_INFO_SIZE*i;
 		std::copy(Result + base, Result + base + CHUNK_INFO_SIZE, chk[i]->Light);
-		chk[i]->FirstSunLighted = true;
-		chk[i]->Meshed = false;
+
+		chk[i]->InitializedLighting = true;
 	}
 }
 
-int ChunkInitialLightingInfo::LiXYZ(const glm::ivec3 &pos)
+int ChunkInitialLightingInfo::LiXYZ(glm::ivec3 pos)
 {
-	glm::ivec3 p = pos;
-	p.x += CHUNK_SIZE, p.z += CHUNK_SIZE;
+	pos.x += CHUNK_SIZE, pos.z += CHUNK_SIZE;
 
-	int i = (p.x / CHUNK_SIZE) * 3 + (p.z / CHUNK_SIZE);
-	p.x %= CHUNK_SIZE, p.z %= CHUNK_SIZE;
+	int i = (pos.x / CHUNK_SIZE) * 3 + (pos.z / CHUNK_SIZE);
+	pos.x %= CHUNK_SIZE, pos.z %= CHUNK_SIZE;
 
-	return Chunk::XYZ(p) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
+	return Chunk::XYZ(pos) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
 }
 
 bool ChunkInitialLightingInfo::CanPass(int index)

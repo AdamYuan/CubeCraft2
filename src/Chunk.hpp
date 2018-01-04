@@ -29,7 +29,7 @@ private:
 	friend class ChunkMeshingInfo;
 	friend class ChunkInitialLightingInfo;
 public:
-	bool InitializedSunlight, LoadedTerrain, Meshed, FirstSunLighted;
+	bool LoadedTerrain, InitializedMesh, InitializedLighting;
 	static inline int XYZ(const glm::ivec3 &pos);
 	static inline int XYZ(int x, int y, int z);
 	static inline bool IsValidPosition(const glm::ivec3 &pos);
@@ -111,7 +111,7 @@ private:
 	DLightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
 
 	inline bool CanPass(int index);
-	inline int LiXYZ(const glm::ivec3 &pos);
+	inline int LiXYZ(glm::ivec3 pos);
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);

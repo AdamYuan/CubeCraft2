@@ -18,6 +18,7 @@
 #include <mutex>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <condition_variable>
 #include <atomic>
 
@@ -30,17 +31,19 @@ private:
 	std::vector<glm::ivec2> LoadingVector;
 
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkInitialLightingInfo>> InitialLightingInfoMap;
-	std::vector<glm::ivec2> InitialLightingVector;
+	std::vector<glm::ivec2> InitialLightingVector, PreInitialLightingVector;
 
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
-	std::vector<glm::ivec3> MeshingVector;
+	std::vector<glm::ivec3> MeshingVector, PreMeshingVector;
+
+	std::unordered_set<glm::ivec3> RenderSet;
 
 	void UpdateChunkLoadingList();
 	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
 
 	static glm::ivec3 s_center;
-	static bool s_meshChanged;
+	bool PosChanged;
 	inline static bool cmp2(const glm::ivec2 &l, const glm::ivec2 &r);
 	inline static bool cmp3(const glm::ivec3 &l, const glm::ivec3 &r);
 
@@ -59,7 +62,6 @@ private:
 
 	MyGL::Frustum frustum;
 
-	std::vector<glm::ivec3> RenderVector;
 
 public:
 	World();

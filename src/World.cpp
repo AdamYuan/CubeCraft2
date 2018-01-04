@@ -7,12 +7,10 @@
 #include <glm/gtx/string_cast.hpp>
 
 glm::ivec3 World::s_center;
-bool World::s_meshChanged;
 
 World::World() : Running(true), ThreadsSupport(std::thread::hardware_concurrency() - 1),
-				 RunningThreads(0)
+				 RunningThreads(0), PosChanged(false)
 {
-	RenderVector.reserve((CHUNK_LOADING_RANGE*2+1)*(CHUNK_LOADING_RANGE*2+1)*WORLD_HEIGHT);
 	std::cout << "Max thread support: " << ThreadsSupport << std::endl;
 	for(unsigned i=0; i<ThreadsSupport; ++i)
 	{
@@ -47,26 +45,41 @@ ChunkPtr World::GetChunk(const glm::ivec3 &pos) const
 
 void World::Update(const glm::ivec3 &center)
 {
-	s_meshChanged = false;
+	//global flags
+	PosChanged = false;
 	s_center = center;
-	//remove all chunks out of the range
-	for(auto iter = SuperChunk.begin(); iter != SuperChunk.end(); ) {
-		if (iter->first.x < center.x - CHUNK_DELETING_RANGE ||
-			iter->first.x > center.x + CHUNK_DELETING_RANGE ||
-			iter->first.z < center.z - CHUNK_DELETING_RANGE ||
-			iter->first.z > center.z + CHUNK_DELETING_RANGE)
-			iter = SuperChunk.erase(iter);
-		else
-			++iter;
+
+	static glm::ivec3 s_lastCenter = glm::ivec3(INT_MAX);
+
+	if(center.x != s_lastCenter.x || center.z != s_lastCenter.z)
+	{
+		PosChanged = true;
+		s_lastCenter = center;
 	}
 
-	//generate chunks in the range
-	glm::ivec3 i;
-	for(i.x = center.x - CHUNK_LOADING_RANGE; i.x <= center.x + CHUNK_LOADING_RANGE; ++i.x)
-		for(i.z = center.z - CHUNK_LOADING_RANGE; i.z <= center.z + CHUNK_LOADING_RANGE; ++i.z)
-			for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
-				if(!SuperChunk.count(i))
-					SetChunk(i);
+	if(PosChanged)
+	{
+		//remove all chunks out of the range
+		for(auto iter = SuperChunk.begin(); iter != SuperChunk.end(); ) {
+			if (iter->first.x < center.x - CHUNK_DELETING_RANGE ||
+				iter->first.x > center.x + CHUNK_DELETING_RANGE ||
+				iter->first.z < center.z - CHUNK_DELETING_RANGE ||
+				iter->first.z > center.z + CHUNK_DELETING_RANGE)
+			{
+				RenderSet.erase(iter->first);
+				iter = SuperChunk.erase(iter);
+			}
+			else
+				++iter;
+		}
+		//generate chunks in the range
+		glm::ivec3 i;
+		for(i.x = center.x - CHUNK_LOADING_RANGE; i.x <= center.x + CHUNK_LOADING_RANGE; ++i.x)
+			for(i.z = center.z - CHUNK_LOADING_RANGE; i.z <= center.z + CHUNK_LOADING_RANGE; ++i.z)
+				for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
+					if(!SuperChunk.count(i))
+						SetChunk(i);
+	}
 
 	//set lock
 	if(Mutex.try_lock())
@@ -75,26 +88,10 @@ void World::Update(const glm::ivec3 &center)
 		UpdateChunkSunLightingList();
 		UpdateChunkMeshingList();
 
-		std::sort(LoadingVector.begin(), LoadingVector.end(), cmp2);
-		std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
-		std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
-
 		for(unsigned _=0; _<ThreadsSupport; ++_)
 			Cond.notify_one();
 
 		Mutex.unlock();
-	}
-
-	//update render list
-	if(s_meshChanged)
-	{
-		RenderVector.clear();
-		for(const auto &chk : SuperChunk)
-		{
-			if(!chk.second->VertexBuffer->Empty() &&
-			   glm::distance((glm::vec3)chk.second->Position, (glm::vec3)center) < CHUNK_LOADING_RANGE + 1.0f)
-				RenderVector.push_back(chk.first);
-		}
 	}
 }
 
@@ -119,16 +116,20 @@ void World::UpdateChunkLoadingList()
 			++iter;
 	}
 
-	glm::ivec2 iter;
-	for(iter.x = s_center.x - CHUNK_LOADING_RANGE; iter.x <= s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
-		for(iter.y = s_center.z - CHUNK_LOADING_RANGE; iter.y <= s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
-		{
-			if(!GetChunk({iter.x, 0, iter.y})->LoadedTerrain && !LoadingInfoMap.count(iter))
+	if(PosChanged)
+	{
+		glm::ivec2 iter;
+		for(iter.x = s_center.x - CHUNK_LOADING_RANGE; iter.x <= s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
+			for(iter.y = s_center.z - CHUNK_LOADING_RANGE; iter.y <= s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
 			{
-				LoadingInfoMap[iter] = std::make_unique<ChunkLoadingInfo>(iter);
-				LoadingVector.push_back(iter);
+				if(!GetChunk({iter.x, 0, iter.y})->LoadedTerrain && !LoadingInfoMap.count(iter))
+				{
+					LoadingInfoMap[iter] = std::make_unique<ChunkLoadingInfo>(iter);
+					LoadingVector.push_back(iter);
+				}
 			}
-		}
+		std::sort(LoadingVector.begin(), LoadingVector.end(), cmp2);
+	}
 }
 
 void World::UpdateChunkSunLightingList()
@@ -145,6 +146,7 @@ void World::UpdateChunkSunLightingList()
 					arr[pos.y] = GetChunk(pos);
 
 				iter->second->ApplySunLight(arr);
+
 			}
 			iter = InitialLightingInfoMap.erase(iter);
 		}
@@ -152,42 +154,53 @@ void World::UpdateChunkSunLightingList()
 			++iter;
 	}
 
-	int counter = 0;
-	glm::ivec2 iter;
-	for(iter.x = s_center.x - CHUNK_LOADING_RANGE + 1; iter.x < s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
-		for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
+	if(PosChanged)
+	{
+		PreInitialLightingVector.clear();
+		glm::ivec2 iter;
+		for(iter.x = s_center.x - CHUNK_LOADING_RANGE + 1; iter.x < s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
+			for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
+				if(!GetChunk({iter.x, 0, iter.y})->InitializedLighting && !InitialLightingInfoMap.count(iter))
+					PreInitialLightingVector.push_back(iter);
+	}
+
+	for(auto iter = PreInitialLightingVector.begin(); iter != PreInitialLightingVector.end(); )
+	{
+		glm::ivec3 i(iter->x, 0, iter->y);
+		if(!GetChunk(i)->LoadedTerrain)
 		{
-			glm::ivec3 i(iter.x, 0, iter.y);
-			if(!GetChunk(i)->FirstSunLighted && !InitialLightingInfoMap.count(iter))
-			{
-				bool flag = true;
-				ChunkPtr arr[WORLD_HEIGHT * 9];
-
-				int ind = 0;
-				for(i.x = iter.x-1; flag && i.x <= iter.x+1; ++i.x)
-					for(i.z = iter.y-1; i.z <= iter.y+1; ++i.z) {
-						i.y = 0;
-						if (!GetChunk(i)->LoadedTerrain) {
-							flag = false;
-							break;
-						}
-						for (; i.y < WORLD_HEIGHT; i.y++) {
-							arr[ind++] = GetChunk(i);
-						}
-					}
-
-				if(flag)
-				{
-					InitialLightingVector.push_back(iter);
-					InitialLightingInfoMap[iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
-
-					//limit the addition number because of its slow constructor
-					if(++counter >= MAX_ADDITION_THREAD)
-						return;
-				}
-			}
+			++iter;
+			continue;
 		}
 
+		bool flag = true;
+		ChunkPtr arr[WORLD_HEIGHT * 9];
+
+		int ind = 0;
+		for(i.x = iter->x-1; flag && i.x <= iter->x+1; ++i.x)
+			for(i.z = iter->y-1; i.z <= iter->y+1; ++i.z) {
+				i.y = 0;
+				if (!GetChunk(i)->LoadedTerrain) {
+					flag = false;
+					break;
+				}
+				for (; i.y < WORLD_HEIGHT; i.y++) {
+					arr[ind++] = GetChunk(i);
+				}
+			}
+
+		if(flag)
+		{
+			InitialLightingVector.push_back(*iter);
+			InitialLightingInfoMap[*iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
+
+			iter = PreInitialLightingVector.erase(iter);
+		}
+		else
+			++iter;
+	}
+
+	std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
 }
 
 void World::UpdateChunkMeshingList()
@@ -199,8 +212,8 @@ void World::UpdateChunkMeshingList()
 			if(SuperChunk.count(iter->first))
 			{
 				iter->second->ApplyMesh(GetChunk(iter->first));
-				s_meshChanged = true;
-				//std::cout << "Meshed: " << glm::to_string(iter->first) << std::endl;
+				if(!GetChunk(iter->first)->VertexBuffer->Empty())
+					RenderSet.insert(iter->first);
 			}
 			iter = MeshingInfoMap.erase(iter);
 		}
@@ -208,38 +221,56 @@ void World::UpdateChunkMeshingList()
 			++iter;
 	}
 
-	glm::ivec3 pos, lookUp[27];
+	if(PosChanged)
+	{
+		PreMeshingVector.clear();
+
+		glm::ivec3 iter;
+		for(iter.x = s_center.x - CHUNK_LOADING_RANGE + 1; iter.x < s_center.x + CHUNK_LOADING_RANGE; ++iter.x)
+			for(iter.z = s_center.z - CHUNK_LOADING_RANGE + 1; iter.z < s_center.z + CHUNK_LOADING_RANGE; ++iter.z)
+				for(iter.y = 0; iter.y < WORLD_HEIGHT; ++iter.y)
+					if(!GetChunk(iter)->InitializedMesh && !MeshingInfoMap.count(iter))
+						PreMeshingVector.push_back(iter);
+	}
+
+	glm::ivec3 _, lookUp[27];
 	int index = 0;
-	for(pos.x = -1; pos.x <= 1; ++pos.x)
-		for(pos.y = -1; pos.y <= 1; ++pos.y)
-			for(pos.z = -1; pos.z <= 1; ++pos.z)
-				lookUp[index++] = pos;
-
+	for(_.x = -1; _.x <= 1; ++_.x)
+		for(_.y = -1; _.y <= 1; ++_.y)
+			for(_.z = -1; _.z <= 1; ++_.z)
+				lookUp[index++] = _;
 	ChunkPtr neighbours[27] = {nullptr};
+	for(auto iter = PreMeshingVector.begin(); iter != PreMeshingVector.end(); )
+	{
+		if(!GetChunk(*iter)->InitializedLighting)
+		{
+			++iter;
+			continue;
+		}
 
-	for(pos.x = s_center.x - CHUNK_LOADING_RANGE + 1; pos.x < s_center.x + CHUNK_LOADING_RANGE; ++pos.x)
-		for(pos.z = s_center.z - CHUNK_LOADING_RANGE + 1; pos.z < s_center.z + CHUNK_LOADING_RANGE; ++pos.z)
-			for(pos.y = 0; pos.y < WORLD_HEIGHT; ++pos.y)
-			{
-				if(GetChunk(pos)->FirstSunLighted && !GetChunk(pos)->Meshed && !MeshingInfoMap.count(pos))
-				{
-					bool flag = true;
-					for(int i=0; i<27; ++i)
-					{
-						neighbours[i] = GetChunk(pos + lookUp[i]);
-						//check that all the terrain are loaded
-						if(neighbours[i] && (!neighbours[i]->LoadedTerrain || !neighbours[i]->FirstSunLighted))
-							flag = false;
-					}
-
-					if(flag)
-					{
-						MeshingVector.push_back(pos);
-						MeshingInfoMap[pos] = std::make_unique<ChunkMeshingInfo>(neighbours);
-					}
-				}
+		bool flag = true;
+		for(int i=0; i<27; ++i)
+		{
+			neighbours[i] = GetChunk(*iter + lookUp[i]);
+			//check that all the terrain are loaded
+			if(neighbours[i] && (!neighbours[i]->LoadedTerrain || !neighbours[i]->InitializedLighting)) {
+				flag = false;
+				break;
 			}
+		}
 
+		if(flag)
+		{
+			MeshingVector.push_back(*iter);
+			MeshingInfoMap[*iter] = std::make_unique<ChunkMeshingInfo>(neighbours);
+
+			iter = PreMeshingVector.erase(iter);
+		}
+		else
+			++iter;
+	}
+
+	std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
 }
 
 bool World::cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
@@ -340,11 +371,12 @@ void World::Render(const glm::mat4 &projection, const glm::mat4 &view, const glm
 	Resource::ChunkShader->PassMat4("matrix", matrix);
 	Resource::ChunkShader->PassVec3("camera", position);
 
-	for(const glm::ivec3 &pos : RenderVector)
+	for(const glm::ivec3 &pos : RenderSet)
 	{
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		ChunkPtr chk = GetChunk(pos);
-		if (chk && frustum.CubeInFrustum(center, CHUNK_SIZE/2))
+		if (chk && frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
+				glm::distance((glm::vec3)pos, (glm::vec3)s_center) < (float)CHUNK_LOADING_RANGE + 1)
 			chk->VertexBuffer->Render(GL_TRIANGLES);
 	}
 
