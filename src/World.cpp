@@ -162,6 +162,8 @@ void World::UpdateChunkSunLightingList()
 			for(iter.y = s_center.z - CHUNK_LOADING_RANGE + 1; iter.y < s_center.z + CHUNK_LOADING_RANGE; ++iter.y)
 				if(!GetChunk({iter.x, 0, iter.y})->InitializedLighting && !InitialLightingInfoMap.count(iter))
 					PreInitialLightingVector.push_back(iter);
+
+		std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
 	}
 
 	for(auto iter = PreInitialLightingVector.begin(); iter != PreInitialLightingVector.end(); )
@@ -191,7 +193,10 @@ void World::UpdateChunkSunLightingList()
 
 		if(flag)
 		{
-			InitialLightingVector.push_back(*iter);
+			auto pos = std::lower_bound(InitialLightingVector.begin(), InitialLightingVector.end(),
+										*iter, cmp2);
+			InitialLightingVector.insert(pos, *iter);
+
 			InitialLightingInfoMap[*iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
 
 			iter = PreInitialLightingVector.erase(iter);
@@ -200,7 +205,6 @@ void World::UpdateChunkSunLightingList()
 			++iter;
 	}
 
-	std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
 }
 
 void World::UpdateChunkMeshingList()
@@ -231,6 +235,8 @@ void World::UpdateChunkMeshingList()
 				for(iter.y = 0; iter.y < WORLD_HEIGHT; ++iter.y)
 					if(!GetChunk(iter)->InitializedMesh && !MeshingInfoMap.count(iter))
 						PreMeshingVector.push_back(iter);
+
+		std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
 	}
 
 	glm::ivec3 _, lookUp[27];
@@ -261,7 +267,9 @@ void World::UpdateChunkMeshingList()
 
 		if(flag)
 		{
-			MeshingVector.push_back(*iter);
+			auto pos = std::lower_bound(MeshingVector.begin(), MeshingVector.end(), *iter, cmp3);
+			MeshingVector.insert(pos, *iter);
+
 			MeshingInfoMap[*iter] = std::make_unique<ChunkMeshingInfo>(neighbours);
 
 			iter = PreMeshingVector.erase(iter);
@@ -269,8 +277,6 @@ void World::UpdateChunkMeshingList()
 		else
 			++iter;
 	}
-
-	std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
 }
 
 bool World::cmp2(const glm::ivec2 &l, const glm::ivec2 &r)

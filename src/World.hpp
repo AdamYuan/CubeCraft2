@@ -31,10 +31,12 @@ private:
 	std::vector<glm::ivec2> LoadingVector;
 
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkInitialLightingInfo>> InitialLightingInfoMap;
-	std::vector<glm::ivec2> InitialLightingVector, PreInitialLightingVector;
+	std::vector<glm::ivec2> InitialLightingVector;
+	std::vector<glm::ivec2> PreInitialLightingVector;
 
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
-	std::vector<glm::ivec3> MeshingVector, PreMeshingVector;
+	std::vector<glm::ivec3> MeshingVector;
+	std::vector<glm::ivec3> PreMeshingVector;
 
 	std::unordered_set<glm::ivec3> RenderSet;
 
