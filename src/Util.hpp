@@ -1,7 +1,7 @@
 #ifndef TYPE_CPP
 #define TYPE_CPP
 
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 enum Face { Right = 0, Left, Top, Bottom, Front, Back };
 
@@ -12,6 +12,8 @@ public:
 	AABB(const glm::vec3 &_min, const glm::vec3 &_max);
 
 	bool Intersect(const AABB &r) const;
+	bool Touch(const AABB &r, float delta) const;
+	float IntersectDistance(const AABB &r, int axis) const;
 };
 
 #endif

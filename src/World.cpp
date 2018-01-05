@@ -11,6 +11,12 @@ glm::ivec3 World::s_center;
 World::World() : Running(true), ThreadsSupport(std::thread::hardware_concurrency() - 1),
 				 RunningThreads(0), PosChanged(false)
 {
+	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
+	LoadingVector.reserve(_SIZE);
+	MeshingVector.reserve(_SIZE);
+	PreMeshingVector.reserve(_SIZE);
+	InitialLightingVector.reserve(_SIZE);
+	PreInitialLightingVector.reserve(_SIZE);
 	std::cout << "Max thread support: " << ThreadsSupport << std::endl;
 	for(unsigned i=0; i<ThreadsSupport; ++i)
 	{
@@ -326,9 +332,7 @@ void World::ChunkInitialLightingWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-
 		InitialLightingInfoMap[pos]->Process();
-
 		RunningThreads --;
 	}
 }
@@ -349,9 +353,7 @@ void World::ChunkMeshingWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-
 		MeshingInfoMap[pos]->Process();
-
 		RunningThreads --;
 	}
 }

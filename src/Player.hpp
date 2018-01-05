@@ -18,7 +18,8 @@ class Player
 private:
 	const AABB BoundingBox;
 	MyGL::Camera Cam;
-	glm::vec3 HitTest(const World &wld, const glm::vec3 &origin, const glm::vec3 &velocity);
+	bool HitTest(const World &wld, glm::vec3 &pos, int axis, float velocity);
+
 public:
 
 	Player();

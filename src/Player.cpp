@@ -48,14 +48,25 @@ void Player::KeyControl(const World &wld, GLFWwindow *win, const MyGL::FrameRate
 			Cam.MoveUp(-dist);
 	}
 	glm::vec3 velocity = Cam.Position - oldPos;
-	glm::vec3 velocity1 = glm::normalize(velocity) * 0.5f;
-
 	Cam.Position = oldPos;
-	while(glm::length(velocity) > 0.5f) {
-		Cam.Position = HitTest(wld, Cam.Position, velocity1);
-		velocity -= velocity1;
+
+	//collision test with separate axis
+	for(int axis = 0; axis < 3; ++axis)
+	{
+		bool flag = true;
+		float axisVelocity = velocity[axis];
+		while(axisVelocity > 1.0f)
+		{
+			if(!HitTest(wld, Cam.Position, axis, 1.0f))
+			{
+				flag = false;
+				break;
+			}
+			axisVelocity -= 1.0f;
+		}
+		if(flag)
+			HitTest(wld, Cam.Position, axis, axisVelocity);
 	}
-	Cam.Position = HitTest(wld, Cam.Position, velocity);
 }
 
 glm::vec3 Player::GetPosition() const
@@ -78,54 +89,39 @@ glm::ivec3 Player::GetChunkPosition() const
 	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
 }
 
-glm::vec3 Player::HitTest(const World &wld, const glm::vec3 &origin, const glm::vec3 &velocity)
+bool Player::HitTest(const World &wld, glm::vec3 &pos, int axis, float velocity)
 {
-	AABB old(BoundingBox.Min + origin, BoundingBox.Max + origin);
-	AABB now(old.Min + velocity, old.Max + velocity);
+	pos[axis] += velocity;
 
-	glm::vec3 newPos = origin + velocity;
+	AABB now(BoundingBox.Min + pos, BoundingBox.Max + pos);
 
-	glm::ivec3 Min = glm::floor(newPos + BoundingBox.Min);
-	glm::ivec3 Max = glm::floor(newPos + BoundingBox.Max);
+	glm::ivec3 Min = glm::floor(now.Min);
+	glm::ivec3 Max = glm::floor(now.Max);
 
-	std::vector<int> faces;
-
-	if(velocity.y != 0)
-		faces.push_back(1);
-	if(velocity.z != 0)
-		faces.push_back(2);
-	if(velocity.x != 0)
-		faces.push_back(0);
+	int u, v;
+	if(axis == 0)
+		u = 1, v = 2;
+	else if(axis == 1)
+		u = 0, v = 2;
+	else
+		u = 0, v = 1;
 
 	glm::ivec3 iter;
-	for(iter.x = Min.x; !faces.empty() && iter.x <= Max.x; ++iter.x)
-		for(iter.y = Min.y; !faces.empty() && iter.y <= Max.y; ++iter.y)
-			for (iter.z = Min.z; !faces.empty() && iter.z <= Max.z; ++iter.z)
+	iter[axis] = velocity > 0 ? Max[axis] : Min[axis];
+
+	for(iter[u] = Min[u]; iter[u] <= Max[u]; ++iter[u])
+		for(iter[v] = Min[v]; iter[v] <= Max[v]; ++iter[v])
+		{
+			AABB box = BlockMethods::GetBlockAABB(iter);
+			if (now.Intersect(box) &&
+				BlockMethods::HaveHitbox(wld.GetBlock(iter)))
 			{
-				if(iter.x != Min.x && iter.x != Max.x && iter.y != Min.y && iter.y != Max.y
-						&& iter.z != Min.z && iter.z != Max.z)
-					continue;
-
-				AABB box = BlockMethods::GetBlockAABB(iter);
-				if (now.Intersect(box) &&
-					BlockMethods::HaveHitbox(wld.GetBlock(iter)))
-					for(auto i = faces.begin(); i != faces.end(); ++i)
-					{
-						//TODO: DEBUG ( SOMETHING WRONG WITH THE AXIS ORDER )
-						AABB _now = old;
-						_now.Min[*i] += velocity[*i];
-						_now.Max[*i] += velocity[*i];
-
-						if (_now.Intersect(BlockMethods::GetBlockAABB(iter)))
-						{
-							newPos[*i] -= velocity[*i];
-
-							faces.erase(i);
-							break;
-						}
-					}
+				pos[axis] -= velocity;
+				return false;
 			}
-	return newPos;
+		}
+
+	return true;
 }
 
 

@@ -14,3 +14,15 @@ bool AABB::Intersect(const AABB &r) const
 		   (Min.y < r.Max.y && Max.y > r.Min.y) &&
 		   (Min.z < r.Max.z && Max.z > r.Min.z);
 }
+
+bool AABB::Touch(const AABB &r, float delta) const
+{
+	return (Min.x <= r.Max.x + delta && Max.x >= r.Min.x - delta) &&
+		   (Min.y <= r.Max.y + delta && Max.y >= r.Min.y - delta) &&
+		   (Min.z <= r.Max.z + delta && Max.z >= r.Min.z - delta);
+}
+
+float AABB::IntersectDistance(const AABB &r, int axis) const
+{
+	return glm::min(glm::abs(Max[axis] - r.Min[axis]), glm::abs(r.Max[axis] - Min[axis]));
+}
