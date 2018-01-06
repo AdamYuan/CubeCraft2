@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 namespace MyGL
 {
-	glm::mat4 Camera::GetViewMatrix()
+	glm::mat4 Camera::GetViewMatrix() const
 	{
 		glm::mat4 view;
 		view = glm::rotate(view, glm::radians(-Pitch), glm::vec3(1.0f,0.0f,0.0f));

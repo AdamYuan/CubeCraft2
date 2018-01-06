@@ -27,11 +27,15 @@ private:
 	MyGL::Matrices Matrices;
 	MyGL::FrameRateManager FramerateManager;
 
+	float FPS = 0.0f;
+
 public:
 	Application();
+	~Application();
 	void Run();
 	void InitWindow();
 	void Render();
+	void RenderUI();
 	void LogicProcess();
 };
 

@@ -21,8 +21,8 @@ namespace MyGL
 		void LoadCubemap(const std::vector<std::string> &faces);
 		void SetParameters(GLenum min_filter, GLenum mag_filter, GLenum wrap_filter);
 		void BuildMipmap();
-		void Bind();
-		void Unbind();
+		void Bind() const;
+		void Unbind() const;
 		GLuint GetId() const;
 		~Texture();
 		Texture();

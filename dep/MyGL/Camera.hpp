@@ -9,7 +9,7 @@ namespace MyGL
 	public:
 		glm::vec3 Position;
 		float Yaw = 0.0f, Pitch = 0.0f;
-		glm::mat4 GetViewMatrix();
+		glm::mat4 GetViewMatrix() const;
 		void ProcessMouseMovement(float xOffset, float yOffset, float sensitivity);
 		void MoveForward(const float &dist, const float &dir);
 		void MoveUp(const float &dist);

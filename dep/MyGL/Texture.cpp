@@ -81,11 +81,11 @@ namespace MyGL
 
 		Unbind();
 	}
-	void Texture::Bind()
+	void Texture::Bind() const
 	{
 		glBindTexture(textureType, id);
 	}
-	void Texture::Unbind()
+	void Texture::Unbind() const
 	{
 		glBindTexture(textureType, 0);
 	}

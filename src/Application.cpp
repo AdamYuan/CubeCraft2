@@ -3,7 +3,12 @@
 #include "Chunk.hpp"
 #include "Application.hpp"
 #include "Resource.hpp"
+#include "UI.hpp"
 
+#include <glm/gtx/string_cast.hpp>
+
+
+//glfw callbacks
 static bool control = true;
 void focusCallback(GLFWwindow*, int focused)
 {
@@ -58,11 +63,12 @@ void Application::InitWindow()
 	glViewport(0, 0, Width, Height);
 	Matrices.UpdateMatrices(Width, Height);
 
+	UI::InitUI(Window);
+	Resource::InitResources();
+
 	glfwSetWindowFocusCallback(Window, focusCallback);
 	glfwSetFramebufferSizeCallback(Window, framebufferSizeCallback);
 	glfwSetKeyCallback(Window, keyCallback);
-
-	Resource::InitResources();
 
 	glCullFace(GL_CCW);
 }
@@ -73,14 +79,17 @@ void Application::Run()
 	while(!glfwWindowShouldClose(Window))
 	{
 		//NEVER CHANGE THIS ORDER!!!!!!
+		UI::NewFrame();
 
 		//logic process
 		LogicProcess();
 
 		//render
 		Render();
-		glfwSwapBuffers(Window);
+		RenderUI();
 
+		UI::Render();
+		glfwSwapBuffers(Window);
 
 		glfwPollEvents();
 	}
@@ -108,7 +117,7 @@ void Application::LogicProcess()
 	if(glfwGetTime() > lastTime + 1)
 	{
 		lastTime = static_cast<int>(glfwGetTime());
-		std::cout << "fps: " << FramerateManager.GetFps() << std::endl;
+		FPS = FramerateManager.GetFps();
 	}
 
 	//process size event
@@ -141,4 +150,34 @@ void Application::LogicProcess()
 	ViewMatrix = GamePlayer.GetViewMatrix();
 
 	world.Update(GamePlayer.GetChunkPosition());
+}
+
+Application::~Application()
+{
+	UI::Shutdown();
+}
+
+void Application::RenderUI()
+{
+	//copied from IMGUI example
+
+	//information box
+    const float DISTANCE = 10.0f;
+    static int corner = 0;
+    ImVec2 window_pos = ImVec2((corner & 1) ? ImGui::GetIO().DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? ImGui::GetIO().DisplaySize.y - DISTANCE : DISTANCE);
+    ImVec2 window_pos_pivot = ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
+    if (ImGui::Begin("", nullptr,
+					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
+    {
+        ImGui::Text("fps: %f", FPS);
+		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
+		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
+		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
+		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
+
+        ImGui::End();
+    }
+	ImGui::PopStyleColor();
 }
