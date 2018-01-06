@@ -40,7 +40,7 @@ void main()
 	color3*=frag_ao*frag_light*intensity;
 
     //gamma correction
-    float gamma = 0.7;
+    float gamma = 0.6;
     color3 = pow(color3, vec3(1.0 / gamma));
 
 	color3 = mix(color3, sky_color, fog_factor);

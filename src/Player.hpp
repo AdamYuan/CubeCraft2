@@ -18,15 +18,26 @@ class Player
 private:
 	const AABB BoundingBox;
 	MyGL::Camera Cam;
-	bool HitTest(const World &wld, glm::vec3 &pos, int axis, float velocity);
+	bool HitTest(glm::vec3 &pos, int axis, float velocity);
+
+	World const *wld;
+
+	bool jumping = false;
 
 public:
 
-	Player();
+	//all the move function will return false if the movement is blocked
+
+	explicit Player(const World &wld);
 	bool flying;
 
-	void KeyControl(const World &wld, GLFWwindow *win, const MyGL::FrameRateManager &framerate);
+	void KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate);
 	void MouseControl(GLFWwindow *win, int width, int height);
+
+	void PhysicsUpdate(const MyGL::FrameRateManager &framerate);
+
+	bool Move(const glm::vec3 &velocity);
+	bool MoveAxis(int axis, float velocity);
 
 	glm::ivec3 GetChunkPosition() const;
 	glm::vec3 GetPosition() const;

@@ -10,7 +10,7 @@ void focusCallback(GLFWwindow*, int focused)
 	control = focused != 0;
 }
 static int sWidth, sHeight;
-static bool resized = false, showFramewire = false;
+static bool resized = false, showFramewire = false, flying = false;
 void framebufferSizeCallback(GLFWwindow*, int width, int height)
 {
 	sWidth = width;
@@ -23,12 +23,14 @@ void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 	{
 		if(key == GLFW_KEY_ESCAPE)
 			control = false;
-		else if(key == GLFW_KEY_F)
+		else if(key == GLFW_KEY_V)
 			showFramewire = !showFramewire;
+		else if(key == GLFW_KEY_F)
+			flying = !flying;
 	}
 }
 
-Application::Application() : world()
+Application::Application() : world(), GamePlayer(world)
 {
 	InitWindow();
 }
@@ -119,14 +121,18 @@ void Application::LogicProcess()
 		Matrices.UpdateMatrices(Width, Height);
 	}
 	//get control when mouse press
-	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	{
 		glfwSetCursorPos(Window, Width / 2, Height / 2);
 		control = true;
 	}
 
-	if(control) {
+	if(control)
+	{
+		GamePlayer.flying = flying;
 		GamePlayer.MouseControl(Window, Width, Height);
-		GamePlayer.KeyControl(world, Window, FramerateManager);
+		GamePlayer.KeyControl(Window, FramerateManager);
+		GamePlayer.PhysicsUpdate(FramerateManager);
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 	else

@@ -163,11 +163,10 @@ void FaceLighting::SetValues(
 			trans[i] = BlockMethods::IsTransparent(sides[i]);
 		}
 
-		this->AO[v] = static_cast<LightLevel>(!trans[0] && !trans[2] ? 0 : 3 - !trans[0] - !trans[1] - !trans[2]);
+		this->AO[v] = (LightLevel)(!trans[0] && !trans[2] ? 0 : 3 - !trans[0] - !trans[1] - !trans[2]);
 
 		//smooth the Light using the average value
 
-		//sunlight
 		LightLevel counter = 1,
 				sunLightSum = sunlightNeighbours[Lookup1[face]],
 				torchLightSum = torchlightNeighbours[Lookup1[face]];

@@ -17,6 +17,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <list>
 #include <unordered_map>
 #include <unordered_set>
 #include <condition_variable>
@@ -31,11 +32,11 @@ private:
 	std::vector<glm::ivec2> LoadingVector;
 
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkInitialLightingInfo>> InitialLightingInfoMap;
-	std::vector<glm::ivec2> InitialLightingVector;
+	std::list<glm::ivec2> InitialLightingList;
 	std::vector<glm::ivec2> PreInitialLightingVector;
 
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
-	std::vector<glm::ivec3> MeshingVector;
+	std::list<glm::ivec3> MeshingList;
 	std::vector<glm::ivec3> PreMeshingVector;
 
 	std::unordered_set<glm::ivec3> RenderSet;

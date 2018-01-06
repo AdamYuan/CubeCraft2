@@ -7,7 +7,9 @@
 #define CHUNK_SIZE 32 //should be greater than 14
 #define WORLD_HEIGHT 8
 
-#define MAX_ADDITION_THREAD 3
+#define GRAVITY 4.0f
+#define MOVE_DIST 0.7f
+#define JUMP_DIST 1.0f
 
 constexpr int WORLD_HEIGHT_BLOCK = WORLD_HEIGHT * CHUNK_SIZE;
 

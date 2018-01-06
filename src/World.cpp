@@ -13,9 +13,7 @@ World::World() : Running(true), ThreadsSupport(std::thread::hardware_concurrency
 {
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
 	LoadingVector.reserve(_SIZE);
-	MeshingVector.reserve(_SIZE);
 	PreMeshingVector.reserve(_SIZE);
-	InitialLightingVector.reserve(_SIZE);
 	PreInitialLightingVector.reserve(_SIZE);
 	std::cout << "Max thread support: " << ThreadsSupport << std::endl;
 	for(unsigned i=0; i<ThreadsSupport; ++i)
@@ -169,7 +167,7 @@ void World::UpdateChunkSunLightingList()
 				if(!GetChunk({iter.x, 0, iter.y})->InitializedLighting && !InitialLightingInfoMap.count(iter))
 					PreInitialLightingVector.push_back(iter);
 
-		std::sort(InitialLightingVector.begin(), InitialLightingVector.end(), cmp2);
+		InitialLightingList.sort(cmp2);
 	}
 
 	for(auto iter = PreInitialLightingVector.begin(); iter != PreInitialLightingVector.end(); )
@@ -199,9 +197,9 @@ void World::UpdateChunkSunLightingList()
 
 		if(flag)
 		{
-			auto pos = std::lower_bound(InitialLightingVector.begin(), InitialLightingVector.end(),
+			auto pos = std::lower_bound(InitialLightingList.begin(), InitialLightingList.end(),
 										*iter, cmp2);
-			InitialLightingVector.insert(pos, *iter);
+			InitialLightingList.insert(pos, *iter);
 
 			InitialLightingInfoMap[*iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
 
@@ -242,7 +240,7 @@ void World::UpdateChunkMeshingList()
 					if(!GetChunk(iter)->InitializedMesh && !MeshingInfoMap.count(iter))
 						PreMeshingVector.push_back(iter);
 
-		std::sort(MeshingVector.begin(), MeshingVector.end(), cmp3);
+		MeshingList.sort(cmp3);
 	}
 
 	glm::ivec3 _, lookUp[27];
@@ -273,8 +271,8 @@ void World::UpdateChunkMeshingList()
 
 		if(flag)
 		{
-			auto pos = std::lower_bound(MeshingVector.begin(), MeshingVector.end(), *iter, cmp3);
-			MeshingVector.insert(pos, *iter);
+			auto pos = std::lower_bound(MeshingList.begin(), MeshingList.end(), *iter, cmp3);
+			MeshingList.insert(pos, *iter);
 
 			MeshingInfoMap[*iter] = std::make_unique<ChunkMeshingInfo>(neighbours);
 
@@ -324,11 +322,11 @@ void World::ChunkInitialLightingWorker()
 
 		std::unique_lock<std::mutex> lk(Mutex);
 		Cond.wait(lk, [this]{return !Running ||
-									(RunningThreads < ThreadsSupport && !InitialLightingVector.empty());});
+									(RunningThreads < ThreadsSupport && !InitialLightingList.empty());});
 		if(!Running)
 			return;
-		pos = InitialLightingVector.back();
-		InitialLightingVector.pop_back();
+		pos = InitialLightingList.back();
+		InitialLightingList.pop_back();
 		lk.unlock();
 
 		RunningThreads ++;
@@ -345,11 +343,11 @@ void World::ChunkMeshingWorker()
 
 		std::unique_lock<std::mutex> lk(Mutex);
 		Cond.wait(lk, [this]{return !Running ||
-									(RunningThreads < ThreadsSupport && !MeshingVector.empty());});
+									(RunningThreads < ThreadsSupport && !MeshingList.empty());});
 		if(!Running)
 			return;
-		pos = MeshingVector.back();
-		MeshingVector.pop_back();
+		pos = MeshingList.back();
+		MeshingList.pop_back();
 		lk.unlock();
 
 		RunningThreads ++;
