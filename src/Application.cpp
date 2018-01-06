@@ -118,7 +118,7 @@ void Application::LogicProcess()
 		Height = sHeight;
 		resized = false;
 		glViewport(0, 0, Width, Height);
-		Matrices.UpdateMatrices(Width, Height);
+		Matrices.UpdateMatrices(Width, Height, 60);
 	}
 	//get control when mouse press
 	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -132,11 +132,12 @@ void Application::LogicProcess()
 		GamePlayer.flying = flying;
 		GamePlayer.MouseControl(Window, Width, Height);
 		GamePlayer.KeyControl(Window, FramerateManager);
-		GamePlayer.PhysicsUpdate(FramerateManager);
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 	else
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+	GamePlayer.PhysicsUpdate(FramerateManager);
 	ViewMatrix = GamePlayer.GetViewMatrix();
 
 	world.Update(GamePlayer.GetChunkPosition());

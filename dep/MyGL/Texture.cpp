@@ -1,6 +1,7 @@
 #include "Texture.hpp"
 #include <iostream>
-#include <SOIL.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 namespace MyGL
 {
 	Texture::Texture()
@@ -89,14 +90,15 @@ namespace MyGL
 		glBindTexture(textureType, 0);
 	}
 
-	inline void Texture::loadImageFile(const std::string &file) {
-		imageData = SOIL_load_image(file.c_str(), &imageWidth, &imageHeight, 0, SOIL_LOAD_RGBA);
+	inline void Texture::loadImageFile(const std::string &file)
+	{
+		imageData = stbi_load(file.c_str(), &imageWidth, &imageHeight, &nrChannels, 4);
 		if(!imageData)
 			throw std::runtime_error("Failed to load image " + file);
 	}
 
 	void Texture::freeImageArray() {
-		SOIL_free_image_data(imageData);
+		stbi_image_free(imageData);
 	}
 
 	GLuint Texture::GetId() const

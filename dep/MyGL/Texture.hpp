@@ -11,7 +11,7 @@ namespace MyGL
 	private:
 		GLuint id;
 		GLenum textureType;
-		int imageWidth, imageHeight;
+		int imageWidth, imageHeight, nrChannels;
 		unsigned char *imageData;
 		void loadImageFile(const std::string &file);
 		void freeImageArray();

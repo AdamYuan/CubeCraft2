@@ -11,6 +11,8 @@ if (OPENGL_FOUND)
 	link_libraries(${OPENGL_LIBRARIES})
 endif()
 
+find_package(glm REQUIRED)
+
 find_package(GLEW REQUIRED)
 if (GLEW_FOUND)
 	include_directories(${GLEW_INCLUDE_DIRS})
@@ -23,12 +25,6 @@ find_package(GLFW3 REQUIRED)
 if (GLFW3_FOUND)
 	include_directories(${GLFW3_INCLUDE_DIR})
 	link_libraries(${GLFW3_LIBRARY})
-endif()
-
-find_package(SOIL REQUIRED)
-if (SOIL_FOUND)
-	include_directories(${SOIL_INCLUDE_DIRS})
-	link_libraries(${SOIL_LIBRARIES})
 endif()
 
 find_package(Threads REQUIRED)

@@ -49,18 +49,17 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 		if(glfwGetKey(win, GLFW_KEY_LEFT_SHIFT))
 			Cam.MoveUp(-dist);
 	}
-	glm::vec3 velocity = Cam.Position - oldPos;
-	Cam.Position = oldPos;
-
 	//jumping
 	if(!flying && glfwGetKey(win, GLFW_KEY_SPACE))
 	{
-		float y = Cam.Position.y;
+		glm::vec3 vec = oldPos;
 		//check player is on a solid block
-		if(!MoveAxis(1, -0.001f))
+		if(!HitTest(vec, 1, -0.001f))
 			jumping = true;
-		Cam.Position.y = y;
 	}
+
+	glm::vec3 velocity = Cam.Position - oldPos;
+	Cam.Position = oldPos;
 
 	Move(velocity);
 }
@@ -173,7 +172,7 @@ void Player::PhysicsUpdate(const MyGL::FrameRateManager &framerate)
 		if(!MoveAxis(1, framerate.GetMovementDistance(JUMP_DIST)))
 			jumping = false;
 
-	static bool lastStatus = false;
+	static bool firstFall = false;
 
 	float dis = GRAVITY * (float)(glfwGetTime() - lastTime);
 	float y = Cam.Position.y;
@@ -181,12 +180,12 @@ void Player::PhysicsUpdate(const MyGL::FrameRateManager &framerate)
 	{
 		lastTime = glfwGetTime();
 		jumping = false;
-		lastStatus = true;
+		firstFall = true;
 	}
-	else if(lastStatus)
+	else if(firstFall)
 	{
 		//not fall at first
-		lastStatus = false;
+		firstFall = false;
 		Cam.Position.y = y;
 	}
 }
