@@ -1,11 +1,20 @@
 # CubeCraft2
 the rebuild version of CubeCraft
+
+## Installation
+
+```bash
+git clone https://github.com/AdamYuan/CubeCraft2.git
+cd CubeCraft2
+cmake . -DCMAKE_BUILD_TYPE=Release
+make -j4
+```
+
 ## Screenshots
 ![alt text](https://raw.githubusercontent.com/AdamYuan/CubeCraft2/master/screenshots/1.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/CubeCraft2/master/screenshots/2.png)
 
 ## Built With
-
 * [GLEW](http://glew.sourceforge.net/) - For modern OpenGL methods
 * [GLFW](http://www.glfw.org/) - Window creation and management
 * [GLM](https://glm.g-truc.net/) - Maths calculations

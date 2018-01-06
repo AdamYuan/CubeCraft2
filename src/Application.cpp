@@ -75,7 +75,7 @@ void Application::InitWindow()
 
 void Application::Run()
 {
-	GamePlayer.SetPosition({GamePlayer.GetPosition().x, 110.0f, GamePlayer.GetPosition().z});
+	GamePlayer.SetPosition({GamePlayer.GetPosition().x, 150.0f, GamePlayer.GetPosition().z});
 	while(!glfwWindowShouldClose(Window))
 	{
 		//NEVER CHANGE THIS ORDER!!!!!!
