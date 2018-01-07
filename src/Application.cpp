@@ -63,7 +63,7 @@ void Application::InitWindow()
 	glViewport(0, 0, Width, Height);
 	Matrices.UpdateMatrices(Width, Height);
 
-	UI::InitUI(Window);
+	GameUI.Init(Window, false);
 	Resource::InitResources();
 
 	glfwSetWindowFocusCallback(Window, focusCallback);
@@ -84,9 +84,9 @@ void Application::Run()
 		//render
 		Render();
 
-		UI::NewFrame();
+		GameUI.NewFrame();
 		RenderUI();
-		UI::Render();
+		GameUI.Render();
 
 		if(control)
 			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -153,33 +153,28 @@ void Application::LogicProcess()
 	world.Update(GamePlayer.GetChunkPosition());
 }
 
-Application::~Application()
-{
-	UI::Shutdown();
-}
-
 void Application::RenderUI()
 {
 	//copied from IMGUI example
 
 	//information box
-    const float DISTANCE = 10.0f;
-    static int corner = 0;
-    ImVec2 window_pos = ImVec2((corner & 1) ? ImGui::GetIO().DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? ImGui::GetIO().DisplaySize.y - DISTANCE : DISTANCE);
-    ImVec2 window_pos_pivot = ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
-    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
-    if (ImGui::Begin("", nullptr,
+	const float DISTANCE = 10.0f;
+	static int corner = 0;
+	ImVec2 window_pos = ImVec2((corner & 1) ? ImGui::GetIO().DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? ImGui::GetIO().DisplaySize.y - DISTANCE : DISTANCE);
+	ImVec2 window_pos_pivot = ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
+	if (ImGui::Begin("INFO", nullptr,
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
-    {
-        ImGui::Text("fps: %f", FPS);
+	{
+		ImGui::Text("fps: %f", FPS);
 		ImGui::Text("memory: %.1f MB", (float)getCurrentRSS() / 1024.0f / 1024.0f);
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
 
-        ImGui::End();
-    }
+		ImGui::End();
+	}
 	ImGui::PopStyleColor();
 }

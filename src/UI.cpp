@@ -4,14 +4,6 @@
 
 #include "UI.hpp"
 
-void UI::InitUI(GLFWwindow *window)
-{
-	ImGui_ImplGlfwGL3_Init(window, true);
-	ImGui::GetIO().WantCaptureKeyboard = false;
-	ImGui::GetIO().WantCaptureMouse = false;
-	ImGui::GetIO().WantMoveMouse = false;
-}
-
 void UI::NewFrame()
 {
 	ImGui_ImplGlfwGL3_NewFrame();
@@ -22,7 +14,15 @@ void UI::Render()
 	ImGui::Render();
 }
 
-void UI::Shutdown()
+void UI::Init(GLFWwindow *window, bool captureEvent)
+{
+	ImGui_ImplGlfwGL3_Init(window, captureEvent);
+	ImGui::GetIO().WantCaptureKeyboard = captureEvent;
+	ImGui::GetIO().WantCaptureMouse = captureEvent;
+}
+
+UI::~UI()
 {
 	ImGui_ImplGlfwGL3_Shutdown();
 }
+

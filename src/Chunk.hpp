@@ -107,8 +107,8 @@ class ChunkInitialLightingInfo : public ChunkInfo
 {
 private:
 	int Highest = 0;
-	Block Grid[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
-	DLightLevel Result[WORLD_HEIGHT * CHUNK_INFO_SIZE * 9];
+	Block Grid[LICHUNK_INFO_SIZE];
+	DLightLevel Result[LICHUNK_INFO_SIZE];
 
 	inline bool CanPass(int index);
 	inline int LiXYZ(glm::ivec3 pos);

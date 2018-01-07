@@ -10,6 +10,7 @@
 
 #include "Player.hpp"
 #include "World.hpp"
+#include "UI.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -22,6 +23,7 @@ private:
 	World world;
 
 	Player GamePlayer;
+	UI GameUI;
 	glm::mat4 ViewMatrix;
 
 	MyGL::Matrices Matrices;
@@ -31,7 +33,6 @@ private:
 
 public:
 	Application();
-	~Application();
 	void Run();
 	void InitWindow();
 	void Render();

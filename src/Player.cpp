@@ -59,6 +59,8 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 	}
 
 	glm::vec3 velocity = Cam.Position - oldPos;
+	if(!flying && velocity != glm::vec3(0.0f))
+		velocity = glm::normalize(velocity) * dist;
 	Cam.Position = oldPos;
 
 	Move(velocity);
