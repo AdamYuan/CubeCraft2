@@ -770,7 +770,7 @@ void ChunkInitialLightingInfo::Process()
 	Done = true;
 }
 
-void ChunkInitialLightingInfo::ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT])
+void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
 	for(int i=0; i<WORLD_HEIGHT; ++i)
 	{

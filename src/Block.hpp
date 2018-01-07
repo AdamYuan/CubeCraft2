@@ -15,6 +15,7 @@ enum Blocks
 	Stone = 3
 };
 
+//they are of the same type but different name
 typedef uint8_t Block;
 typedef uint8_t LightLevel;
 //bits: SSSSTTTT

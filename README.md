@@ -1,5 +1,5 @@
 # CubeCraft2
-the rebuild version of CubeCraft
+Another Minecraft clone also the rebuild version of [CubeCraft](https://github.com/AdamYuan/CubeCraft)
 
 ## Installation
 
@@ -21,3 +21,7 @@ make -j4
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) - Image loading
 * [FastNoiseSIMD](https://github.com/Auburns/FastNoiseSIMD) - Terrain generation
 * [ImGui](https://github.com/ocornut/imgui) - UI rendering
+
+## References
+* https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1
+* https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/

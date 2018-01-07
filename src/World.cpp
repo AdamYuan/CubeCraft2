@@ -149,7 +149,7 @@ void World::UpdateChunkSunLightingList()
 				for(; pos.y<WORLD_HEIGHT; ++pos.y)
 					arr[pos.y] = GetChunk(pos);
 
-				iter->second->ApplySunLight(arr);
+				iter->second->ApplyLighting(arr);
 
 			}
 			iter = InitialLightingInfoMap.erase(iter);

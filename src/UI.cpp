@@ -9,6 +9,7 @@ void UI::InitUI(GLFWwindow *window)
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::GetIO().WantCaptureKeyboard = false;
 	ImGui::GetIO().WantCaptureMouse = false;
+	ImGui::GetIO().WantMoveMouse = false;
 }
 
 void UI::NewFrame()

@@ -116,7 +116,7 @@ private:
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
 	void Process() override;
-	void ApplySunLight(ChunkPtr (&chk)[WORLD_HEIGHT]);
+	void ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 
 #endif // CHUNK_HPP

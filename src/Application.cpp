@@ -78,17 +78,21 @@ void Application::Run()
 	GamePlayer.SetPosition({GamePlayer.GetPosition().x, 150.0f, GamePlayer.GetPosition().z});
 	while(!glfwWindowShouldClose(Window))
 	{
-		//NEVER CHANGE THIS ORDER!!!!!!
-		UI::NewFrame();
-
 		//logic process
 		LogicProcess();
 
 		//render
 		Render();
-		RenderUI();
 
+		UI::NewFrame();
+		RenderUI();
 		UI::Render();
+
+		if(control)
+			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		else
+			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
 		glfwSwapBuffers(Window);
 
 		glfwPollEvents();
@@ -141,10 +145,7 @@ void Application::LogicProcess()
 		GamePlayer.flying = flying;
 		GamePlayer.MouseControl(Window, Width, Height);
 		GamePlayer.KeyControl(Window, FramerateManager);
-		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
-	else
-		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 	GamePlayer.PhysicsUpdate(FramerateManager);
 	ViewMatrix = GamePlayer.GetViewMatrix();
@@ -172,6 +173,7 @@ void Application::RenderUI()
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
     {
         ImGui::Text("fps: %f", FPS);
+		ImGui::Text("memory: %.1f MB", (float)getCurrentRSS() / 1024.0f / 1024.0f);
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
