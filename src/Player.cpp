@@ -28,7 +28,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 
 void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate)
 {
-	float dist = framerate.GetMovementDistance(MOVE_DIST);
+	float dist = framerate.GetMovementDistance(WALK_SPEED);
 
 	glm::vec3 oldPos = Cam.Position;
 

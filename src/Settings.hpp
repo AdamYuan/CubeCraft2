@@ -8,8 +8,10 @@
 #define WORLD_HEIGHT 8
 
 #define GRAVITY 4.0f
-#define MOVE_DIST 0.7f
+#define WALK_SPEED 0.7f
 #define JUMP_DIST 1.0f
+
+#define WALK_FOVY 60
 
 constexpr int WORLD_HEIGHT_BLOCK = WORLD_HEIGHT * CHUNK_SIZE;
 

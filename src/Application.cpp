@@ -44,24 +44,30 @@ void Application::InitWindow()
 {
 	glfwInit();
 
-	glfwWindowHint(GLFW_SAMPLES, 4);
+	//glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
 	Window = glfwCreateWindow(Width, Height, "CubeCraft2", nullptr, nullptr);
 	if(Window == nullptr)
-		throw std::runtime_error("ERROR WHEN CREATING WINDOW");
+	{
+		printf("ERROR WHEN CREATING WINDOW");
+		exit(EXIT_FAILURE);
+	}
 
 	glfwMakeContextCurrent(Window);
 
 	glewExperimental = GL_TRUE;
 	if(glewInit() != GLEW_OK)
-		throw std::runtime_error("ERROR WHEN INITIALIZE GLEW");
+	{
+		printf("ERROR WHEN INITIALIZE GLEW");
+		exit(EXIT_FAILURE);
+	}
 	glViewport(0, 0, Width, Height);
-	Matrices.UpdateMatrices(Width, Height);
+	Matrices.UpdateMatrices(Width, Height, WALK_FOVY);
 
 	GameUI.Init(Window, false);
 	Resource::InitResources();
@@ -109,6 +115,14 @@ void Application::Render()
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	world.Render(Matrices.Projection3d, ViewMatrix, GamePlayer.GetPosition());
+
+	//render cross hair
+	glEnable(GL_COLOR_LOGIC_OP);
+	glLogicOp(GL_INVERT);
+	Resource::LineShader->Use();
+	Resource::LineShader->PassMat4(Resource::UNIF_MATRIX, Matrices.Matrix2dCenter);
+	Resource::CrosshairObject->Render(GL_TRIANGLES);
+	glDisable(GL_COLOR_LOGIC_OP);
 }
 
 void Application::LogicProcess()
@@ -131,7 +145,7 @@ void Application::LogicProcess()
 		Height = sHeight;
 		resized = false;
 		glViewport(0, 0, Width, Height);
-		Matrices.UpdateMatrices(Width, Height, 60);
+		Matrices.UpdateMatrices(Width, Height, WALK_FOVY);
 	}
 	//get control when mouse press
 	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -169,6 +183,7 @@ void Application::RenderUI()
 	{
 		ImGui::Text("fps: %f", FPS);
 		ImGui::Text("memory: %.1f MB", (float)getCurrentRSS() / 1024.0f / 1024.0f);
+		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");

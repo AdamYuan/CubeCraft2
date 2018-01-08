@@ -80,6 +80,8 @@ public:
 	void SetBlock(const glm::ivec3 &pos, Block blk);
 	Block GetBlock(const glm::ivec3 &pos) const;
 
+	uint GetRunningThreadNum() const;
+
 	static glm::ivec3 BlockPosToChunkPos(const glm::ivec3 &pos);
 };
 

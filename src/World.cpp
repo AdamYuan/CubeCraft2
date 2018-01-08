@@ -372,9 +372,9 @@ void World::Render(const glm::mat4 &projection, const glm::mat4 &view, const glm
 	Resource::ChunkTexture->Bind();
 
 	Resource::ChunkShader->PassInt(Resource::UNIF_SAMPLER, 0);
+	Resource::ChunkShader->PassMat4(Resource::UNIF_MATRIX, matrix);
 
 	Resource::ChunkShader->PassFloat("viewDistance", range);
-	Resource::ChunkShader->PassMat4("matrix", matrix);
 	Resource::ChunkShader->PassVec3("camera", position);
 
 	for(const glm::ivec3 &pos : RenderSet)
@@ -415,5 +415,10 @@ glm::ivec3 World::BlockPosToChunkPos(const glm::ivec3 &pos)
 	return glm::ivec3((pos.x + (pos.x < 0)) / CHUNK_SIZE - (pos.x < 0),
 					  (pos.y + (pos.y < 0)) / CHUNK_SIZE - (pos.y < 0),
 					  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
+}
+
+uint World::GetRunningThreadNum() const
+{
+	return RunningThreads;
 }
 

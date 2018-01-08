@@ -11,6 +11,6 @@ namespace MyGL
 	{
 	public:
 		glm::mat4 Projection3d, Matrix2d, Matrix2dCenter;
-		void UpdateMatrices(int width, int height, float fovy = 45.0f);
+		void UpdateMatrices(int width, int height, float fovy);
 	};
 }

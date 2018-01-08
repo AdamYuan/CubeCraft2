@@ -4,5 +4,5 @@ uniform mat4 matrix;
 
 void main()
 {
-	gl_Position=matrix*position;
+	gl_Position = matrix * position;
 }
