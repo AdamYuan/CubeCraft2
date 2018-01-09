@@ -9,34 +9,39 @@
 
 
 //glfw callbacks
-static bool control = true;
-void focusCallback(GLFWwindow*, int focused)
+Application *Application::getCallbackInstance(GLFWwindow *window)
 {
+	return reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+}
+void Application::focusCallback(GLFWwindow *window, int focused)
+{
+	auto app = getCallbackInstance(window);
 	if(!focused)
-		control = false;
+		app->control = false;
 }
-static int sWidth, sHeight;
-static bool resized = false, showFramewire = false, flying = false;
-void framebufferSizeCallback(GLFWwindow*, int width, int height)
+void Application::framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
-	sWidth = width;
-	sHeight = height;
-	resized = true;
+	auto app = getCallbackInstance(window);
+	app->Width = width;
+	app->Height = height;
+	glViewport(0, 0, width, height);
+	app->Matrices.UpdateMatrices(width, height, WALK_FOVY);
 }
-void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
+void Application::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
+	auto app = getCallbackInstance(window);
 	if(action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_ESCAPE)
-			control = false;
+			app->control = false;
 		else if(key == GLFW_KEY_V)
-			showFramewire = !showFramewire;
+			app->showFramewire = !app->showFramewire;
 		else if(key == GLFW_KEY_F)
-			flying = !flying;
+			app->GamePlayer.flying = !app->GamePlayer.flying;
 	}
 }
 
-Application::Application() : world(), GamePlayer(world)
+Application::Application() : world(), GamePlayer(world), showFramewire(false), control(true)
 {
 	InitWindow();
 }
@@ -53,6 +58,8 @@ void Application::InitWindow()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
 	Window = glfwCreateWindow(Width, Height, "CubeCraft2", nullptr, nullptr);
+    glfwSetWindowUserPointer(Window, reinterpret_cast<void *>(this));
+
 	if(Window == nullptr)
 	{
 		printf("ERROR WHEN CREATING WINDOW");
@@ -128,7 +135,6 @@ void Application::LogicProcess()
 	//update frame rate info
 	FramerateManager.UpdateFrameRateInfo();
 
-
 	static int lastTime = 0;
 	if(glfwGetTime() > lastTime + 1)
 	{
@@ -136,15 +142,6 @@ void Application::LogicProcess()
 		FPS = FramerateManager.GetFps();
 	}
 
-	//process size event
-	if(resized)
-	{
-		Width = sWidth;
-		Height = sHeight;
-		resized = false;
-		glViewport(0, 0, Width, Height);
-		Matrices.UpdateMatrices(Width, Height, WALK_FOVY);
-	}
 	//get control when mouse press
 	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
@@ -154,7 +151,6 @@ void Application::LogicProcess()
 
 	if(control)
 	{
-		GamePlayer.flying = flying;
 		GamePlayer.MouseControl(Window, Width, Height);
 		GamePlayer.KeyControl(Window, FramerateManager);
 	}
@@ -190,3 +186,4 @@ void Application::RenderUI()
 	}
 	ImGui::PopStyleColor();
 }
+

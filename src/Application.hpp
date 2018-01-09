@@ -17,7 +17,7 @@
 class Application
 {
 private:
-	GLFWwindow *Window;
+	GLFWwindow *Window;//must be the first
 	int Width = 720, Height = 480;
 
 	World world;
@@ -30,6 +30,12 @@ private:
 	MyGL::FrameRateManager FramerateManager;
 
 	float FPS = 0.0f;
+	bool control, showFramewire;
+
+	static void focusCallback(GLFWwindow* window, int focused);
+	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	inline static Application *getCallbackInstance(GLFWwindow* window);
 
 public:
 	Application();
@@ -38,6 +44,7 @@ public:
 	void Render();
 	void RenderUI();
 	void LogicProcess();
+
 };
 
 #endif

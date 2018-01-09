@@ -57,7 +57,6 @@ void ChunkLoadingInfo::Process()
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 #define IS_CAVE(x) ((x) > .86f)
-#define HEIGHT(x) ((int)((x) * 50 + 100))
 	constexpr int _SIZE = CHUNK_SIZE + 4;
 
 	//calculate height map
@@ -69,7 +68,7 @@ void ChunkLoadingInfo::Process()
 	int highest = 0;
 	for (int i = 0; i < _SIZE*_SIZE; ++i)
 	{
-		heights[i] = HEIGHT(heightMap[i]);
+		heights[i] = (int)(heightMap[i] * 50.0f + 100.0f);
 		highest = std::max(highest, heights[i]);
 	}
 	FastNoiseSIMD::FreeNoiseSet(heightMap);
@@ -137,7 +136,9 @@ void ChunkLoadingInfo::Process()
 					{
 						if(_z == z && _x == x)
 							continue;
-						Result[Chunk::XYZ(_x, h, _z)] = Blocks::Leaves;
+						int ind = Chunk::XYZ(_x, h, _z);
+						if(Result[ind] == Blocks::Air)
+							Result[ind] = Blocks::Leaves;
 					}
 			}
 			if(x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
