@@ -89,7 +89,7 @@ void ChunkLoadingInfo::Process()
 					continue;
 
 				int ind = y * CHUNK_SIZE * CHUNK_SIZE + index;
-				bool notCave = caveMap[ind] < .79f;
+				bool notCave = caveMap[ind] < .86f;
 
 				if (!notCave)
 					continue;

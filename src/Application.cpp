@@ -12,7 +12,8 @@
 static bool control = true;
 void focusCallback(GLFWwindow*, int focused)
 {
-	control = focused != 0;
+	if(!focused)
+		control = false;
 }
 static int sWidth, sHeight;
 static bool resized = false, showFramewire = false, flying = false;
