@@ -56,43 +56,53 @@ void ChunkLoadingInfo::Process()
 
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
+#define IS_CAVE(x) ((x) > .86f)
+#define HEIGHT(x) ((int)((x) * 50 + 100))
+	constexpr int _SIZE = CHUNK_SIZE + 4;
+
+	//calculate height map
 	fastNoise->SetFractalOctaves(4);
 	fastNoise->SetFrequency(0.002f);
-	float* heightMap = fastNoise->GetSimplexFractalSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0,
-													   CHUNK_SIZE, CHUNK_SIZE, 1);
-
-	int heights[CHUNK_SIZE*CHUNK_SIZE];
-
+	float *heightMap = fastNoise->GetSimplexFractalSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0,
+													   _SIZE, _SIZE, 1);
+	int heights[_SIZE*_SIZE];
 	int highest = 0;
-	for (int index = 0; index < CHUNK_SIZE*CHUNK_SIZE; ++index)
+	for (int i = 0; i < _SIZE*_SIZE; ++i)
 	{
-		heights[index] = static_cast<int>(heightMap[index] * 50 + 100);
-		highest = std::max(highest, heights[index]);
+		heights[i] = HEIGHT(heightMap[i]);
+		highest = std::max(highest, heights[i]);
 	}
-
 	FastNoiseSIMD::FreeNoiseSet(heightMap);
+
 
 	fastNoise->SetFrequency(0.012f);
 	fastNoise->SetFractalOctaves(1);
 	fastNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
 	fastNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Cave);
-	float* caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE,
-											   highest + 1, CHUNK_SIZE, CHUNK_SIZE);
+	float *caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE,
+											   highest + 1, _SIZE, _SIZE);
 
 
 	for (int y = 0; y <= highest; y++) {
 		int index = 0;
-		for (int z = 0; z < CHUNK_SIZE; z++)
-			for (int x = 0; x < CHUNK_SIZE; x++, index++)
+		for (int z = -2; z < CHUNK_SIZE + 2; z++)
+			for (int x = -2; x < CHUNK_SIZE + 2; x++, index++)
 			{
-				if(y > heights[index])
+				if(y > heights[index] || z < 0 || z >= CHUNK_SIZE || x < 0 || x >= CHUNK_SIZE)
 					continue;
 
-				int ind = y * CHUNK_SIZE * CHUNK_SIZE + index;
-				bool notCave = caveMap[ind] < .86f;
+				int ind = Chunk::XYZ(x, y, z);
+				int ind2 = y * _SIZE * _SIZE + index;
 
-				if (!notCave)
+				if(y == 0)
+				{
+					Result[ind] = Blocks::Bedrock;
 					continue;
+				}
+
+				if (IS_CAVE(caveMap[ind2]))
+					continue;
+
 
 				if (y == heights[index])
 					Result[ind] = Blocks::Grass;
@@ -103,6 +113,41 @@ void ChunkLoadingInfo::Process()
 			}
 	}
 
+	//tree generation
+	fastNoise->SetFrequency(1.0f);
+	float *treeMap = fastNoise->GetWhiteNoiseSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0,
+												 _SIZE, _SIZE, 1);
+	for (int z = -2, i = 0; z < CHUNK_SIZE + 2; ++z)
+		for (int x = -2; x < CHUNK_SIZE + 2; ++x, ++i)
+		{
+			const bool treeExist = (int) ((treeMap[i] + 1.0f) * 128.0f) == 0;
+			if(!treeExist || IS_CAVE(caveMap[heights[i]*_SIZE*_SIZE + i]))
+				continue;
+
+			const int treeHeight = (int) ((treeMap[i] + 1.0f) * 10000.0f) % 5 + 7;
+			const int leavesHeight = (int) ((treeMap[i] + 1.0f) * 10000.0f) % 4 + 2;
+			for(int h = heights[i] + treeHeight - leavesHeight + 1; h <= heights[i] + treeHeight; ++h)
+			{
+				int xMin = std::max(x-2, 0);
+				int xMax = std::min(x+2, CHUNK_SIZE-1);
+				int zMin = std::max(z-2, 0);
+				int zMax = std::min(z+2, CHUNK_SIZE-1);
+				for(int _z = zMin; _z <= zMax; ++_z)
+					for(int _x = xMin; _x <= xMax; ++_x)
+					{
+						if(_z == z && _x == x)
+							continue;
+						Result[Chunk::XYZ(_x, h, _z)] = Blocks::Leaves;
+					}
+			}
+			if(x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
+			{
+				for(int h = heights[i] + 1; h <= heights[i] + treeHeight; ++h)
+					Result[Chunk::XYZ(x, h, z)] = Blocks::Wood;
+				Result[Chunk::XYZ(x, heights[i], z)] = Blocks::Dirt;
+			}
+		}
+	FastNoiseSIMD::FreeNoiseSet(treeMap);
 	FastNoiseSIMD::FreeNoiseSet(caveMap);
 	Done = true;
 }
@@ -698,21 +743,62 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 
 ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 {
-	int index = 0;
-	for(int _=0; _<9; ++_)
-		for(int i=0; i<WORLD_HEIGHT; ++i, index += CHUNK_INFO_SIZE)
+	for(int h = 0; h < WORLD_HEIGHT; ++h)
+	{
+		int arr[9];
+		for(int i=0; i<9; ++i)
+			arr[i] = WORLD_HEIGHT*i + h;
+
+		// 0 3 6
+		// 1 4 7
+		// 2 5 8
+		for(int y=0; y<CHUNK_SIZE; ++y)
 		{
-			int c = i + WORLD_HEIGHT*_;
-			std::copy(std::begin(chk[c]->Grid), std::end(chk[c]->Grid), Grid + index);
+			int height = h * CHUNK_SIZE + y;
+			for(int z=-14; z<0; ++z)
+			{
+				std::copy(chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
+						  chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[3]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[3]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[6]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[6]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+			}
+			for(int z=0; z<CHUNK_SIZE; ++z)
+			{
+				std::copy(chk[arr[1]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
+						  chk[arr[1]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[4]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[4]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[7]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[7]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+			}
+			for(int z=CHUNK_SIZE; z<CHUNK_SIZE+14; ++z)
+			{
+				std::copy(chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
+						  chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[5]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[5]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[8]]->Grid + Chunk::XYZ(0, y, z),
+						  chk[arr[8]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+			}
 		}
+	}
 }
 
 void ChunkInitialLightingInfo::Process()
 {
 	//Get Highest Layer
-	for(int i=0; i<CHUNK_INFO_SIZE*WORLD_HEIGHT*9; ++i)
+	constexpr int LICHUNK_SIZE_2 = LICHUNK_SIZE*LICHUNK_SIZE;
+	for(int i=0; i<LICHUNK_INFO_SIZE; )
+	{
 		if(!CanPass(i))
-			Highest = std::max(Highest, (i % (CHUNK_INFO_SIZE*WORLD_HEIGHT)) / (CHUNK_SIZE*CHUNK_SIZE) + 1);
+		{
+			Highest = std::max(Highest, (i /= LICHUNK_SIZE_2) + 1);
+			i = i * LICHUNK_SIZE_2 + LICHUNK_SIZE_2;
+		} else
+			++i;
+	}
 
 	if(Highest >= WORLD_HEIGHT_BLOCK)
 		Highest = WORLD_HEIGHT_BLOCK - 1;
@@ -772,26 +858,32 @@ void ChunkInitialLightingInfo::Process()
 
 void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
-	for(int i=0; i<WORLD_HEIGHT; ++i)
+	for(int h=0; h<WORLD_HEIGHT; ++h)
 	{
-		int base = 4*CHUNK_INFO_SIZE*WORLD_HEIGHT + CHUNK_INFO_SIZE*i;
-		std::copy(Result + base, Result + base + CHUNK_INFO_SIZE, chk[i]->Light);
-
-		chk[i]->InitializedLighting = true;
+		for(int y=0; y<CHUNK_SIZE; ++y)
+		{
+			int height = h*CHUNK_SIZE + y;
+			for(int z=0; z<CHUNK_SIZE; ++z)
+			{
+				std::copy(Result + LiXYZ(0, height, z), Result + LiXYZ(CHUNK_SIZE, height, z),
+						  chk[h]->Light + Chunk::XYZ(0, y, z));
+			}
+		}
+		chk[h]->InitializedLighting = true;
 	}
 }
 
 int ChunkInitialLightingInfo::LiXYZ(glm::ivec3 pos)
 {
-	pos.x += CHUNK_SIZE, pos.z += CHUNK_SIZE;
-
-	int i = (pos.x / CHUNK_SIZE) * 3 + (pos.z / CHUNK_SIZE);
-	pos.x %= CHUNK_SIZE, pos.z %= CHUNK_SIZE;
-
-	return Chunk::XYZ(pos) + i*CHUNK_INFO_SIZE*WORLD_HEIGHT;
+	return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE;
+}
+int ChunkInitialLightingInfo::LiXYZ(int x, int y, int z)
+{
+	return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE;
 }
 
 bool ChunkInitialLightingInfo::CanPass(int index)
 {
 	return BlockMethods::LightCanPass(Grid[index]);
 }
+

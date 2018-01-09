@@ -95,10 +95,7 @@ void Application::Run()
 		RenderUI();
 		GameUI.Render();
 
-		if(control)
-			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		else
-			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetInputMode(Window, GLFW_CURSOR, control ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 
 		glfwSwapBuffers(Window);
 
@@ -183,7 +180,6 @@ void Application::RenderUI()
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
 	{
 		ImGui::Text("fps: %f", FPS);
-		ImGui::Text("memory: %.1f MB", (float)getCurrentRSS() / 1024.0f / 1024.0f);
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());

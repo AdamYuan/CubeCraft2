@@ -8,7 +8,7 @@
 
 glm::ivec3 World::s_center;
 
-World::World() : Running(true), ThreadsSupport(std::thread::hardware_concurrency() - 1),
+World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
 				 RunningThreads(0), PosChanged(false)
 {
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
@@ -361,7 +361,7 @@ void World::Render(const glm::mat4 &projection, const glm::mat4 &view, const glm
 	glm::mat4 matrix = projection * view;
 	frustum.CalculatePlanes(matrix);
 
-	static constexpr float range = CHUNK_SIZE*CHUNK_LOADING_RANGE;
+	static constexpr float range = CHUNK_SIZE*(CHUNK_LOADING_RANGE - 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 

@@ -112,6 +112,7 @@ private:
 
 	inline bool CanPass(int index);
 	inline int LiXYZ(glm::ivec3 pos);
+	inline int LiXYZ(int x, int y, int z);
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);

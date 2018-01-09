@@ -5,7 +5,8 @@
 	Air = 0,
 	Dirt = 1,
 	Grass = 2,
-	Stone = 3
+	Stone = 3,
+ 	Bedrock = 4
 };*/
 
 struct BlockProperty
@@ -22,7 +23,10 @@ namespace BlockMethods
 					{true,	true,	false,	0,	{}},
 					{false,	false,	true,	0,	{0, 0, 0, 0, 0, 0}},
 					{false,	false,	true,	0,	{1, 1, 2, 0, 1, 1}},
-					{false,	false,	true,	0,	{3, 3, 3, 3, 3, 3}}
+					{false,	false,	true,	0,	{3, 3, 3, 3, 3, 3}},
+					{false,	false,	true,	0,	{4, 4, 4, 4, 4, 4}},
+					{false,	false,	true,	0,	{5, 5, 6, 6, 5, 5}},
+					{true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}}
 			};
 
 	int GetTexture(Block block, Face face)
