@@ -827,6 +827,9 @@ void ChunkInitialLightingInfo::Process()
 		LightBFSNode node = SunLightQueue.front();
 		SunLightQueue.pop();
 
+		if((Result[LiXYZ(node.Pos)] >> 4) > node.Value)
+			continue;
+
 		for(unsigned face=0; face<6; ++face)
 		{
 			LightBFSNode neighbour = node;

@@ -11,7 +11,7 @@ if (OPENGL_FOUND)
 	link_libraries(${OPENGL_LIBRARIES})
 endif()
 
-find_package(glm REQUIRED)
+find_package(glm 0.9.8 REQUIRED)
 
 find_package(GLEW REQUIRED)
 if (GLEW_FOUND)

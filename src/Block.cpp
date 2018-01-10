@@ -20,13 +20,13 @@ namespace BlockMethods
 {
 	const static BlockProperty BlockProperties[BLOCKS_NUM] =
 			{
-					{true,	true,	false,	0,	{}},
-					{false,	false,	true,	0,	{0, 0, 0, 0, 0, 0}},
-					{false,	false,	true,	0,	{1, 1, 2, 0, 1, 1}},
-					{false,	false,	true,	0,	{3, 3, 3, 3, 3, 3}},
-					{false,	false,	true,	0,	{4, 4, 4, 4, 4, 4}},
-					{false,	false,	true,	0,	{5, 5, 6, 6, 5, 5}},
-					{true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}}
+					{true,	true,	false,	0,	{}},					//Air
+					{false,	false,	true,	0,	{0, 0, 0, 0, 0, 0}},	//Dirt
+					{false,	false,	true,	0,	{1, 1, 2, 0, 1, 1}},	//Grass
+					{false,	false,	true,	0,	{3, 3, 3, 3, 3, 3}},	//Stone
+					{false,	false,	true,	0,	{4, 4, 4, 4, 4, 4}},	//Bedrock
+					{false,	false,	true,	0,	{5, 5, 6, 6, 5, 5}},	//Wood
+					{true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}}		//Leaves
 			};
 
 	int GetTexture(Block block, Face face)

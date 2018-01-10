@@ -3,7 +3,7 @@
 #include "Chunk.hpp"
 #include "Application.hpp"
 #include "Resource.hpp"
-#include "UI.hpp"
+#include "Renderer.hpp"
 
 #include <glm/gtx/string_cast.hpp>
 
@@ -25,6 +25,7 @@ void Application::framebufferSizeCallback(GLFWwindow *window, int width, int hei
 	app->Width = width;
 	app->Height = height;
 	glViewport(0, 0, width, height);
+	glfwSetCursorPos(window, width / 2, height / 2);
 	app->Matrices.UpdateMatrices(width, height, WALK_FOVY);
 }
 void Application::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -119,15 +120,9 @@ void Application::Render()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	world.Render(Matrices.Projection3d, ViewMatrix, GamePlayer.GetPosition());
 
-	//render cross hair
-	glEnable(GL_COLOR_LOGIC_OP);
-	glLogicOp(GL_INVERT);
-	Resource::LineShader->Use();
-	Resource::LineShader->PassMat4(Resource::UNIF_MATRIX, Matrices.Matrix2dCenter);
-	Resource::CrosshairObject->Render(GL_TRIANGLES);
-	glDisable(GL_COLOR_LOGIC_OP);
+	Renderer::RenderWorld(world, Matrices.Projection3d, ViewMatrix, GamePlayer.GetPosition());
+	Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 }
 
 void Application::LogicProcess()

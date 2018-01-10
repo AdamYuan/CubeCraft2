@@ -8,8 +8,6 @@
 #include "Chunk.hpp"
 #include "Settings.hpp"
 
-#include <MyGL/Frustum.hpp>
-
 #include <glm/gtx/hash.hpp>
 
 #include <algorithm>
@@ -39,8 +37,6 @@ private:
 	std::list<glm::ivec3> MeshingList;
 	std::vector<glm::ivec3> PreMeshingVector;
 
-	std::unordered_set<glm::ivec3> RenderSet;
-
 	void UpdateChunkLoadingList();
 	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
@@ -63,19 +59,15 @@ private:
 	void ChunkMeshingWorker();
 	bool Running;
 
-	MyGL::Frustum frustum;
-
-
 public:
 	World();
 	~World();
 
-	void SetChunk(const glm::ivec3 &pos);
-	inline ChunkPtr GetChunk(const glm::ivec3 &pos) const;
+	inline void SetChunk(const glm::ivec3 &pos);
+	inline bool ChunkExist(const glm::ivec3 &pos) const;
+	ChunkPtr GetChunk(const glm::ivec3 &pos) const;
 
 	void Update(const glm::ivec3 &center);
-
-	void Render(const glm::mat4 &projection, const glm::mat4 &view, const glm::vec3 &position);
 
 	void SetBlock(const glm::ivec3 &pos, Block blk);
 	Block GetBlock(const glm::ivec3 &pos) const;
@@ -83,6 +75,8 @@ public:
 	uint GetRunningThreadNum() const;
 
 	static glm::ivec3 BlockPosToChunkPos(const glm::ivec3 &pos);
+
+	std::unordered_set<glm::ivec3> RenderSet;
 };
 
 

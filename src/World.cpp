@@ -3,7 +3,6 @@
 //
 
 #include "World.hpp"
-#include "Resource.hpp"
 #include <glm/gtx/string_cast.hpp>
 
 glm::ivec3 World::s_center;
@@ -40,9 +39,14 @@ void World::SetChunk(const glm::ivec3 &pos)
 	SuperChunk[pos] = std::make_unique<Chunk>(pos);
 }
 
+bool World::ChunkExist(const glm::ivec3 &pos) const
+{
+	return static_cast<bool>(SuperChunk.count(pos));
+}
+
 ChunkPtr World::GetChunk(const glm::ivec3 &pos) const
 {
-	if(!SuperChunk.count(pos))
+	if(!ChunkExist(pos))
 		return nullptr;
 	return SuperChunk.at(pos).get();
 }
@@ -81,7 +85,7 @@ void World::Update(const glm::ivec3 &center)
 		for(i.x = center.x - CHUNK_LOADING_RANGE; i.x <= center.x + CHUNK_LOADING_RANGE; ++i.x)
 			for(i.z = center.z - CHUNK_LOADING_RANGE; i.z <= center.z + CHUNK_LOADING_RANGE; ++i.z)
 				for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
-					if(!SuperChunk.count(i))
+					if(!ChunkExist(i))
 						SetChunk(i);
 	}
 
@@ -106,7 +110,7 @@ void World::UpdateChunkLoadingList()
 		if(iter->second->Done)
 		{
 			glm::ivec3 pos(iter->first.x, 0, iter->first.y);
-			if(SuperChunk.count(pos))
+			if(ChunkExist(pos))
 			{
 				ChunkPtr arr[WORLD_HEIGHT];
 				for(; pos.y < WORLD_HEIGHT; pos.y++)
@@ -143,7 +147,7 @@ void World::UpdateChunkSunLightingList()
 		if(iter->second->Done)
 		{
 			glm::ivec3 pos(iter->first.x, 0, iter->first.y);
-			if(SuperChunk.count(pos))
+			if(ChunkExist(pos))
 			{
 				ChunkPtr arr[WORLD_HEIGHT];
 				for(; pos.y<WORLD_HEIGHT; ++pos.y)
@@ -217,7 +221,7 @@ void World::UpdateChunkMeshingList()
 	{
 		if(iter->second->Done)
 		{
-			if(SuperChunk.count(iter->first))
+			if(ChunkExist(iter->first))
 			{
 				iter->second->ApplyMesh(GetChunk(iter->first));
 				if(!GetChunk(iter->first)->VertexBuffer->Empty())
@@ -356,40 +360,6 @@ void World::ChunkMeshingWorker()
 	}
 }
 
-void World::Render(const glm::mat4 &projection, const glm::mat4 &view, const glm::vec3 &position)
-{
-	glm::mat4 matrix = projection * view;
-	frustum.CalculatePlanes(matrix);
-
-	static constexpr float range = CHUNK_SIZE*(CHUNK_LOADING_RANGE - 1);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-	Resource::ChunkShader->Use();
-
-	//texture
-	glActiveTexture(GL_TEXTURE0);
-	Resource::ChunkTexture->Bind();
-
-	Resource::ChunkShader->PassInt(Resource::UNIF_SAMPLER, 0);
-	Resource::ChunkShader->PassMat4(Resource::UNIF_MATRIX, matrix);
-
-	Resource::ChunkShader->PassFloat("viewDistance", range);
-	Resource::ChunkShader->PassVec3("camera", position);
-
-	for(const glm::ivec3 &pos : RenderSet)
-	{
-		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
-		ChunkPtr chk = GetChunk(pos);
-		if (chk && frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
-				glm::distance((glm::vec3)pos, (glm::vec3)s_center) < (float)CHUNK_LOADING_RANGE + 1)
-			chk->VertexBuffer->Render(GL_TRIANGLES);
-	}
-
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-}
-
 void World::SetBlock(const glm::ivec3 &pos, Block blk)
 {
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
@@ -421,4 +391,5 @@ uint World::GetRunningThreadNum() const
 {
 	return RunningThreads;
 }
+
 
