@@ -35,10 +35,13 @@ void Application::keyCallback(GLFWwindow *window, int key, int scancode, int act
 			app->showFramewire = !app->showFramewire;
 		else if(key == GLFW_KEY_F)
 			app->GamePlayer.flying = !app->GamePlayer.flying;
+		else if(key == GLFW_KEY_U)
+			app->showUI = !app->showUI;
 	}
 }
 
-Application::Application() : world(), GamePlayer(world), showFramewire(false), control(true)
+Application::Application() : world(), GamePlayer(world),
+							 showFramewire(false), control(true), showUI(true)
 {
 	InitWindow();
 }
@@ -91,18 +94,17 @@ void Application::Run()
 	{
 		//logic process
 		LogicProcess();
-
 		//render
 		Render();
-
-		GameUI.NewFrame();
-		RenderUI();
-		GameUI.Render();
-
+		if(showUI)
+		{
+			GameUI.NewFrame();
+			RenderUI();
+			GameUI.Render();
+		}
 		glfwSetInputMode(Window, GLFW_CURSOR, control ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 
 		glfwSwapBuffers(Window);
-
 		glfwPollEvents();
 	}
 }
@@ -112,12 +114,15 @@ void Application::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.6f, 0.8f, 1.0f, 1.0f);
 
+	glm::mat4 ViewMatrix = GamePlayer.GetViewMatrix();
+	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
+
 	if(showFramewire)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	Renderer::RenderWorld(world, Matrices.Projection3d, ViewMatrix, GamePlayer.GetPosition());
+	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
 	Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 }
 
@@ -147,7 +152,6 @@ void Application::LogicProcess()
 	}
 
 	GamePlayer.PhysicsUpdate(FramerateManager);
-	ViewMatrix = GamePlayer.GetViewMatrix();
 
 	world.Update(GamePlayer.GetChunkPosition());
 }
@@ -170,8 +174,12 @@ void Application::RenderUI()
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
+		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
+		ImGui::Separator();
+		ImGui::Text("renderer: %s", glGetString(GL_RENDERER));
+		ImGui::Text("vendor: %s", glGetString(GL_VENDOR));
 
 		ImGui::End();
 	}

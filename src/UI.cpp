@@ -19,8 +19,6 @@ void UI::Init(GLFWwindow *window, bool captureEvent)
 	ImGui_ImplGlfwGL3_Init(window, captureEvent);
 	ImGui::GetIO().WantCaptureKeyboard = captureEvent;
 	ImGui::GetIO().WantCaptureMouse = captureEvent;
-
-	ImGui::GetIO().Fonts->ClearFonts();
 	ImGui::GetIO().Fonts->AddFontFromFileTTF("resources/DroidSans.ttf", 16);
 }
 

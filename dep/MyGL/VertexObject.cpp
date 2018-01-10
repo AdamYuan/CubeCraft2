@@ -75,6 +75,6 @@ namespace MyGL
 
 	VertexObjectPtr NewVertexObject()
 	{
-		return VertexObjectPtr(new VertexObject());
+		return std::make_unique<MyGL::VertexObject>();
 	}
 }

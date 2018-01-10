@@ -7,7 +7,7 @@
 #include <MyGL/Frustum.hpp>
 
 #include "World.hpp"
-void Renderer::RenderWorld(const World &wld, const glm::mat4 &projection, const glm::mat4 &view,
+void Renderer::RenderWorld(const World &wld, const glm::mat4 &matrix,
 						   const glm::vec3 &position)
 {
 	static MyGL::Frustum frustum = {};
@@ -15,7 +15,6 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &projection, const 
 
 	glm::vec3 p_center = (glm::vec3)(World::BlockPosToChunkPos(glm::floor(position)));
 
-	glm::mat4 matrix = projection * view;
 	frustum.CalculatePlanes(matrix);
 
 	glEnable(GL_DEPTH_TEST);

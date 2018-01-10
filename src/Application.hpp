@@ -24,13 +24,12 @@ private:
 
 	Player GamePlayer;
 	UI GameUI;
-	glm::mat4 ViewMatrix;
 
 	MyGL::Matrices Matrices;
 	MyGL::FrameRateManager FramerateManager;
 
 	float FPS = 0.0f;
-	bool control, showFramewire;
+	bool control, showFramewire, showUI;
 
 	static void focusCallback(GLFWwindow* window, int focused);
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);

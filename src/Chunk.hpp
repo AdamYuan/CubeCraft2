@@ -94,16 +94,12 @@ private:
 
 	static inline int ExXYZ(int x, int y, int z)
 	{ return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE; }
-
 	inline Block GetBlock(int x, int y, int z)
 	{ return Grid[ExXYZ(x, y, z)]; }
-
 	inline LightLevel GetSunLight(int x, int y, int z)
 	{ return static_cast<LightLevel>((Light[ExXYZ(x, y, z)] >> 4) & 0xF); }
-
 	inline LightLevel GetTorchLight(int x, int y, int z)
 	{ return static_cast<LightLevel>(Light[ExXYZ(x, y, z)] & 0xF); }
-
 	inline bool ShowFace(Block now, Block neighbour)
 	{
 		bool trans = BlockMethods::IsTransparent(now), transN = BlockMethods::IsTransparent(neighbour);

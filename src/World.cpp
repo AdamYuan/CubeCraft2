@@ -81,8 +81,7 @@ void World::Update(const glm::ivec3 &center)
 		UpdateChunkSunLightingList();
 		UpdateChunkMeshingList();
 
-		for(unsigned _=0; _<ThreadsSupport; ++_)
-			Cond.notify_one();
+		Cond.notify_all();
 
 		Mutex.unlock();
 	}

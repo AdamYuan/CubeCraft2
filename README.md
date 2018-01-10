@@ -2,7 +2,7 @@
 Another Minecraft clone also the rebuild version of [CubeCraft](https://github.com/AdamYuan/CubeCraft)
 
 ## Installation
-
+### Linux (Unix)
 ```bash
 git clone https://github.com/AdamYuan/CubeCraft2.git
 cd CubeCraft2
@@ -25,3 +25,4 @@ make -j4
 ## References
 * https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1
 * https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+* http://www.minecrafttexturepacks.com/xenocontendi/ - Block texture

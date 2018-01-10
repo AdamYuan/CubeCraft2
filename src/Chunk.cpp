@@ -6,16 +6,10 @@
 #include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 //static methods
-
-
-
 Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
 									  InitializedMesh(false), InitializedLighting(false),
 									  Position(pos)
 {
-	std::fill(std::begin(Grid), std::end(Grid), Blocks::Air);
-	std::fill(std::begin(Light), std::end(Light), 0x00);
-
 	VertexBuffer = MyGL::NewVertexObject();
 }
 void Chunk::SetBlock(const glm::ivec3 &pos, Block b)
