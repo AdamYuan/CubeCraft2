@@ -216,10 +216,10 @@ void FaceLighting::SetValues(
 		LightLevel counter = 1,
 				sunLightSum = sunlightNeighbours[Lookup1[face]],
 				torchLightSum = torchlightNeighbours[Lookup1[face]];
-		if(trans[0] || trans[2])
+		if(!sides[0] || !sides[2])
 			for(int i=0; i<3; ++i)
 			{
-				if(!trans[i])
+				if(sides[i])
 					continue;
 				counter++;
 				sunLightSum += sunlightNeighbours[Lookup3[face][v][i]];
@@ -742,7 +742,7 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	}
 }
 
-ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
+ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]) : Highest(0)
 {
 	for(int h = 0; h < WORLD_HEIGHT; ++h)
 	{
@@ -758,12 +758,13 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 			int height = h * CHUNK_SIZE + y;
 			for(int z=-14; z<0; ++z)
 			{
-				std::copy(chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
-						  chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[3]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[3]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[6]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[6]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				int _z = z + CHUNK_SIZE;
+				std::copy(chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[3]]->Grid + Chunk::XYZ(0, y, _z),
+						  chk[arr[3]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[6]]->Grid + Chunk::XYZ(0, y, _z),
+						  chk[arr[6]]->Grid + Chunk::XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
 			}
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
@@ -776,12 +777,13 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 			}
 			for(int z=CHUNK_SIZE; z<CHUNK_SIZE+14; ++z)
 			{
-				std::copy(chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
-						  chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[5]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[5]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[8]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[8]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				int _z = z - CHUNK_SIZE;
+				std::copy(chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[5]]->Grid + Chunk::XYZ(0, y, _z),
+						  chk[arr[5]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[8]]->Grid + Chunk::XYZ(0, y, _z),
+						  chk[arr[8]]->Grid + Chunk::XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
 			}
 		}
 	}
@@ -795,16 +797,16 @@ void ChunkInitialLightingInfo::Process()
 	{
 		if(!CanPass(i))
 		{
-			Highest = std::max(Highest, (i /= LICHUNK_SIZE_2) + 1);
+			Highest = std::max(Highest, i / LICHUNK_SIZE_2);
+			i /= LICHUNK_SIZE_2;
 			i = i * LICHUNK_SIZE_2 + LICHUNK_SIZE_2;
 		} else
 			++i;
 	}
 
-	if(Highest >= WORLD_HEIGHT_BLOCK)
-		Highest = WORLD_HEIGHT_BLOCK - 1;
+	std::fill(Result, Result + (Highest+1) * LICHUNK_SIZE_2, 0x00);
+	std::fill(Result + (Highest+1) * LICHUNK_SIZE_2, Result + LICHUNK_INFO_SIZE, 0xF0);
 
-	std::fill(std::begin(Result), std::end(Result), 0x00);
 
 	std::queue<LightBFSNode> SunLightQueue;
 
@@ -814,6 +816,8 @@ void ChunkInitialLightingInfo::Process()
 		for(pos.z = -14; pos.z < CHUNK_SIZE + 14; ++pos.z)
 		{
 			int index = LiXYZ(pos);
+			if(!CanPass(index))
+				continue;
 			Result[index] = 15 << 4;
 			SunLightQueue.push({pos, 15});
 		}

@@ -106,7 +106,7 @@ public:
 class ChunkInitialLightingInfo : public ChunkInfo
 {
 private:
-	int Highest = 0;
+	int Highest;
 	Block Grid[LICHUNK_INFO_SIZE];
 	DLightLevel Result[LICHUNK_INFO_SIZE];
 
