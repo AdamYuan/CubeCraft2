@@ -24,14 +24,47 @@ typedef uint8_t LightLevel;
 //bits: SSSSTTTT
 typedef uint8_t DLightLevel;
 
+struct BlockProperty
+{
+	bool Transparent, LightCanPass, Hitbox;
+	LightLevel Light;
+	int Textures[6];
+};
+
 namespace BlockMethods
 {
-	extern int GetTexture(Block block, Face face);
-	extern bool IsTransparent(Block block);
-	extern bool LightCanPass(Block block);
-	extern bool HaveHitbox(Block block);
-	extern LightLevel GetLightLevel(Block block);
-	extern AABB GetBlockAABB(const glm::ivec3 &pos);
+	extern const BlockProperty BlockProperties[BLOCKS_NUM];
+
+
+	inline int GetTexture(Block block, Face face)
+	{
+		return BlockProperties[block].Textures[face];
+	}
+
+	inline bool IsTransparent(Block block)
+	{
+		return BlockProperties[block].Transparent;
+	}
+
+	inline bool HaveHitbox(Block block)
+	{
+		return BlockProperties[block].Hitbox;
+	}
+
+	inline LightLevel GetLightLevel(Block block)
+	{
+		return BlockProperties[block].Light;
+	}
+
+	inline bool LightCanPass(Block block)
+	{
+		return BlockProperties[block].LightCanPass;
+	}
+
+	inline AABB GetBlockAABB(const glm::ivec3 &pos)
+	{
+		return {(glm::vec3)pos, (glm::vec3)pos + glm::vec3(1.0f)};
+	}
 }
 
 #endif // BLOCK_HPP

@@ -34,22 +34,7 @@ World::~World()
 	SuperChunk.clear();
 }
 
-void World::SetChunk(const glm::ivec3 &pos)
-{
-	SuperChunk[pos] = std::make_unique<Chunk>(pos);
-}
 
-bool World::ChunkExist(const glm::ivec3 &pos) const
-{
-	return static_cast<bool>(SuperChunk.count(pos));
-}
-
-ChunkPtr World::GetChunk(const glm::ivec3 &pos) const
-{
-	if(!ChunkExist(pos))
-		return nullptr;
-	return SuperChunk.at(pos).get();
-}
 
 void World::Update(const glm::ivec3 &center)
 {
@@ -287,15 +272,6 @@ void World::UpdateChunkMeshingList()
 	}
 }
 
-bool World::cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
-{
-	return glm::length((glm::vec2)l - glm::vec2(s_center.x, s_center.z)) >
-		   glm::length((glm::vec2)r - glm::vec2(s_center.x, s_center.z));
-}
-bool World::cmp3(const glm::ivec3 &l, const glm::ivec3 &r)
-{
-	return glm::length((glm::vec3)l - (glm::vec3)s_center) > glm::length((glm::vec3)r - (glm::vec3)s_center);
-}
 
 void World::ChunkLoadingWorker()
 {
@@ -380,12 +356,6 @@ Block World::GetBlock(const glm::ivec3 &pos) const
 	return chk->GetBlock(pos - chkPos*CHUNK_SIZE);
 }
 
-glm::ivec3 World::BlockPosToChunkPos(const glm::ivec3 &pos)
-{
-	return glm::ivec3((pos.x + (pos.x < 0)) / CHUNK_SIZE - (pos.x < 0),
-					  (pos.y + (pos.y < 0)) / CHUNK_SIZE - (pos.y < 0),
-					  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
-}
 
 uint World::GetRunningThreadNum() const
 {

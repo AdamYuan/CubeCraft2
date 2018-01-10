@@ -66,25 +66,6 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 	Move(velocity);
 }
 
-glm::vec3 Player::GetPosition() const
-{
-	return Cam.Position;
-}
-
-void Player::SetPosition(const glm::vec3 &pos)
-{
-	Cam.Position = pos;
-}
-
-glm::mat4 Player::GetViewMatrix()
-{
-	return Cam.GetViewMatrix();
-}
-
-glm::ivec3 Player::GetChunkPosition() const
-{
-	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
-}
 
 bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 {
@@ -190,5 +171,10 @@ void Player::PhysicsUpdate(const MyGL::FrameRateManager &framerate)
 		firstFall = false;
 		Cam.Position.y = y;
 	}
+}
+
+glm::ivec3 Player::GetChunkPosition() const
+{
+	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
 }
 

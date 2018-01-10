@@ -39,11 +39,13 @@ public:
 	bool Move(const glm::vec3 &velocity);
 	bool MoveAxis(int axis, float velocity);
 
+	inline glm::vec3 GetPosition() const
+	{ return Cam.Position; }
+	inline void SetPosition(const glm::vec3 &pos)
+	{ Cam.Position = pos; }
 	glm::ivec3 GetChunkPosition() const;
-	glm::vec3 GetPosition() const;
-	void SetPosition(const glm::vec3 &pos);
-
-	glm::mat4 GetViewMatrix();
+	inline glm::mat4 GetViewMatrix()
+	{ return Cam.GetViewMatrix(); }
 };
 
 

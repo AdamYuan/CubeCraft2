@@ -30,9 +30,13 @@ private:
 	friend class ChunkInitialLightingInfo;
 public:
 	bool LoadedTerrain, InitializedMesh, InitializedLighting;
-	static inline int XYZ(const glm::ivec3 &pos);
-	static inline int XYZ(int x, int y, int z);
-	static inline bool IsValidPosition(const glm::ivec3 &pos);
+
+	static inline int XYZ(const glm::ivec3 &pos)
+	{ return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
+	static inline int XYZ(int x, int y, int z)
+	{ return x + (y*CHUNK_SIZE + z)*CHUNK_SIZE; }
+	static inline bool IsValidPosition(const glm::ivec3 &pos)
+	{ return !(pos.x < 0 || pos.x >= CHUNK_SIZE || pos.z < 0 || pos.z >= CHUNK_SIZE || pos.y < 0 || pos.y >= CHUNK_SIZE); }
 
 	glm::ivec3 Position;
 
@@ -88,11 +92,27 @@ private:
 	DLightLevel Light[EXCHUNK_INFO_SIZE];
 	glm::ivec3 Position;
 
-	static inline int ExXYZ(int x, int y, int z);
-	inline Block GetBlock(int x, int y, int z);
-	inline LightLevel GetSunLight(int x, int y, int z);
-	inline LightLevel GetTorchLight(int x, int y, int z);
-	inline bool ShowFace(Block now, Block neighbour);
+	static inline int ExXYZ(int x, int y, int z)
+	{ return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE; }
+
+	inline Block GetBlock(int x, int y, int z)
+	{ return Grid[ExXYZ(x, y, z)]; }
+
+	inline LightLevel GetSunLight(int x, int y, int z)
+	{ return static_cast<LightLevel>((Light[ExXYZ(x, y, z)] >> 4) & 0xF); }
+
+	inline LightLevel GetTorchLight(int x, int y, int z)
+	{ return static_cast<LightLevel>(Light[ExXYZ(x, y, z)] & 0xF); }
+
+	inline bool ShowFace(Block now, Block neighbour)
+	{
+		bool trans = BlockMethods::IsTransparent(now), transN = BlockMethods::IsTransparent(neighbour);
+		if(!now)
+			return false;
+		if(!trans && !transN)
+			return false;
+		return !(trans && neighbour);
+	}
 
 	std::vector<ChunkRenderVertex> Result;
 
@@ -110,9 +130,12 @@ private:
 	Block Grid[LICHUNK_INFO_SIZE];
 	DLightLevel Result[LICHUNK_INFO_SIZE];
 
-	inline bool CanPass(int index);
-	inline int LiXYZ(glm::ivec3 pos);
-	inline int LiXYZ(int x, int y, int z);
+	inline bool CanPass(int index)
+	{ return BlockMethods::LightCanPass(Grid[index]); }
+	inline int LiXYZ(glm::ivec3 pos)
+	{ return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE; }
+	inline int LiXYZ(int x, int y, int z)
+	{ return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE; }
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);

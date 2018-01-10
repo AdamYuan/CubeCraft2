@@ -43,8 +43,16 @@ private:
 
 	static glm::ivec3 s_center;
 	bool PosChanged;
-	inline static bool cmp2(const glm::ivec2 &l, const glm::ivec2 &r);
-	inline static bool cmp3(const glm::ivec3 &l, const glm::ivec3 &r);
+
+	inline static bool cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
+	{
+		return glm::length((glm::vec2)l - glm::vec2(s_center.x, s_center.z)) >
+			   glm::length((glm::vec2)r - glm::vec2(s_center.x, s_center.z));
+	}
+	inline static bool cmp3(const glm::ivec3 &l, const glm::ivec3 &r)
+	{
+		return glm::length((glm::vec3)l - (glm::vec3)s_center) > glm::length((glm::vec3)r - (glm::vec3)s_center);
+	}
 
 	//multi threading stuff
 	unsigned ThreadsSupport;
@@ -63,9 +71,16 @@ public:
 	World();
 	~World();
 
-	inline void SetChunk(const glm::ivec3 &pos);
-	inline bool ChunkExist(const glm::ivec3 &pos) const;
-	ChunkPtr GetChunk(const glm::ivec3 &pos) const;
+	inline void SetChunk(const glm::ivec3 &pos)
+	{ SuperChunk[pos] = std::make_unique<Chunk>(pos); }
+	inline bool ChunkExist(const glm::ivec3 &pos) const
+	{ return static_cast<bool>(SuperChunk.count(pos)); }
+	inline ChunkPtr GetChunk(const glm::ivec3 &pos) const
+	{
+		if(!ChunkExist(pos))
+			return nullptr;
+		return SuperChunk.at(pos).get();
+	}
 
 	void Update(const glm::ivec3 &center);
 
@@ -74,7 +89,12 @@ public:
 
 	uint GetRunningThreadNum() const;
 
-	static glm::ivec3 BlockPosToChunkPos(const glm::ivec3 &pos);
+	static inline glm::ivec3 BlockPosToChunkPos(const glm::ivec3 &pos)
+	{
+		return glm::ivec3((pos.x + (pos.x < 0)) / CHUNK_SIZE - (pos.x < 0),
+						  (pos.y + (pos.y < 0)) / CHUNK_SIZE - (pos.y < 0),
+						  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
+	}
 
 	std::unordered_set<glm::ivec3> RenderSet;
 };

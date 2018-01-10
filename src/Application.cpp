@@ -9,10 +9,6 @@
 
 
 //glfw callbacks
-Application *Application::getCallbackInstance(GLFWwindow *window)
-{
-	return reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-}
 void Application::focusCallback(GLFWwindow *window, int focused)
 {
 	auto app = getCallbackInstance(window);

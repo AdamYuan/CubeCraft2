@@ -35,7 +35,8 @@ private:
 	static void focusCallback(GLFWwindow* window, int focused);
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	inline static Application *getCallbackInstance(GLFWwindow* window);
+	inline static Application *getCallbackInstance(GLFWwindow* window)
+	{ return reinterpret_cast<Application*>(glfwGetWindowUserPointer(window)); }
 
 public:
 	Application();

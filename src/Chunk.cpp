@@ -6,20 +6,7 @@
 #include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 //static methods
-int Chunk::XYZ(const glm::ivec3 &pos)
-{
-	//order: x z y
-	return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE;
-}
 
-int Chunk::XYZ(int x, int y, int z)
-{
-	return x + (y*CHUNK_SIZE + z)*CHUNK_SIZE;
-}
-bool Chunk::IsValidPosition(const glm::ivec3 &pos)
-{
-	return !(pos.x < 0 || pos.x >= CHUNK_SIZE || pos.z < 0 || pos.z >= CHUNK_SIZE || pos.y < 0 || pos.y >= CHUNK_SIZE);
-}
 
 
 Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
@@ -55,43 +42,41 @@ void ChunkLoadingInfo::Process()
 	std::fill(std::begin(Result), std::end(Result), Blocks::Air);
 
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	constexpr int _SIZE = CHUNK_SIZE + 4, _SIZE2 = _SIZE * _SIZE;
 
-#define IS_CAVE(x) ((x) > .86f)
-	constexpr int _SIZE = CHUNK_SIZE + 4;
-
-	//calculate height map
+	//generate height map
+	int heights[_SIZE*_SIZE], highest = 0;
 	fastNoise->SetFractalOctaves(4);
 	fastNoise->SetFrequency(0.002f);
-	float *heightMap = fastNoise->GetSimplexFractalSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0,
-													   _SIZE, _SIZE, 1);
-	int heights[_SIZE*_SIZE];
-	int highest = 0;
-	for (int i = 0; i < _SIZE*_SIZE; ++i)
+	float *heightMap = fastNoise->GetSimplexFractalSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0, _SIZE, _SIZE, 1);
+	for (int i = 0; i < _SIZE2; ++i)
 	{
 		heights[i] = (int)(heightMap[i] * 50.0f + 100.0f);
 		highest = std::max(highest, heights[i]);
 	}
 	FastNoiseSIMD::FreeNoiseSet(heightMap);
 
-
+	//generate cave map
+	const int CAVEMAP_SIZE = _SIZE2 * (highest + 1);
+	bool isCave[CAVEMAP_SIZE];
 	fastNoise->SetFrequency(0.012f);
 	fastNoise->SetFractalOctaves(1);
 	fastNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
 	fastNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Cave);
-	float *caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE,
-											   highest + 1, _SIZE, _SIZE);
+	float *caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, highest + 1, _SIZE, _SIZE);
+	for(int i=0; i<CAVEMAP_SIZE; ++i)
+		isCave[i] = caveMap[i] > .86f;
+	FastNoiseSIMD::FreeNoiseSet(caveMap);
 
-
+	//main terrain generation
 	for (int y = 0; y <= highest; y++) {
 		int index = 0;
-		for (int z = -2; z < CHUNK_SIZE + 2; z++)
-			for (int x = -2; x < CHUNK_SIZE + 2; x++, index++)
+		for (int z = 0; z < CHUNK_SIZE; z++)
+			for (int x = 0; x < CHUNK_SIZE; x++, index++)
 			{
-				if(y > heights[index] || z < 0 || z >= CHUNK_SIZE || x < 0 || x >= CHUNK_SIZE)
-					continue;
-
-				int ind = Chunk::XYZ(x, y, z);
-				int ind2 = y * _SIZE * _SIZE + index;
+				int ind = y * CHUNK_SIZE * CHUNK_SIZE + index;
+				int ind2_2d = (z + 2) * _SIZE + x + 2; //index 2d base on (CHUNK_SIZE + 4)
+				int ind2_3d = y * _SIZE2 + ind2_2d;
 
 				if(y == 0)
 				{
@@ -99,13 +84,12 @@ void ChunkLoadingInfo::Process()
 					continue;
 				}
 
-				if (IS_CAVE(caveMap[ind2]))
+				if (isCave[ind2_3d] || y > heights[ind2_2d])
 					continue;
 
-
-				if (y == heights[index])
+				if (y == heights[ind2_2d])
 					Result[ind] = Blocks::Grass;
-				else if(y >= heights[index] - heights[index] / 70)
+				else if(y >= heights[ind2_2d] - heights[ind2_2d] / 70)
 					Result[ind] = Blocks::Dirt;
 				else
 					Result[ind] = Blocks::Stone;
@@ -120,11 +104,12 @@ void ChunkLoadingInfo::Process()
 		for (int x = -2; x < CHUNK_SIZE + 2; ++x, ++i)
 		{
 			const bool treeExist = (int) ((treeMap[i] + 1.0f) * 128.0f) == 0;
-			if(!treeExist || IS_CAVE(caveMap[heights[i]*_SIZE*_SIZE + i]))
+			if(!treeExist || isCave[heights[i]*_SIZE*_SIZE + i])
 				continue;
-
 			const int treeHeight = (int) ((treeMap[i] + 1.0f) * 10000.0f) % 5 + 7;
 			const int leavesHeight = (int) ((treeMap[i] + 1.0f) * 10000.0f) % 4 + 2;
+
+			//leaves
 			for(int h = heights[i] + treeHeight - leavesHeight + 1; h <= heights[i] + treeHeight; ++h)
 			{
 				int xMin = std::max(x-2, 0);
@@ -149,7 +134,6 @@ void ChunkLoadingInfo::Process()
 			}
 		}
 	FastNoiseSIMD::FreeNoiseSet(treeMap);
-	FastNoiseSIMD::FreeNoiseSet(caveMap);
 	Done = true;
 }
 
@@ -261,35 +245,7 @@ bool FaceLighting::operator!=(const FaceLighting &f) const
 
 
 //Mesh Generation
-int ChunkMeshingInfo::ExXYZ(int x, int y, int z)
-{
-	return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE;
-}
 
-Block ChunkMeshingInfo::GetBlock(int x, int y, int z)
-{
-	return Grid[ExXYZ(x, y, z)];
-}
-
-LightLevel ChunkMeshingInfo::GetSunLight(int x, int y, int z)
-{
-	return static_cast<LightLevel>((Light[ExXYZ(x, y, z)] >> 4) & 0xF);
-}
-
-LightLevel ChunkMeshingInfo::GetTorchLight(int x, int y, int z)
-{
-	return static_cast<LightLevel>(Light[ExXYZ(x, y, z)] & 0xF);
-}
-
-bool ChunkMeshingInfo::ShowFace(Block now, Block neighbour)
-{
-	bool trans = BlockMethods::IsTransparent(now), transN = BlockMethods::IsTransparent(neighbour);
-	if(!now)
-		return false;
-	if(!trans && !transN)
-		return false;
-	return !(trans && neighbour);
-}
 
 
 void ChunkMeshingInfo::Process()
@@ -881,17 +837,5 @@ void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 	}
 }
 
-int ChunkInitialLightingInfo::LiXYZ(glm::ivec3 pos)
-{
-	return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE;
-}
-int ChunkInitialLightingInfo::LiXYZ(int x, int y, int z)
-{
-	return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE;
-}
 
-bool ChunkInitialLightingInfo::CanPass(int index)
-{
-	return BlockMethods::LightCanPass(Grid[index]);
-}
 
