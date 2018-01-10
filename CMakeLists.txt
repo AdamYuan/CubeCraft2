@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.7)
 project(CubeCraft2)
 
 set(CMAKE_CXX_STANDARD 14)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2")
 
 find_package(OpenGL REQUIRED)
@@ -19,9 +18,11 @@ if (GLEW_FOUND)
 	link_libraries(${GLEW_LIBRARY})
 endif()
 
-find_package(glfw3 3.2 REQUIRED)
-if (glfw3_FOUND)
-	include_directories(${GLFW3_INCLUDE_DIR})
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules" ${CMAKE_MODULE_PATH})
+
+find_package(GLFW3 3.2 REQUIRED)
+if (GLFW3_FOUND)
+	include_directories(${GLFW3_INCLUDE_PATH})
 	link_libraries(${GLFW3_LIBRARY})
 endif()
 
