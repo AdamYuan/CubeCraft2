@@ -67,6 +67,9 @@ private:
 	void ChunkMeshingWorker();
 	bool Running;
 
+	//chunk update
+	std::unordered_set<glm::ivec3> MeshUpdateSet;
+
 public:
 	World();
 	~World();

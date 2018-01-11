@@ -2,6 +2,7 @@
 #define CHUNK_HPP
 
 #include <iostream>
+#include <functional>
 #include <vector>
 #include <queue>
 
@@ -73,17 +74,6 @@ struct ChunkRenderVertex
 	float X, Y, Z, U, V, Tex, Face, AO, SunLight, TorchLight;
 };
 
-struct FaceLighting
-{
-	LightLevel SunLight[4], TorchLight[4], AO[4];
-	void SetValues(
-			int face,
-			const Block (&neighbours)[27],
-			const LightLevel (&sunlightNeighbours)[27],
-			const LightLevel (&torchlightNeighbours)[27]);
-	bool operator== (const FaceLighting &f) const;
-	bool operator!= (const FaceLighting &f) const;
-};
 
 class ChunkMeshingInfo : public ChunkInfo
 {
@@ -94,21 +84,10 @@ private:
 
 	static inline int ExXYZ(int x, int y, int z)
 	{ return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE; }
-	inline Block GetBlock(int x, int y, int z)
+	Block GetBlock(int x, int y, int z)
 	{ return Grid[ExXYZ(x, y, z)]; }
-	inline LightLevel GetSunLight(int x, int y, int z)
-	{ return static_cast<LightLevel>((Light[ExXYZ(x, y, z)] >> 4) & 0xF); }
-	inline LightLevel GetTorchLight(int x, int y, int z)
-	{ return static_cast<LightLevel>(Light[ExXYZ(x, y, z)] & 0xF); }
-	inline bool ShowFace(Block now, Block neighbour)
-	{
-		bool trans = BlockMethods::IsTransparent(now), transN = BlockMethods::IsTransparent(neighbour);
-		if(!now)
-			return false;
-		if(!trans && !transN)
-			return false;
-		return !(trans && neighbour);
-	}
+	DLightLevel GetLight(int x, int y, int z)
+	{ return Light[ExXYZ(x, y, z)]; }
 
 	std::vector<ChunkRenderVertex> Result;
 
@@ -132,6 +111,12 @@ private:
 	{ return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE; }
 	inline int LiXYZ(int x, int y, int z)
 	{ return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE; }
+	inline Block GetBlock(int x, int y, int z)
+	{ return Grid[LiXYZ(x, y, z)]; }
+	inline DLightLevel GetLight(int x, int y, int z)
+	{ return Result[LiXYZ(x, y, z)]; }
+	inline void SetLight(int x, int y, int z, DLightLevel val)
+	{ Result[LiXYZ(x, y, z)] = val; }
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
