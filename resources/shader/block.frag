@@ -1,9 +1,8 @@
 #version 330 core
-in vec3 pos;
-in vec3 texcoord;
-in float frag_face;
-in float frag_ao;
-in float frag_light;
+in vec3 frag_lighting;
+in vec3 frag_pos;
+in vec3 frag_texcoord;
+
 out vec4 color;
 uniform sampler2DArray sampler;
 uniform vec3 camera;
@@ -13,31 +12,24 @@ float fog_factor;
 float fog_height;
 
 const float pi = 3.14159265;
-const float intensities[6] = float[6](0.7, 0.7, 1.0, 0.6, 0.85, 0.85);
-
 
 void main()
 {
-	//fog
-	vec3 sky_color = vec3(0.6, 0.8, 1.0);
-	float camera_distance = distance(camera, pos);
-	fog_factor = pow(clamp(camera_distance / viewDistance, 0.0, 1.0), 4.0);
-	float dy = pos.y - camera.y;
-	float dx = distance(pos.xz, camera.xz);
-	fog_height = (atan(dy, dx) + pi / 2) / pi;
-
-	int f = int(frag_face+0.5);
-
-	color = texture(sampler, texcoord);
-
+	color = texture(sampler, frag_texcoord);
 	if(color.a == 0.0f)
 		discard;
 
-	float intensity = intensities[f];
+	//fog
+	vec3 sky_color = vec3(0.6, 0.8, 1.0);
+	float camera_distance = distance(camera, frag_pos);
+	fog_factor = pow(clamp(camera_distance / viewDistance, 0.0, 1.0), 4.0);
+	float dy = frag_pos.y - camera.y;
+	float dx = distance(frag_pos.xz, camera.xz);
+	fog_height = (atan(dy, dx) + pi / 2) / pi;
 
 	vec3 color3 = color.rgb;
 
-	color3 *= frag_ao * frag_light * intensity;
+	color3 *= frag_lighting.x * frag_lighting.y * frag_lighting.z;
 
 	//gamma correction
 	float gamma = 0.8;

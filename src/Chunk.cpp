@@ -312,15 +312,20 @@ void ChunkMeshingInfo::Process()
 
 					bool outA = x[axis] < 0, outB = CHUNK_SIZE - 1 <= x[axis];
 
-					if (!outA && ShowFace(a, b)) {
+					if (!outA && ShowFace(a, b))
+					{
 						mask[counter] = a;
 						lightMask[counter] = &LightingData[Chunk::XYZ(x[0], x[1], x[2])][axis << 1];
 
-					} else if (!outB && ShowFace(b, a)) {
+					}
+					else if (!outB && ShowFace(b, a))
+					{
 						mask[counter] = -b;
 						lightMask[counter] = &LightingData[
 								Chunk::XYZ(x[0] + q[0], x[1] + q[1], x[2] + q[2])][(axis << 1) | 1];
-					} else {
+					}
+					else
+					{
 						mask[counter] = 0;
 						lightMask[counter] = nullptr;
 					}
@@ -780,10 +785,11 @@ void ChunkInitialLightingInfo::Process()
 		if((Result[LiXYZ(node.Pos)] >> 4) > node.Value)
 			continue;
 
-		for(unsigned face=0; face<6; ++face)
+		for(short face=0; face<6; ++face)
 		{
 			LightBFSNode neighbour = node;
-			neighbour.Pos[face>>1] += 1 - ((face&1)<<1);
+			neighbour.Pos = Util::FaceExtend(node.Pos, face);
+
 			int index = LiXYZ(neighbour.Pos);
 
 			//deal with out chunk situations

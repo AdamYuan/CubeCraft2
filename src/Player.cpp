@@ -13,15 +13,42 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player(const World &wld) : flying(false),
-								   BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
-								   wld(&wld)
+Player::Player(World &wld) : flying(false),
+							 BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
+							 wld(&wld)
 {
 
 }
 
 void Player::MouseControl(GLFWwindow *win, int width, int height)
 {
+	static constexpr double INTERVAL = 0.18;
+	static double lastTime = glfwGetTime();
+	static bool leftFirst = true, rightFirst = true;
+	if(glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	{
+		rightFirst = true;
+		if(leftFirst || glfwGetTime() - lastTime >= INTERVAL)
+		{
+			wld->SetBlock(Selection, Blocks::Air);
+			lastTime = glfwGetTime();
+			leftFirst = false;
+		}
+	}
+	else if(glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+	{
+		leftFirst = true;
+		if((rightFirst || glfwGetTime() - lastTime >= INTERVAL) &&
+				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(NewBlockSelection)))
+		{
+			wld->SetBlock(NewBlockSelection, Blocks::Stone);
+			lastTime = glfwGetTime();
+			rightFirst = false;
+		}
+	}
+	else
+		leftFirst = rightFirst = true;
+
 	double x, y;
 	glfwGetCursorPos(win, &x, &y);
 	Cam.ProcessMouseMovement((float) (width / 2 - x), (float) (height / 2 - y),
@@ -100,7 +127,7 @@ bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 			{
 				//set the right position
 				pos[axis] = (float)(iter[axis] + !positive) -
-						(positive ? BoundingBox.Max[axis] : BoundingBox.Min[axis]);
+							(positive ? BoundingBox.Max[axis] : BoundingBox.Min[axis]);
 				return false;
 			}
 		}
@@ -145,7 +172,7 @@ bool Player::MoveAxis(int axis, float velocity)
 	return HitTest(Cam.Position, axis, velocity * sign);
 }
 
-void Player::PhysicsUpdate(const MyGL::FrameRateManager &framerate)
+void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 {
 	static double lastTime = glfwGetTime();
 	if(flying)
@@ -181,18 +208,27 @@ glm::ivec3 Player::GetChunkPosition() const
 	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
 }
 
-void Player::Control(GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
+void Player::Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
 					 const glm::mat4 &projection)
 {
-	MouseControl(win, width, height);
-	KeyControl(win, framerate);
+	//positions
+	if(focus)
+	{
+		MouseControl(win, width, height);
+		KeyControl(win, framerate);
+	}
+	UpdatePhysics(framerate);
+
+	//update matrix
 	ViewMatrix = Cam.GetViewMatrix();
-	UpdateSelection(width, height, projection);
+
+	if(focus)
+		UpdateSelection(width, height, projection);
 }
 
 void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 {
-	float radius = 10.0f;
+	float radius = 6.0f;
 
 	glm::vec3 origin = Cam.Position;
 	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
@@ -240,8 +276,8 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 		// Invoke the callback, unless we are not *yet* within the bounds of the
 		// world.
 		if (BlockMethods::HaveHitbox(wld->GetBlock(xyz))) {
-			SelectedPosition = xyz;
-			SelectedFaceVec = face;
+			Selection = xyz;
+			NewBlockSelection = Selection + face;
 			return;
 		}
 
@@ -289,5 +325,5 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 		}
 	}
 
-	SelectedPosition = glm::ivec3(INT_MAX);
+	NewBlockSelection = Selection = glm::ivec3(INT_MAX);
 }

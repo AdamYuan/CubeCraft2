@@ -24,4 +24,10 @@ public:
 	}
 };
 
+namespace Util
+{
+	inline glm::ivec3 FaceExtend(glm::ivec3 pos, short face)
+	{ pos[face>>1] += 1 - ((face&1)<<1); return pos; }
+}
+
 #endif

@@ -23,7 +23,7 @@ private:
 
 	glm::mat4 ViewMatrix;
 
-	glm::ivec3 SelectedPosition, SelectedFaceVec;
+	glm::ivec3 Selection, NewBlockSelection;
 	inline float intBound(float s, float ds)
 	{
 		bool sIsInteger = glm::round(s) == s;
@@ -32,31 +32,33 @@ private:
 		return (ds > 0 ? (s == 0.0f ? 1.0f : glm::ceil(s)) - s : s - glm::floor(s)) / glm::abs(ds);
 	}
 
-	World const *wld;
+	World *wld;
 
 	bool jumping = false;
 
 	void KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate);
 	void MouseControl(GLFWwindow *win, int width, int height);
 	void UpdateSelection(int width, int height, const glm::mat4 &projection);
+	void UpdatePhysics(const MyGL::FrameRateManager &framerate);
 
 public:
 
 	//all the move function will return false if the movement is blocked
 
-	explicit Player(const World &wld);
+	explicit Player(World &wld);
 	bool flying;
 
-	void Control(GLFWwindow *win, int width, int height,
-				 const MyGL::FrameRateManager &framerate, const glm::mat4 &projection);
+	void Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
+					 const glm::mat4 &projection);
 
-	void PhysicsUpdate(const MyGL::FrameRateManager &framerate);
 
 	bool Move(const glm::vec3 &velocity);
 	bool MoveAxis(int axis, float velocity);
 
 	glm::ivec3 GetChunkPosition() const;
 
+	inline AABB GetBoundingBox() const
+	{ return AABB(BoundingBox.Min + Cam.Position, BoundingBox.Max + Cam.Position); }
 	inline glm::vec3 GetPosition() const
 	{ return Cam.Position; }
 	inline void SetPosition(const glm::vec3 &pos)
@@ -64,7 +66,7 @@ public:
 	inline glm::mat4 GetViewMatrix()
 	{ return ViewMatrix; }
 	inline glm::ivec3 GetSelection(bool addDirVec)
-	{ return addDirVec ? SelectedPosition + SelectedFaceVec : SelectedPosition; }
+	{ return addDirVec ? NewBlockSelection : Selection; }
 };
 
 

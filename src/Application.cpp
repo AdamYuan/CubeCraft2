@@ -140,16 +140,13 @@ void Application::LogicProcess()
 	}
 
 	//get control when mouse press
-	if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	if(!control && glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
 		glfwSetCursorPos(Window, Width / 2, Height / 2);
 		control = true;
 	}
 
-	if(control)
-		GamePlayer.Control(Window, Width, Height, FramerateManager, Matrices.Projection3d);
-
-	GamePlayer.PhysicsUpdate(FramerateManager);
+	GamePlayer.Control(control, Window, Width, Height, FramerateManager, Matrices.Projection3d);
 
 	world.Update(GamePlayer.GetChunkPosition());
 }
