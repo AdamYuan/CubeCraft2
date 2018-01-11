@@ -11,12 +11,15 @@
 #include <queue>
 #include <glm/glm.hpp>
 #include "Block.hpp"
+#include "Settings.hpp"
 
 struct ChunkRenderVertex;
 struct LightBFSNode;
+struct Chunk;
 
 typedef std::function<uint8_t(int, int, int)> GetDataFunc;
 typedef std::function<void(int, int, int, uint8_t)> SetDataFunc;
+
 
 namespace ChunkAlgorithm
 {
@@ -44,9 +47,10 @@ namespace ChunkAlgorithm
 
 	extern void Meshing(const GetDataFunc &getBlock, const GetDataFunc &getLight, const glm::ivec3 &ChunkPos,
 						std::vector<ChunkRenderVertex> &result);
+	extern void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh);
 	extern void SunLightBFS(const GetDataFunc &getLight, const SetDataFunc &setLight, const GetDataFunc &getBlock,
 							std::queue<LightBFSNode> Queue,
-							const glm::ivec2 &minXZRange = glm::ivec2(0), const glm::ivec2 &maxXZRange = glm::ivec2(0));
+							const glm::ivec3 &minRange = glm::ivec3(0, 0, 0), const glm::ivec3 &maxRange = glm::ivec3(0, WORLD_HEIGHT_BLOCK, 0));
 }
 
 

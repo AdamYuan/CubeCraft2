@@ -87,7 +87,7 @@ public:
 
 	void Update(const glm::ivec3 &center);
 
-	void SetBlock(const glm::ivec3 &pos, Block blk);
+	void SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate);
 	Block GetBlock(const glm::ivec3 &pos) const;
 
 	uint GetRunningThreadNum() const;

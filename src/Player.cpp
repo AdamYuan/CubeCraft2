@@ -30,7 +30,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		rightFirst = true;
 		if(leftFirst || glfwGetTime() - lastTime >= INTERVAL)
 		{
-			wld->SetBlock(Selection, Blocks::Air);
+			wld->SetBlock(Selection, Blocks::Air, true);
 			lastTime = glfwGetTime();
 			leftFirst = false;
 		}
@@ -41,7 +41,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		if((rightFirst || glfwGetTime() - lastTime >= INTERVAL) &&
 				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(NewBlockSelection)))
 		{
-			wld->SetBlock(NewBlockSelection, Blocks::Stone);
+			wld->SetBlock(NewBlockSelection, Blocks::Stone, true);
 			lastTime = glfwGetTime();
 			rightFirst = false;
 		}

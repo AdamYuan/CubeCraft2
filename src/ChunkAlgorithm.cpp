@@ -2,6 +2,7 @@
 // Created by adamyuan on 1/11/18.
 //
 
+#include "Resource.hpp"
 #include "ChunkAlgorithm.hpp"
 #include "Chunk.hpp"
 
@@ -104,7 +105,7 @@ namespace ChunkAlgorithm
 	void Meshing(const GetDataFunc &getBlock, const GetDataFunc &getLight, const glm::ivec3 &ChunkPos, std::vector<ChunkRenderVertex> &result)
 	{
 		//generate LightingInfo(including AO, sunlight and torchlight)
-		FaceLighting LightingData[CHUNK_INFO_SIZE][6] = {};
+		FaceLighting LightingData[CHUNK_INFO_SIZE * 6] = {};
 
 		uint8_t neighbours[27];
 		uint8_t sunlightNeighbour[27], torchlightNeighbour[27];
@@ -146,7 +147,7 @@ namespace ChunkAlgorithm
 							}
 				}
 
-				LightingData[index][face].SetValues(face, neighbours, sunlightNeighbour, torchlightNeighbour);
+				LightingData[index * 6 + face].SetValues(face, neighbours, sunlightNeighbour, torchlightNeighbour);
 			}
 		}
 
@@ -174,13 +175,13 @@ namespace ChunkAlgorithm
 						if (!outA && ShowFace(a, b))
 						{
 							mask[counter] = a;
-							lightMask[counter] = &LightingData[Chunk::XYZ(x[0], x[1], x[2])][axis << 1];
+							lightMask[counter] = &LightingData[Chunk::XYZ(x[0], x[1], x[2])*6 + (axis << 1)];
 						}
 						else if (!outB && ShowFace(b, a))
 						{
 							mask[counter] = -b;
 							lightMask[counter] = &LightingData[
-									Chunk::XYZ(x[0] + q[0], x[1] + q[1], x[2] + q[2])][(axis << 1) | 1];
+									Chunk::XYZ(x[0] + q[0], x[1] + q[1], x[2] + q[2])*6 + ((axis << 1) | 1)];
 						}
 						else
 						{
@@ -340,10 +341,22 @@ namespace ChunkAlgorithm
 		}
 	}
 
-	void SunLightBFS(const GetDataFunc &getLight, const SetDataFunc &setLight, const GetDataFunc &getBlock,
-					 std::queue<LightBFSNode> Queue, const glm::ivec2 &minXZRange, const glm::ivec2 &maxXZRange)
+	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh)
 	{
-		bool checkRange = minXZRange != maxXZRange;
+		chk->VertexBuffer->SetDataVec(mesh);
+		chk->VertexBuffer->SetAttributes(4,
+										 Resource::ATTR_POSITION, 3,
+										 Resource::ATTR_TEXCOORD, 3,
+										 Resource::ATTR_CHUNK_FACE, 1,
+										 Resource::ATTR_CHUNK_LIGHTING, 3);
+	}
+
+	void SunLightBFS(const GetDataFunc &getLight, const SetDataFunc &setLight, const GetDataFunc &getBlock,
+					 std::queue<LightBFSNode> Queue, const glm::ivec3 &minRange, const glm::ivec3 &maxRange)
+	{
+		bool checkRange[3];
+		for(short a=0; a<3; ++a)
+			checkRange[3] = minRange[a] != maxRange[a];
 		while(!Queue.empty())
 		{
 			LightBFSNode node = Queue.front();
@@ -362,23 +375,20 @@ namespace ChunkAlgorithm
 				{
 					neighbour.Value--;
 
-					if(checkRange)
+					if(checkRange[0] && face>>1 == 0)
 					{
-						if(face>>1 == 0)
-						{
-							if(neighbour.Pos.x < minXZRange.x || neighbour.Pos.x >= maxXZRange.x)
-								continue;
-						}
-						else
-						{
-							if(neighbour.Pos.z < minXZRange.y || neighbour.Pos.z >= maxXZRange.y)
-								continue;
-						}
+						if(neighbour.Pos.x < minRange.x || neighbour.Pos.x >= maxRange.x)
+							continue;
+					}
+					else if(checkRange[2])
+					{
+						if(neighbour.Pos.z < minRange.z || neighbour.Pos.z >= maxRange.z)
+							continue;
 					}
 				}
 				else
 				{
-					if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
+					if(checkRange[1] && (neighbour.Pos.y < minRange.y || neighbour.Pos.y >= maxRange.y))
 						continue;
 					else if(neighbour.Value == 15 && face == Face::Top)
 						continue;
@@ -398,4 +408,5 @@ namespace ChunkAlgorithm
 			}
 		}
 	}
+
 }

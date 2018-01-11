@@ -160,12 +160,7 @@ void ChunkMeshingInfo::Process()
 
 void ChunkMeshingInfo::ApplyMesh(ChunkPtr chk)
 {
-	chk->VertexBuffer->SetDataVec(Result);
-	chk->VertexBuffer->SetAttributes(4,
-										Resource::ATTR_POSITION, 3,
-										Resource::ATTR_TEXCOORD, 3,
-										Resource::ATTR_CHUNK_FACE, 1,
-										Resource::ATTR_CHUNK_LIGHTING, 3);
+	ChunkAlgorithm::ApplyMesh(chk, Result);
 	chk->InitializedMesh = true;
 	//std::cout << Result.size() << std::endl;
 }
@@ -436,7 +431,6 @@ void ChunkInitialLightingInfo::Process()
 	std::fill(Result, Result + (Highest+1) * LICHUNK_SIZE_2, 0x00);
 	std::fill(Result + (Highest+1) * LICHUNK_SIZE_2, Result + LICHUNK_INFO_SIZE, 0xF0);
 
-
 	std::queue<LightBFSNode> SunLightQueue;
 
 	glm::ivec3 pos;
@@ -453,11 +447,10 @@ void ChunkInitialLightingInfo::Process()
 
 	GetDataFunc getLight = std::bind(&ChunkInitialLightingInfo::GetLight, this, _1, _2, _3);
 	SetDataFunc setLight = std::bind(&ChunkInitialLightingInfo::SetLight, this, _1, _2, _3, _4);
-
 	GetDataFunc getBlock = std::bind(&ChunkInitialLightingInfo::GetBlock, this, _1, _2, _3);
 
 	ChunkAlgorithm::SunLightBFS(getLight, setLight, getBlock, SunLightQueue,
-								{-14, -14}, {CHUNK_SIZE + 14, CHUNK_SIZE + 14});
+								{-14, 0, -14}, {CHUNK_SIZE + 14, Highest, CHUNK_SIZE + 14});
 
 	Done = true;
 }

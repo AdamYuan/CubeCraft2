@@ -3,6 +3,7 @@
 //
 
 #include "World.hpp"
+#include "ChunkAlgorithm.hpp"
 #include <glm/gtx/string_cast.hpp>
 
 glm::ivec3 World::s_center;
@@ -335,7 +336,7 @@ void World::ChunkMeshingWorker()
 	}
 }
 
-void World::SetBlock(const glm::ivec3 &pos, Block blk)
+void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 {
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
 
