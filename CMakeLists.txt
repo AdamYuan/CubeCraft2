@@ -18,17 +18,17 @@ if (GLEW_FOUND)
 	link_libraries(${GLEW_LIBRARY})
 endif()
 
+find_package(Threads REQUIRED)
+if(THREADS_FOUND)
+    link_libraries(${CMAKE_THREAD_LIBS_INIT})
+endif()
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules" ${CMAKE_MODULE_PATH})
 
 find_package(GLFW3 3.2 REQUIRED)
 if (GLFW3_FOUND)
 	include_directories(${GLFW3_INCLUDE_PATH})
 	link_libraries(${GLFW3_LIBRARY})
-endif()
-
-find_package(Threads REQUIRED)
-if(THREADS_FOUND)
-	link_libraries(${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 #add source files

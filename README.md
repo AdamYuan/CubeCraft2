@@ -23,6 +23,7 @@ make -j4
 * [ImGui](https://github.com/ocornut/imgui) - UI rendering
 
 ## References
-* https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1
-* https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+* https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1 - Lighting
+* https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/ - Ambient occlusion
+* http://www.cse.yorku.ca/~amana/research/grid.pdf - Block selection
 * http://www.minecrafttexturepacks.com/xenocontendi/ - Block texture

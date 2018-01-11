@@ -9,7 +9,7 @@ namespace Resource
 {
 	MyGL::ShaderPtr ChunkShader, LineShader;
 	MyGL::TexturePtr ChunkTexture;
-	MyGL::VertexObjectPtr CrosshairObject;
+	MyGL::VertexObjectPtr CrosshairObject, BoxObject;
 
 	const char *UNIF_SAMPLER = "sampler", *UNIF_MATRIX = "matrix";
 
@@ -30,15 +30,32 @@ namespace Resource
 
 
 		float _size = 10.0, _width = 1.0f;
-		static const float vertices[] = {-_width, -_size, -_width, _size, _width, -_size,
-										 _width, -_size, -_width, _size, _width, _size,
-										 -_size, _width, _size, -_width, -_size, -_width,
-										 _size, _width, _size, -_width, -_size, _width,
-										 -_width, -_width, -_width, _width, _width, -_width,
-										 _width, -_width, -_width, _width, _width, _width};
+		static const float crosshairVertices[] = {-_width, -_size, -_width, _size, _width, -_size,
+												  _width, -_size, -_width, _size, _width, _size,
+												  -_size, _width, _size, -_width, -_size, -_width,
+												  _size, _width, _size, -_width, -_size, _width,
+												  -_width, -_width, -_width, _width, _width, -_width,
+												  _width, -_width, -_width, _width, _width, _width};
 		CrosshairObject = MyGL::NewVertexObject();
-		CrosshairObject->SetDataArr(vertices, 36);
+		CrosshairObject->SetDataArr(crosshairVertices, 36);
 		CrosshairObject->SetAttributes(1, ATTR_POSITION, 2);
+
+		static const float boxVertices[] = {
+				1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+				1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+				1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+				0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+				1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+				1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+				1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+				1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+		BoxObject = MyGL::NewVertexObject();
+		BoxObject->SetDataArr(boxVertices, 72);
+		BoxObject->SetAttributes(1, ATTR_POSITION, 3);
 	}
 }
 

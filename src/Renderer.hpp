@@ -11,8 +11,9 @@ class World;
 
 namespace Renderer
 {
-	extern void RenderWorld(const World &wld, const glm::mat4 &matrix, const glm::vec3 &position);
-	extern void RenderCrosshair(const glm::mat4 &matrix);
+	extern void RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const glm::vec3 &position);
+	extern void RenderCrosshair(const glm::mat4 &vpMatrix);
+	extern void RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &position);
 };
 
 

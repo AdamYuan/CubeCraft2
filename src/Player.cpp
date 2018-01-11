@@ -8,6 +8,9 @@
 
 #include "Player.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+
+
 #define MOUSE_SENSITIVITY 0.17f
 
 Player::Player(const World &wld) : flying(false),
@@ -178,3 +181,113 @@ glm::ivec3 Player::GetChunkPosition() const
 	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
 }
 
+void Player::Control(GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
+					 const glm::mat4 &projection)
+{
+	MouseControl(win, width, height);
+	KeyControl(win, framerate);
+	ViewMatrix = Cam.GetViewMatrix();
+	UpdateSelection(width, height, projection);
+}
+
+void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
+{
+	float radius = 10.0f;
+
+	glm::vec3 origin = Cam.Position;
+	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
+	// by John Amanatides and Andrew Woo, 1987
+	// <http://www.cse.yorku.ca/~amana/research/grid.pdf>
+	// <http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.3443>
+	// Extensions to the described algorithm:
+	//   • Imposed a distance limit.
+	//   • The face passed through to reach the current cube is provided to
+	//     the callback.
+
+	// The foundation of this algorithm is a parameterized representation of
+	// the provided ray,
+	//                    origin + t * direction,
+	// except that t is not actually stored; rather, at any given point in the
+	// traversal, we keep track of the *greater* t values which we would have
+	// if we took a step sufficient to cross a cube boundary along that axis
+	// (i.e. change the integer part of the coordinate) in the variables
+	// tMaxX, tMaxY, and tMaxZ.
+
+	// Cube containing origin point.
+	glm::vec3 xyz = glm::floor(origin);
+	// Break out direction vector.
+	glm::vec3 direction = glm::unProject(glm::vec3(width / 2, height / 2, 1.0f),
+										 glm::mat4(), projection * ViewMatrix,
+										 glm::vec4(0.0f, 0.0f, width, height)) - origin;
+	// Direction to increment x,y,z when stepping.
+	glm::ivec3 step = glm::sign(direction);
+	// See description above. The initial values depend on the fractional
+	// part of the origin.
+	glm::vec3 tMax = glm::vec3(intBound(origin.x, direction.x),
+							   intBound(origin.y, direction.y),
+							   intBound(origin.z, direction.z));
+	// The change in t when taking a step (always positive).
+	glm::vec3 tDelta = (glm::vec3)step / direction;
+	// Buffer for reporting faces to the callback.
+	glm::ivec3 face;
+
+	// Rescale from units of 1 cube-edge to units of 'direction' so we can
+	// compare with 't'.
+	radius /= glm::sqrt(direction.x*direction.x + direction.y*direction.y + direction.z*direction.z);
+
+	while (true)
+	{
+		// Invoke the callback, unless we are not *yet* within the bounds of the
+		// world.
+		if (BlockMethods::HaveHitbox(wld->GetBlock(xyz))) {
+			SelectedPosition = xyz;
+			SelectedFaceVec = face;
+			return;
+		}
+
+		// tMaxX stores the t-value at which we cross a cube boundary along the
+		// X axis, and similarly for Y and Z. Therefore, choosing the least tMax
+		// chooses the closest cube boundary. Only the first case of the four
+		// has been commented in detail.
+		if (tMax.x < tMax.y) {
+			if (tMax.x < tMax.z) {
+				if (tMax.x > radius) break;
+				// Update which cube we are now in.
+				xyz.x += step.x;
+				// Adjust tMaxX to the next X-oriented boundary crossing.
+				tMax.x += tDelta.x;
+				// Record the normal vector of the cube face we entered.
+				face[0] = -step.x;
+				face[1] = 0;
+				face[2] = 0;
+			} else {
+				if (tMax.z > radius) break;
+				xyz.z += step.z;
+				tMax.z += tDelta.z;
+				face[0] = 0;
+				face[1] = 0;
+				face[2] = -step.z;
+			}
+		} else {
+			if (tMax.y < tMax.z) {
+				if (tMax.y > radius) break;
+				xyz.y += step.y;
+				tMax.y += tDelta.y;
+				face[0] = 0;
+				face[1] = -step.y;
+				face[2] = 0;
+			} else {
+				// Identical to the second case, repeated for simplicity in
+				// the conditionals.
+				if (tMax.z > radius) break;
+				xyz.z += step.z;
+				tMax.z += tDelta.z;
+				face[0] = 0;
+				face[1] = 0;
+				face[2] = -step.z;
+			}
+		}
+	}
+
+	SelectedPosition = glm::ivec3(INT_MAX);
+}

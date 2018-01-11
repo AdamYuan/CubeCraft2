@@ -124,6 +124,7 @@ void Application::Render()
 
 	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
 	Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
+	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
 }
 
 void Application::LogicProcess()
@@ -146,10 +147,7 @@ void Application::LogicProcess()
 	}
 
 	if(control)
-	{
-		GamePlayer.MouseControl(Window, Width, Height);
-		GamePlayer.KeyControl(Window, FramerateManager);
-	}
+		GamePlayer.Control(Window, Width, Height, FramerateManager, Matrices.Projection3d);
 
 	GamePlayer.PhysicsUpdate(FramerateManager);
 

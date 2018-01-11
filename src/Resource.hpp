@@ -17,7 +17,7 @@ namespace Resource
 
 	extern MyGL::ShaderPtr ChunkShader, LineShader;
 	extern MyGL::TexturePtr ChunkTexture;
-	extern MyGL::VertexObjectPtr CrosshairObject;
+	extern MyGL::VertexObjectPtr CrosshairObject, BoxObject;
 
 	extern void InitResources();
 }
