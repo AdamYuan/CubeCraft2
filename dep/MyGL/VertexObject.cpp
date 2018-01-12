@@ -38,7 +38,8 @@ namespace MyGL
 			attributes[i][1]=size;
 		}
 		va_end(vl);
-		AttributesLength=0;
+
+		int AttributesLength = 0;
 		for(int i=0;i<attr_count;++i)
 		{
 			GLuint attr_id=attributes[i][0];
@@ -50,7 +51,7 @@ namespace MyGL
 		}
 		unbindAll();
 
-		Elements = DataNum / AttributesLength;
+		Elements = DataSize / AttributesLength;
 	}
 	void VertexObject::Render(GLenum mode)
 	{

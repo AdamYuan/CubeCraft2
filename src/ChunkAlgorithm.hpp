@@ -16,6 +16,7 @@
 struct ChunkRenderVertex;
 struct LightBFSNode;
 struct Chunk;
+struct World;
 
 typedef std::function<uint8_t(int, int, int)> GetDataFunc;
 typedef std::function<void(int, int, int, uint8_t)> SetDataFunc;
@@ -45,12 +46,17 @@ namespace ChunkAlgorithm
 		return !(trans && neighbour);
 	}
 
-	extern void Meshing(const GetDataFunc &getBlock, const GetDataFunc &getLight, const glm::ivec3 &ChunkPos,
-						std::vector<ChunkRenderVertex> &result);
+	extern void Meshing(World const *wld, const glm::ivec3 &ChunkPos, std::vector<ChunkRenderVertex> &result);
+	extern void MeshingThreaded(const uint8_t (&Grid)[EXCHUNK_INFO_SIZE],
+								const uint8_t (&Light)[EXCHUNK_INFO_SIZE],
+								const glm::ivec3 &ChunkPos,
+								std::vector<ChunkRenderVertex> &result);
 	extern void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh);
-	extern void SunLightBFS(const GetDataFunc &getLight, const SetDataFunc &setLight, const GetDataFunc &getBlock,
-							std::queue<LightBFSNode> Queue,
-							const glm::ivec3 &minRange = glm::ivec3(0, 0, 0), const glm::ivec3 &maxRange = glm::ivec3(0, WORLD_HEIGHT_BLOCK, 0));
+	extern void SunLightBFS(World *wld, std::queue<LightBFSNode> &Queue);
+	extern void SunLightBFSThreaded(const uint8_t (&Grid)[LICHUNK_INFO_SIZE], uint8_t (&Result)[LICHUNK_INFO_SIZE],
+									int Highest, std::queue<LightBFSNode> &Queue);
+	extern void SunLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue,
+								   std::queue<LightBFSNode> &SunLightQueue);
 }
 
 

@@ -13,12 +13,27 @@
 
 #include <glm/glm.hpp>
 
+static inline int XYZ(const glm::ivec3 &pos)
+{ return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
+static inline int XYZ(int x, int y, int z)
+{ return x + (y*CHUNK_SIZE + z)*CHUNK_SIZE; }
+static inline int LiXYZ(glm::ivec3 pos)
+{ return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE; }
+static inline int LiXYZ(int x, int y, int z)
+{ return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE; }
+static inline int ExXYZ(int x, int y, int z)
+{ return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE; }
+static inline bool IsValidChunkPosition(const glm::ivec3 &pos)
+{ return !(pos.x < 0 || pos.x >= CHUNK_SIZE || pos.z < 0 || pos.z >= CHUNK_SIZE || pos.y < 0 || pos.y >= CHUNK_SIZE); }
+static inline bool IsValidChunkPosition(int x, int y, int z)
+{ return !(x < 0 || x >= CHUNK_SIZE || z < 0 || z >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE); }
 
 struct LightBFSNode
 {
 	glm::ivec3 Pos;
 	DLightLevel Value;
 };
+
 
 class Chunk
 {
@@ -32,20 +47,24 @@ private:
 public:
 	bool LoadedTerrain, InitializedMesh, InitializedLighting;
 
-	static inline int XYZ(const glm::ivec3 &pos)
-	{ return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
-	static inline int XYZ(int x, int y, int z)
-	{ return x + (y*CHUNK_SIZE + z)*CHUNK_SIZE; }
-	static inline bool IsValidPosition(const glm::ivec3 &pos)
-	{ return !(pos.x < 0 || pos.x >= CHUNK_SIZE || pos.z < 0 || pos.z >= CHUNK_SIZE || pos.y < 0 || pos.y >= CHUNK_SIZE); }
-
 	glm::ivec3 Position;
 
 	MyGL::VertexObjectPtr VertexBuffer;
 
 	explicit Chunk(const glm::ivec3 &pos);
-	void SetBlock(const glm::ivec3 &pos, Block b);
-	Block GetBlock(const glm::ivec3 &pos) const;
+
+	inline void SetBlock(const glm::ivec3 &pos, Block b)
+	{ Grid[XYZ(pos)] = b; }
+	inline Block GetBlock(const glm::ivec3 &pos) const
+	{ return Grid[XYZ(pos)]; }
+	inline Block GetBlock(int x, int y, int z) const
+	{ return Grid[XYZ(x, y, z)]; }
+	inline DLightLevel GetLight(int x, int y, int z) const
+	{ return Light[XYZ(x, y, z)]; }
+	inline DLightLevel GetLight(const glm::ivec3 &pos) const
+	{ return Light[XYZ(pos)]; }
+	inline void SetLight(const glm::ivec3 &pos, DLightLevel val)
+	{ Light[XYZ(pos)] = val; }
 };
 using ChunkPtr = Chunk*;
 
@@ -82,13 +101,6 @@ private:
 	DLightLevel Light[EXCHUNK_INFO_SIZE];
 	glm::ivec3 Position;
 
-	static inline int ExXYZ(int x, int y, int z)
-	{ return x + 1 + ((y + 1) * EXCHUNK_SIZE + z + 1)*EXCHUNK_SIZE; }
-	Block GetBlock(int x, int y, int z)
-	{ return Grid[ExXYZ(x, y, z)]; }
-	DLightLevel GetLight(int x, int y, int z)
-	{ return Light[ExXYZ(x, y, z)]; }
-
 	std::vector<ChunkRenderVertex> Result;
 
 public:
@@ -96,6 +108,7 @@ public:
 	void Process() override;
 	void ApplyMesh(ChunkPtr chk);
 };
+
 
 
 class ChunkInitialLightingInfo : public ChunkInfo
@@ -107,21 +120,12 @@ private:
 
 	inline bool CanPass(int index)
 	{ return BlockMethods::LightCanPass(Grid[index]); }
-	inline int LiXYZ(glm::ivec3 pos)
-	{ return pos.x + 14 + (pos.y * LICHUNK_SIZE + pos.z + 14) * LICHUNK_SIZE; }
-	inline int LiXYZ(int x, int y, int z)
-	{ return x + 14 + (y * LICHUNK_SIZE + z + 14) * LICHUNK_SIZE; }
-	inline Block GetBlock(int x, int y, int z)
-	{ return Grid[LiXYZ(x, y, z)]; }
-	inline DLightLevel GetLight(int x, int y, int z)
-	{ return Result[LiXYZ(x, y, z)]; }
-	inline void SetLight(int x, int y, int z, DLightLevel val)
-	{ Result[LiXYZ(x, y, z)] = val; }
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
 	void Process() override;
 	void ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
+
 
 #endif // CHUNK_HPP

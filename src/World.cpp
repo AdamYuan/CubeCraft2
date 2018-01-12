@@ -75,6 +75,8 @@ void World::Update(const glm::ivec3 &center)
 						SetChunk(i);
 	}
 
+	ProcessChunkUpdates();
+
 	//set lock
 	if(Mutex.try_lock())
 	{
@@ -85,6 +87,30 @@ void World::Update(const glm::ivec3 &center)
 		Cond.notify_all();
 
 		Mutex.unlock();
+	}
+}
+
+void World::ProcessChunkUpdates()
+{
+	if(!MeshUpdateSet.empty())
+	{
+		ChunkAlgorithm::SunLightRemovalBFS(this, SunLightRemovalQueue, SunLightQueue);
+		ChunkAlgorithm::SunLightBFS(this, SunLightQueue);
+		for(const glm::ivec3 &pos : MeshUpdateSet)
+		{
+			if(!ChunkExist(pos))
+				continue;
+			std::vector<ChunkRenderVertex> mesh;
+			ChunkAlgorithm::Meshing(this, pos, mesh);
+			ChunkAlgorithm::ApplyMesh(GetChunk(pos), mesh);
+			//update render set
+			if(mesh.size() != 0)
+				RenderSet.insert(pos);
+			else
+				RenderSet.erase(pos);
+		}
+		std::cout << std::endl;
+		MeshUpdateSet.clear();
 	}
 }
 
@@ -344,6 +370,30 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 	if(!chk)
 		return;
 	chk->SetBlock(pos - chkPos*CHUNK_SIZE, blk);
+
+	if(checkUpdate)
+	{
+		AddRelatedChunks(pos, MeshUpdateSet);
+		if(!BlockMethods::LightCanPass(blk))
+		{
+			DLightLevel dlight = GetLight(pos);
+			if(dlight >> 4)//have sunlight
+			{
+				SunLightRemovalQueue.push({pos, (uint8_t)(dlight >> 4)});
+				SetLight(pos, dlight & (uint8_t)0xF, false);
+			}
+		}
+		else
+		{
+			for(short face = 0; face < 6; ++face)
+			{
+				glm::ivec3 neighbour = Util::FaceExtend(pos, face);
+				LightLevel light = GetLight(neighbour) >> 4;
+				if(light)
+					SunLightQueue.push({neighbour, light});
+			}
+		}
+	}
 }
 
 Block World::GetBlock(const glm::ivec3 &pos) const
@@ -356,10 +406,35 @@ Block World::GetBlock(const glm::ivec3 &pos) const
 	return chk->GetBlock(pos - chkPos*CHUNK_SIZE);
 }
 
+DLightLevel World::GetLight(const glm::ivec3 &pos) const
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return 0xF0;
+	return chk->GetLight(pos - chkPos*CHUNK_SIZE);
+}
+
+void World::SetLight(const glm::ivec3 &pos, DLightLevel val, bool checkUpdate)
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return;
+	chk->SetLight(pos - chkPos*CHUNK_SIZE, val);
+
+	if(checkUpdate)
+		AddRelatedChunks(pos, MeshUpdateSet);
+}
 
 uint World::GetRunningThreadNum() const
 {
 	return RunningThreads;
 }
+
+
+
 
 

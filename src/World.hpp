@@ -68,7 +68,9 @@ private:
 	bool Running;
 
 	//chunk update
+	void ProcessChunkUpdates();
 	std::unordered_set<glm::ivec3> MeshUpdateSet;
+	std::queue<LightBFSNode> SunLightQueue, SunLightRemovalQueue;
 
 public:
 	World();
@@ -84,11 +86,34 @@ public:
 			return nullptr;
 		return SuperChunk.at(pos).get();
 	}
+	inline void AddRelatedChunks(const glm::ivec3 &bPos, std::unordered_set<glm::ivec3> &chunkPos)
+	{
+		std::vector<glm::ivec3> _tmp;
+		glm::ivec3 cPos = BlockPosToChunkPos(bPos), _bPos = bPos - cPos * CHUNK_SIZE;
+		_tmp.push_back(cPos);
+		for(short axis = 0; axis < 3; ++ axis)
+			if(_bPos[axis] == 0)
+				for(glm::ivec3 i : _tmp)
+				{
+					i[axis]--;
+					_tmp.push_back(i);
+				}
+			else if(_bPos[axis] == CHUNK_SIZE-1)
+				for(glm::ivec3 i : _tmp)
+				{
+					i[axis]++;
+					_tmp.push_back(i);
+				}
+		for(const glm::ivec3 &i : _tmp) chunkPos.insert(i);
+	}
 
 	void Update(const glm::ivec3 &center);
 
-	void SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate);
 	Block GetBlock(const glm::ivec3 &pos) const;
+	void SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate);
+
+	DLightLevel GetLight(const glm::ivec3 &pos) const;
+	void SetLight(const glm::ivec3 &pos, DLightLevel val, bool checkUpdate);
 
 	uint GetRunningThreadNum() const;
 

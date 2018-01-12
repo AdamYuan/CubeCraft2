@@ -10,7 +10,7 @@ namespace MyGL
 	{
 	private:
 		GLuint VAO, VBO;
-		int Elements = 0, DataNum = 0, AttributesLength = 1;
+		int Elements = 0, DataSize = 0;
 		void bindAll();
 		void unbindAll();
 
@@ -39,28 +39,24 @@ namespace MyGL
 	void VertexObject::SetDataVec(std::vector<T> vec)
 	{
 		if(vec.empty()) {
-			DataNum = 0;
+			DataSize = 0;
 			return;
 		}
 		bindAll();
-
 		glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(T), &vec[0], GL_STATIC_DRAW);
-		DataNum = (int) (vec.size() * (sizeof(T) / sizeof(float)));
-
+		DataSize = (int) (vec.size() * (sizeof(T) / sizeof(float)));
 		unbindAll();
 	}
 	template<class T>
 	void VertexObject::SetDataArr(const T *array, int arrSize)
 	{
 		if(arrSize == 0) {
-			DataNum = 0;
+			DataSize = 0;
 			return;
 		}
 		bindAll();
-
 		glBufferData(GL_ARRAY_BUFFER, arrSize*sizeof(T), array, GL_STATIC_DRAW);
-		DataNum = arrSize * (sizeof(T) / sizeof(float));
-
+		DataSize = arrSize * (sizeof(T) / sizeof(float));
 		unbindAll();
 	}
 

@@ -14,17 +14,6 @@ Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
 {
 	VertexBuffer = MyGL::NewVertexObject();
 }
-void Chunk::SetBlock(const glm::ivec3 &pos, Block b)
-{
-	if(IsValidPosition(pos))
-		Grid[XYZ(pos)] = b;
-}
-Block Chunk::GetBlock(const glm::ivec3 &pos) const
-{
-	if(IsValidPosition(pos))
-		return Grid[XYZ(pos)];
-	return Blocks::Air;
-}
 
 //Terrain Generation
 
@@ -117,7 +106,7 @@ void ChunkLoadingInfo::Process()
 					{
 						if(_z == z && _x == x)
 							continue;
-						int ind = Chunk::XYZ(_x, h, _z);
+						int ind = XYZ(_x, h, _z);
 						if(Result[ind] == Blocks::Air)
 							Result[ind] = Blocks::Leaves;
 					}
@@ -125,8 +114,8 @@ void ChunkLoadingInfo::Process()
 			if(x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
 			{
 				for(int h = heights[i] + 1; h <= heights[i] + treeHeight; ++h)
-					Result[Chunk::XYZ(x, h, z)] = Blocks::Wood;
-				Result[Chunk::XYZ(x, heights[i], z)] = Blocks::Dirt;
+					Result[XYZ(x, h, z)] = Blocks::Wood;
+				Result[XYZ(x, heights[i], z)] = Blocks::Dirt;
 			}
 		}
 	FastNoiseSIMD::FreeNoiseSet(treeMap);
@@ -150,11 +139,7 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 
 void ChunkMeshingInfo::Process()
 {
-	GetDataFunc getBlockFunc = std::bind(&ChunkMeshingInfo::GetBlock, this, _1, _2, _3);
-	GetDataFunc getLightFunc = std::bind(&ChunkMeshingInfo::GetLight, this, _1, _2, _3);
-
-	ChunkAlgorithm::Meshing(getBlockFunc, getLightFunc, Position, Result);
-
+	ChunkAlgorithm::MeshingThreaded(Grid, Light, Position, Result);
 	Done = true;
 }
 
@@ -192,52 +177,52 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	for(Y = 0, ExY = 0; Y < CHUNK_SIZE; ++Y, ++ExY)
 	{
 		Obj = 3;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
+		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(-1, ExY, -1);
 		SET;
 
 		Obj = 5;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, 0);
+		Index = XYZ(CHUNK_SIZE-1, Y, 0);
 		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 23;
-		Index = Chunk::XYZ(0, Y, 0);
+		Index = XYZ(0, Y, 0);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 21;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
 		SET;
 
 		Obj = 12;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
+		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(0, ExY, -1);
 		COPY;
 
 		Obj = 14;
-		Index = Chunk::XYZ(0, Y, 0);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, 0);
+		Index = XYZ(0, Y, 0);
+		Index2 = XYZ(CHUNK_SIZE, Y, 0);
 		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
 		COPY;
 
 		for(int z=0; z<CHUNK_SIZE; ++z)
 		{
 			Obj = 4;
-			Index = Chunk::XYZ(CHUNK_SIZE-1, Y, z);
+			Index = XYZ(CHUNK_SIZE-1, Y, z);
 			ExIndex = ExXYZ(-1, ExY, z);
 			SET;
 
 			Obj = 22;
-			Index = Chunk::XYZ(0, Y, z);
+			Index = XYZ(0, Y, z);
 			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
 			SET;
 
 			Obj = 13;
-			Index = Chunk::XYZ(0, Y, z);
-			Index2 = Chunk::XYZ(CHUNK_SIZE, Y, z);
+			Index = XYZ(0, Y, z);
+			Index2 = XYZ(CHUNK_SIZE, Y, z);
 			ExIndex = ExXYZ(0, ExY, z);
 			COPY;
 		}
@@ -248,52 +233,52 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 		Y = 0, ExY = CHUNK_SIZE;
 
 		Obj = 6;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
+		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(-1, ExY, -1);
 		SET;
 
 		Obj = 8;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, 0);
+		Index = XYZ(CHUNK_SIZE-1, Y, 0);
 		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 26;
-		Index = Chunk::XYZ(0, Y, 0);
+		Index = XYZ(0, Y, 0);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 24;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
 		SET;
 
 		Obj = 15;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
+		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(0, ExY, -1);
 		COPY;
 
 		Obj = 17;
-		Index = Chunk::XYZ(0, Y, 0);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, 0);
+		Index = XYZ(0, Y, 0);
+		Index2 = XYZ(CHUNK_SIZE, Y, 0);
 		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
 		COPY;
 
 		for(int z=0; z<CHUNK_SIZE; ++z)
 		{
 			Obj = 7;
-			Index = Chunk::XYZ(CHUNK_SIZE-1, Y, z);
+			Index = XYZ(CHUNK_SIZE-1, Y, z);
 			ExIndex = ExXYZ(-1, ExY, z);
 			SET;
 
 			Obj = 25;
-			Index = Chunk::XYZ(0, Y, z);
+			Index = XYZ(0, Y, z);
 			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
 			SET;
 
 			Obj = 16;
-			Index = Chunk::XYZ(0, Y, z);
-			Index2 = Chunk::XYZ(CHUNK_SIZE, Y, z);
+			Index = XYZ(0, Y, z);
+			Index2 = XYZ(CHUNK_SIZE, Y, z);
 			ExIndex = ExXYZ(0, ExY, z);
 			COPY;
 		}
@@ -309,52 +294,52 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 		Y = CHUNK_SIZE - 1, ExY = -1;
 
 		Obj = 0;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
+		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(-1, ExY, -1);
 		SET;
 
 		Obj = 2;
-		Index = Chunk::XYZ(CHUNK_SIZE-1, Y, 0);
+		Index = XYZ(CHUNK_SIZE-1, Y, 0);
 		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 20;
-		Index = Chunk::XYZ(0, Y, 0);
+		Index = XYZ(0, Y, 0);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
 		SET;
 
 		Obj = 18;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
 		SET;
 
 		Obj = 9;
-		Index = Chunk::XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
+		Index = XYZ(0, Y, CHUNK_SIZE-1);
+		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
 		ExIndex = ExXYZ(0, ExY, -1);
 		COPY;
 
 		Obj = 11;
-		Index = Chunk::XYZ(0, Y, 0);
-		Index2 = Chunk::XYZ(CHUNK_SIZE, Y, 0);
+		Index = XYZ(0, Y, 0);
+		Index2 = XYZ(CHUNK_SIZE, Y, 0);
 		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
 		COPY;
 
 		for(int z=0; z<CHUNK_SIZE; ++z)
 		{
 			Obj = 1;
-			Index = Chunk::XYZ(CHUNK_SIZE-1, Y, z);
+			Index = XYZ(CHUNK_SIZE-1, Y, z);
 			ExIndex = ExXYZ(-1, ExY, z);
 			SET;
 
 			Obj = 19;
-			Index = Chunk::XYZ(0, Y, z);
+			Index = XYZ(0, Y, z);
 			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
 			SET;
 
 			Obj = 10;
-			Index = Chunk::XYZ(0, Y, z);
-			Index2 = Chunk::XYZ(CHUNK_SIZE, Y, z);
+			Index = XYZ(0, Y, z);
+			Index2 = XYZ(CHUNK_SIZE, Y, z);
 			ExIndex = ExXYZ(0, ExY, z);
 			COPY;
 		}
@@ -383,31 +368,31 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 			for(int z=-14; z<0; ++z)
 			{
 				int _z = z + CHUNK_SIZE;
-				std::copy(chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, _z),
-						  chk[arr[0]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[3]]->Grid + Chunk::XYZ(0, y, _z),
-						  chk[arr[3]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[6]]->Grid + Chunk::XYZ(0, y, _z),
-						  chk[arr[6]]->Grid + Chunk::XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[0]]->Grid + XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[0]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[3]]->Grid + XYZ(0, y, _z),
+						  chk[arr[3]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[6]]->Grid + XYZ(0, y, _z),
+						  chk[arr[6]]->Grid + XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
 			}
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
-				std::copy(chk[arr[1]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, z),
-						  chk[arr[1]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[4]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[4]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[7]]->Grid + Chunk::XYZ(0, y, z),
-						  chk[arr[7]]->Grid + Chunk::XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[1]]->Grid + XYZ(CHUNK_SIZE-14, y, z),
+						  chk[arr[1]]->Grid + XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[4]]->Grid + XYZ(0, y, z),
+						  chk[arr[4]]->Grid + XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[7]]->Grid + XYZ(0, y, z),
+						  chk[arr[7]]->Grid + XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
 			}
 			for(int z=CHUNK_SIZE; z<CHUNK_SIZE+14; ++z)
 			{
 				int _z = z - CHUNK_SIZE;
-				std::copy(chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE-14, y, _z),
-						  chk[arr[2]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[5]]->Grid + Chunk::XYZ(0, y, _z),
-						  chk[arr[5]]->Grid + Chunk::XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[8]]->Grid + Chunk::XYZ(0, y, _z),
-						  chk[arr[8]]->Grid + Chunk::XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[2]]->Grid + XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[2]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
+				std::copy(chk[arr[5]]->Grid + XYZ(0, y, _z),
+						  chk[arr[5]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
+				std::copy(chk[arr[8]]->Grid + XYZ(0, y, _z),
+						  chk[arr[8]]->Grid + XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
 			}
 		}
 	}
@@ -445,12 +430,7 @@ void ChunkInitialLightingInfo::Process()
 			SunLightQueue.push({pos, 15});
 		}
 
-	GetDataFunc getLight = std::bind(&ChunkInitialLightingInfo::GetLight, this, _1, _2, _3);
-	SetDataFunc setLight = std::bind(&ChunkInitialLightingInfo::SetLight, this, _1, _2, _3, _4);
-	GetDataFunc getBlock = std::bind(&ChunkInitialLightingInfo::GetBlock, this, _1, _2, _3);
-
-	ChunkAlgorithm::SunLightBFS(getLight, setLight, getBlock, SunLightQueue,
-								{-14, 0, -14}, {CHUNK_SIZE + 14, Highest, CHUNK_SIZE + 14});
+	ChunkAlgorithm::SunLightBFSThreaded(Grid, Result, Highest, SunLightQueue);
 
 	Done = true;
 }
@@ -465,7 +445,7 @@ void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
 				std::copy(Result + LiXYZ(0, height, z), Result + LiXYZ(CHUNK_SIZE, height, z),
-						  chk[h]->Light + Chunk::XYZ(0, y, z));
+						  chk[h]->Light + XYZ(0, y, z));
 			}
 		}
 		chk[h]->InitializedLighting = true;
