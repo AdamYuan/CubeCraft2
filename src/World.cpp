@@ -104,12 +104,11 @@ void World::ProcessChunkUpdates()
 			ChunkAlgorithm::Meshing(this, pos, mesh);
 			ChunkAlgorithm::ApplyMesh(GetChunk(pos), mesh);
 			//update render set
-			if(mesh.size() != 0)
+			if(!mesh.empty())
 				RenderSet.insert(pos);
 			else
 				RenderSet.erase(pos);
 		}
-		std::cout << std::endl;
 		MeshUpdateSet.clear();
 	}
 }
@@ -411,7 +410,9 @@ DLightLevel World::GetLight(const glm::ivec3 &pos) const
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
 
 	ChunkPtr chk = GetChunk(chkPos);
-	if(!chk)
+	if(pos.y < 0)
+		return 0x00;
+	else if(pos.y >= WORLD_HEIGHT_BLOCK || !chk)
 		return 0xF0;
 	return chk->GetLight(pos - chkPos*CHUNK_SIZE);
 }

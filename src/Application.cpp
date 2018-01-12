@@ -30,7 +30,10 @@ void Application::keyCallback(GLFWwindow *window, int key, int scancode, int act
 	if(action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_ESCAPE)
-			app->control = false;
+		{
+			glfwSetCursorPos(window, app->Width / 2, app->Height / 2);
+			app->control = !app->control;
+		}
 		else if(key == GLFW_KEY_V)
 			app->showFramewire = !app->showFramewire;
 		else if(key == GLFW_KEY_F)
@@ -137,13 +140,6 @@ void Application::LogicProcess()
 	{
 		lastTime = static_cast<int>(glfwGetTime());
 		FPS = FramerateManager.GetFps();
-	}
-
-	//get control when mouse press
-	if(!control && glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-	{
-		glfwSetCursorPos(Window, Width / 2, Height / 2);
-		control = true;
 	}
 
 	GamePlayer.Control(control, Window, Width, Height, FramerateManager, Matrices.Projection3d);
