@@ -96,16 +96,11 @@ void World::ProcessChunkUpdates()
 	if(!MeshDirectlyUpdateSet.empty())
 	{
 		ChunkAlgorithm::SunLightRemovalBFS(this, SunLightRemovalQueue, SunLightQueue);
-		std::cout << SunLightQueue.size() << std::endl;
 		ChunkAlgorithm::SunLightBFS(this, SunLightQueue);
-		std::cout << SunLightQueue.size() << std::endl;
+
 		for(const glm::ivec3 &pos : MeshDirectlyUpdateSet)
 		{
-			if(MeshThreadedUpdateSet.count(pos))
-				MeshThreadedUpdateSet.erase(pos);
-
-			if(!ChunkExist(pos))
-				continue;
+			MeshThreadedUpdateSet.erase(pos);
 			std::vector<ChunkRenderVertex> mesh;
 			ChunkAlgorithm::Meshing(this, pos, mesh);
 			ChunkAlgorithm::ApplyMesh(GetChunk(pos), mesh);
@@ -324,20 +319,25 @@ void World::UpdateChunkMeshingList()
 			++iter;
 	}
 
-	for(const glm::ivec3 &pos : MeshThreadedUpdateSet)
+	if(!MeshThreadedUpdateSet.empty())
 	{
-		if(!ChunkExist(pos))
-			continue;
+		for(const glm::ivec3 &pos : MeshThreadedUpdateSet)
+		{
+			if(!ChunkExist(pos))
+				continue;
+			if(!GetChunk(pos)->InitializedMesh)
+				continue;
 
-		for(int i=0; i<27; ++i)
-			neighbours[i] = GetChunk(pos + lookUp[i]);
-		if(MeshUpdateInfoMap.count(pos))
-			MeshUpdateInfoMap.erase(pos);
-		else
-			MeshUpdateVector.push_back(pos);
-		MeshUpdateInfoMap[pos] = std::make_unique<ChunkMeshingInfo>(neighbours);
+			for(int i=0; i<27; ++i)
+				neighbours[i] = GetChunk(pos + lookUp[i]);
+			if(MeshUpdateInfoMap.count(pos))
+				MeshUpdateInfoMap.erase(pos);
+			else
+				MeshUpdateVector.push_back(pos);
+			MeshUpdateInfoMap[pos] = std::make_unique<ChunkMeshingInfo>(neighbours);
+		}
+		MeshThreadedUpdateSet.clear();
 	}
-	MeshThreadedUpdateSet.clear();
 }
 
 
@@ -439,11 +439,11 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 		AddRelatedChunks(pos, MeshDirectlyUpdateSet);
 		if(!BlockMethods::LightCanPass(blk))
 		{
-			DLightLevel dlight = GetLight(pos);
-			if(dlight >> 4)//have sunlight
+			LightLevel light = GetSunLight(pos);
+			if(light)//have sunlight
 			{
-				SunLightRemovalQueue.push({pos, (uint8_t)(dlight >> 4)});
-				SetLight(pos, dlight & (uint8_t)0xF, false);
+				SunLightRemovalQueue.push({pos, light});
+				SetSunLight(pos, 0, false);
 			}
 		}
 		else
@@ -451,7 +451,7 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 			for(short face = 0; face < 6; ++face)
 			{
 				glm::ivec3 neighbour = Util::FaceExtend(pos, face);
-				LightLevel light = GetLight(neighbour) >> 4;
+				LightLevel light = GetSunLight(neighbour);
 				if(light)
 					SunLightQueue.push({neighbour, light});
 			}
@@ -469,7 +469,7 @@ Block World::GetBlock(const glm::ivec3 &pos) const
 	return chk->GetBlock(pos - chkPos*CHUNK_SIZE);
 }
 
-DLightLevel World::GetLight(const glm::ivec3 &pos) const
+LightLevel World::GetSunLight(const glm::ivec3 &pos) const
 {
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
 
@@ -478,20 +478,30 @@ DLightLevel World::GetLight(const glm::ivec3 &pos) const
 		return 0x00;
 	else if(pos.y >= WORLD_HEIGHT_BLOCK || !chk)
 		return 0xF0;
-	return chk->GetLight(pos - chkPos*CHUNK_SIZE);
+	return chk->GetSunLight(pos - chkPos*CHUNK_SIZE);
 }
 
-void World::SetLight(const glm::ivec3 &pos, DLightLevel val, bool checkUpdate)
+void World::SetSunLight(const glm::ivec3 &pos, LightLevel val, bool checkUpdate)
 {
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
 
 	ChunkPtr chk = GetChunk(chkPos);
 	if(!chk)
 		return;
-	chk->SetLight(pos - chkPos*CHUNK_SIZE, val);
+	chk->SetSunLight(pos - chkPos*CHUNK_SIZE, val);
 
 	if(checkUpdate)
 		AddRelatedChunks(pos, MeshThreadedUpdateSet);
+}
+
+LightLevel World::GetTorchLight(const glm::ivec3 &pos) const
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return 0;
+	return chk->GetTorchLight(pos - chkPos*CHUNK_SIZE);
 }
 
 uint World::GetRunningThreadNum() const

@@ -122,7 +122,8 @@ namespace ChunkAlgorithm
 		const glm::ivec3 chkBase = ChunkPos * CHUNK_SIZE;
 
 #define getBlock(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetBlock(x, y, z) : wld->GetBlock(chkBase + glm::ivec3(x, y, z)))
-#define getLight(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetLight(x, y, z) : wld->GetLight(chkBase + glm::ivec3(x, y, z)))
+#define getSunLight(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetSunLight(x, y, z) : wld->GetSunLight(chkBase + glm::ivec3(x, y, z)))
+#define getTorchLight(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetTorchLight(x, y, z) : wld->GetTorchLight(chkBase + glm::ivec3(x, y, z)))
 
 		//generate LightingInfo(including AO, sunlight and torchlight)
 		FaceLighting LightingData[CHUNK_INFO_SIZE][6] = {};
@@ -162,8 +163,8 @@ namespace ChunkAlgorithm
 							for(it[2] = pos[2]-1; it[2] <= pos[2]+1; ++it[2], ++ind)
 							{
 								neighbours[ind] = getBlock(it[0], it[1], it[2]);
-								sunlightNeighbour[ind] = getLight(it[0], it[1], it[2]) >> 4;
-								torchlightNeighbour[ind] = getLight(it[0], it[1], it[2]) & (uint8_t)0xF;
+								sunlightNeighbour[ind] = getSunLight(it[0], it[1], it[2]);
+								torchlightNeighbour[ind] = getTorchLight(it[0], it[1], it[2]);
 							}
 				}
 
@@ -629,12 +630,12 @@ namespace ChunkAlgorithm
 				if(neighbour.Value != 15 || face != Face::Bottom)
 					neighbour.Value--;
 
-				uint8_t cLight = wld->GetLight(neighbour.Pos);
+				uint8_t cLight = wld->GetSunLight(neighbour.Pos);
 
 				if(BlockMethods::LightCanPass(wld->GetBlock(neighbour.Pos)) &&
-						(cLight >> 4) < neighbour.Value)
+						cLight < neighbour.Value)
 				{
-					wld->SetLight(neighbour.Pos, (cLight & (uint8_t)0x0F) | (neighbour.Value << 4), true);
+					wld->SetSunLight(neighbour.Pos, neighbour.Value, true);
 					Queue.push(neighbour);
 				}
 			}
@@ -697,27 +698,24 @@ namespace ChunkAlgorithm
 			{
 				glm::ivec3 neighbour = Util::FaceExtend(node.Pos, face);
 
-				//std::cout << "233 " << (int)neighbour.Value << std::endl;
-
 				if (face >> 1 == 1)
 					if (neighbour.y < 0 || neighbour.y >= WORLD_HEIGHT_BLOCK)
 						continue;
 
-				uint8_t cLight = wld->GetLight(neighbour);
-				uint8_t neighbourLevel = cLight >> 4;
+				uint8_t neighbourLevel = wld->GetSunLight(neighbour);
 
 				if (neighbourLevel == 0)
 					continue;
 
 				if (face == Face::Bottom && node.Value == 15)
 				{
-					wld->SetLight(neighbour, cLight & (uint8_t) 0x0F, true);
+					wld->SetSunLight(neighbour, 0, true);
 					RemovalQueue.push({neighbour, 15});
 				} else
 				{
 					if (neighbourLevel < node.Value)
 					{
-						wld->SetLight(neighbour, cLight & (uint8_t) 0x0F, true);
+						wld->SetSunLight(neighbour, 0, true);
 						RemovalQueue.push({neighbour, neighbourLevel});
 					} else if (neighbourLevel >= node.Value)
 						SunLightVector.push_back(neighbour);
@@ -727,7 +725,7 @@ namespace ChunkAlgorithm
 
 		for(const glm::ivec3 &i : SunLightVector)
 		{
-			uint8_t light = wld->GetLight(i) >> 4;
+			uint8_t light = wld->GetSunLight(i);
 			if(light)
 				SunLightQueue.push({i, light});
 		}

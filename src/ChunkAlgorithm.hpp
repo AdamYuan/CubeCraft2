@@ -57,6 +57,12 @@ namespace ChunkAlgorithm
 									int Highest, std::queue<LightBFSNode> &Queue);
 	extern void SunLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue,
 								   std::queue<LightBFSNode> &SunLightQueue);
+
+	extern void TorchLightBFS(World *wld, std::queue<LightBFSNode> &Queue);
+	extern void TorchLightBFSThreaded(const uint8_t (&Grid)[LICHUNK_INFO_SIZE], uint8_t (&Result)[LICHUNK_INFO_SIZE],
+									int Highest, std::queue<LightBFSNode> &Queue);
+	extern void TorchLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue,
+								   std::queue<LightBFSNode> &SunLightQueue);
 }
 
 

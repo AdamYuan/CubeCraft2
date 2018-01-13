@@ -99,13 +99,17 @@ public:
 				for(glm::ivec3 i : _tmp)
 				{
 					i[axis]--;
-					_tmp.push_back(i);
+					ChunkPtr chk = GetChunk(i);
+					if(chk && chk->InitializedMesh)
+						_tmp.push_back(i);
 				}
 			else if(_bPos[axis] == CHUNK_SIZE-1)
 				for(glm::ivec3 i : _tmp)
 				{
 					i[axis]++;
-					_tmp.push_back(i);
+					ChunkPtr chk = GetChunk(i);
+					if(chk && chk->InitializedMesh)
+						_tmp.push_back(i);
 				}
 		for(const glm::ivec3 &i : _tmp) chunkPos.insert(i);
 	}
@@ -115,8 +119,10 @@ public:
 	Block GetBlock(const glm::ivec3 &pos) const;
 	void SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate);
 
-	DLightLevel GetLight(const glm::ivec3 &pos) const;
-	void SetLight(const glm::ivec3 &pos, DLightLevel val, bool checkUpdate);
+	LightLevel GetSunLight(const glm::ivec3 &pos) const;
+	void SetSunLight(const glm::ivec3 &pos, LightLevel val, bool checkUpdate);
+
+	LightLevel GetTorchLight(const glm::ivec3 &pos) const;
 
 	uint GetRunningThreadNum() const;
 

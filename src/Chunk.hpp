@@ -59,12 +59,24 @@ public:
 	{ return Grid[XYZ(pos)]; }
 	inline Block GetBlock(int x, int y, int z) const
 	{ return Grid[XYZ(x, y, z)]; }
-	inline DLightLevel GetLight(int x, int y, int z) const
-	{ return Light[XYZ(x, y, z)]; }
-	inline DLightLevel GetLight(const glm::ivec3 &pos) const
-	{ return Light[XYZ(pos)]; }
-	inline void SetLight(const glm::ivec3 &pos, DLightLevel val)
-	{ Light[XYZ(pos)] = val; }
+	inline DLightLevel GetTorchLight(int x, int y, int z) const
+	{ return Light[XYZ(x, y, z)] & (uint8_t)0x0F; }
+	inline DLightLevel GetTorchLight(const glm::ivec3 &pos) const
+	{ return Light[XYZ(pos)] & (uint8_t)0x0F; }
+	inline void SetTorchLight(const glm::ivec3 &pos, LightLevel val)
+	{
+		int index = XYZ(pos);
+		Light[index] = (Light[index] & (uint8_t)0xF0) | val;
+	}
+	inline DLightLevel GetSunLight(int x, int y, int z) const
+	{ return (Light[XYZ(x, y, z)] >> 4) & (uint8_t)0x0F; }
+	inline DLightLevel GetSunLight(const glm::ivec3 &pos) const
+	{ return (Light[XYZ(pos)] >> 4) & (uint8_t)0x0F; }
+	inline void SetSunLight(const glm::ivec3 &pos, LightLevel val)
+	{
+		int index = XYZ(pos);
+		Light[index] = (Light[index] & (uint8_t)0x0F) | (val << 4);
+	}
 };
 using ChunkPtr = Chunk*;
 
