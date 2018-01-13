@@ -20,6 +20,7 @@ World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardwar
 	{
 		Threads.emplace_back(&World::ChunkLoadingWorker, this);
 		Threads.emplace_back(&World::ChunkMeshingWorker, this);
+		Threads.emplace_back(&World::ChunkMeshUpdateWorker, this);
 		Threads.emplace_back(&World::ChunkInitialLightingWorker, this);
 	}
 }
@@ -92,12 +93,17 @@ void World::Update(const glm::ivec3 &center)
 
 void World::ProcessChunkUpdates()
 {
-	if(!MeshUpdateSet.empty())
+	if(!MeshDirectlyUpdateSet.empty())
 	{
 		ChunkAlgorithm::SunLightRemovalBFS(this, SunLightRemovalQueue, SunLightQueue);
+		std::cout << SunLightQueue.size() << std::endl;
 		ChunkAlgorithm::SunLightBFS(this, SunLightQueue);
-		for(const glm::ivec3 &pos : MeshUpdateSet)
+		std::cout << SunLightQueue.size() << std::endl;
+		for(const glm::ivec3 &pos : MeshDirectlyUpdateSet)
 		{
+			if(MeshThreadedUpdateSet.count(pos))
+				MeshThreadedUpdateSet.erase(pos);
+
 			if(!ChunkExist(pos))
 				continue;
 			std::vector<ChunkRenderVertex> mesh;
@@ -109,7 +115,7 @@ void World::ProcessChunkUpdates()
 			else
 				RenderSet.erase(pos);
 		}
-		MeshUpdateSet.clear();
+		MeshDirectlyUpdateSet.clear();
 	}
 }
 
@@ -227,6 +233,14 @@ void World::UpdateChunkSunLightingList()
 
 void World::UpdateChunkMeshingList()
 {
+	glm::ivec3 _, lookUp[27];
+	int index = 0;
+	for(_.x = -1; _.x <= 1; ++_.x)
+		for(_.y = -1; _.y <= 1; ++_.y)
+			for(_.z = -1; _.z <= 1; ++_.z)
+				lookUp[index++] = _;
+
+	//mesh initialize
 	for(auto iter = MeshingInfoMap.begin(); iter != MeshingInfoMap.end(); )
 	{
 		if(iter->second->Done)
@@ -257,12 +271,6 @@ void World::UpdateChunkMeshingList()
 		MeshingList.sort(cmp3);
 	}
 
-	glm::ivec3 _, lookUp[27];
-	int index = 0;
-	for(_.x = -1; _.x <= 1; ++_.x)
-		for(_.y = -1; _.y <= 1; ++_.y)
-			for(_.z = -1; _.z <= 1; ++_.z)
-				lookUp[index++] = _;
 	ChunkPtr neighbours[27] = {nullptr};
 	for(auto iter = PreMeshingVector.begin(); iter != PreMeshingVector.end(); )
 	{
@@ -295,6 +303,41 @@ void World::UpdateChunkMeshingList()
 		else
 			++iter;
 	}
+
+	//chunk mesh update
+
+	for(auto iter = MeshUpdateInfoMap.begin(); iter != MeshUpdateInfoMap.end(); )
+	{
+		if(iter->second->Done)
+		{
+			if(ChunkExist(iter->first))
+			{
+				iter->second->ApplyMesh(GetChunk(iter->first));
+				if(GetChunk(iter->first)->VertexBuffer->Empty())
+					RenderSet.erase(iter->first);
+				else
+					RenderSet.insert(iter->first);
+			}
+			iter = MeshUpdateInfoMap.erase(iter);
+		}
+		else
+			++iter;
+	}
+
+	for(const glm::ivec3 &pos : MeshThreadedUpdateSet)
+	{
+		if(!ChunkExist(pos))
+			continue;
+
+		for(int i=0; i<27; ++i)
+			neighbours[i] = GetChunk(pos + lookUp[i]);
+		if(MeshUpdateInfoMap.count(pos))
+			MeshUpdateInfoMap.erase(pos);
+		else
+			MeshUpdateVector.push_back(pos);
+		MeshUpdateInfoMap[pos] = std::make_unique<ChunkMeshingInfo>(neighbours);
+	}
+	MeshThreadedUpdateSet.clear();
 }
 
 
@@ -361,6 +404,27 @@ void World::ChunkMeshingWorker()
 	}
 }
 
+void World::ChunkMeshUpdateWorker()
+{
+	while(Running)
+	{
+		glm::ivec3 pos;
+
+		std::unique_lock<std::mutex> lk(Mutex);
+		Cond.wait(lk, [this]{return !Running ||
+									(RunningThreads < ThreadsSupport && !MeshUpdateVector.empty());});
+		if(!Running)
+			return;
+		pos = MeshUpdateVector.back();
+		MeshUpdateVector.pop_back();
+		lk.unlock();
+
+		RunningThreads ++;
+		MeshUpdateInfoMap[pos]->Process();
+		RunningThreads --;
+	}
+}
+
 void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 {
 	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
@@ -372,7 +436,7 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 
 	if(checkUpdate)
 	{
-		AddRelatedChunks(pos, MeshUpdateSet);
+		AddRelatedChunks(pos, MeshDirectlyUpdateSet);
 		if(!BlockMethods::LightCanPass(blk))
 		{
 			DLightLevel dlight = GetLight(pos);
@@ -427,13 +491,14 @@ void World::SetLight(const glm::ivec3 &pos, DLightLevel val, bool checkUpdate)
 	chk->SetLight(pos - chkPos*CHUNK_SIZE, val);
 
 	if(checkUpdate)
-		AddRelatedChunks(pos, MeshUpdateSet);
+		AddRelatedChunks(pos, MeshThreadedUpdateSet);
 }
 
 uint World::GetRunningThreadNum() const
 {
 	return RunningThreads;
 }
+
 
 
 

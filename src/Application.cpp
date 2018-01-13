@@ -169,12 +169,14 @@ void Application::RenderUI()
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
 		ImGui::Separator();
-		ImGui::Text("renderer: %s", glGetString(GL_RENDERER));
-		ImGui::Text("vendor: %s", glGetString(GL_VENDOR));
-		ImGui::Text("OpenGL version: %s", glGetString(GL_VERSION));
+		//ImGui::Text("selection: %s", glm::to_string(GamePlayer.GetSelection(false)).c_str());
+		ImGui::Text("block: %d, light: %x", (int)world.GetBlock(GamePlayer.GetSelection(false)),
+					(int)world.GetLight(GamePlayer.GetSelection(false)));
+		//ImGui::Text("selection2: %s", glm::to_string(GamePlayer.GetSelection(true)).c_str());
+		ImGui::Text("block2: %d, light2: %x", (int)world.GetBlock(GamePlayer.GetSelection(true)),
+					(int)world.GetLight(GamePlayer.GetSelection(true)));
 
 		ImGui::End();
 	}
 	ImGui::PopStyleColor();
 }
-

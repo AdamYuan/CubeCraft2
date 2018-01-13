@@ -614,8 +614,8 @@ namespace ChunkAlgorithm
 
 			Queue.pop();
 
-			if((wld->GetLight(node.Pos) >> 4) > node.Value)
-				continue;
+			//if((wld->GetLight(node.Pos) >> 4) > node.Value)
+			//	continue;
 
 			for(short face=0; face<6; ++face)
 			{
@@ -623,24 +623,18 @@ namespace ChunkAlgorithm
 				neighbour.Pos = Util::FaceExtend(node.Pos, face);
 
 				//deal with out chunk situations
-				if(face>>1 != 1)
-					neighbour.Value--;
-				else
-				{
+				if(face>>1 == 1)
 					if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
 						continue;
-					else if(neighbour.Value == 15 && face == Face::Top)
-						continue;
-					else if(neighbour.Value != 15)
-						neighbour.Value --;
-				}
+				if(neighbour.Value != 15 || face != Face::Bottom)
+					neighbour.Value--;
 
 				uint8_t cLight = wld->GetLight(neighbour.Pos);
 
 				if(BlockMethods::LightCanPass(wld->GetBlock(neighbour.Pos)) &&
 						(cLight >> 4) < neighbour.Value)
 				{
-					wld->SetLight(neighbour.Pos, (cLight & (uint8_t)0xF) | (neighbour.Value << 4), true);
+					wld->SetLight(neighbour.Pos, (cLight & (uint8_t)0x0F) | (neighbour.Value << 4), true);
 					Queue.push(neighbour);
 				}
 			}
@@ -656,8 +650,8 @@ namespace ChunkAlgorithm
 			LightBFSNode node = Queue.front();
 			Queue.pop();
 
-			if((Result[LiXYZ(node.Pos)] >> 4) > node.Value)
-				continue;
+			//if((Result[LiXYZ(node.Pos)] >> 4) > node.Value)
+			//	continue;
 
 			for(short face=0; face<6; ++face)
 			{
@@ -669,21 +663,17 @@ namespace ChunkAlgorithm
 				//deal with out chunk situations
 				if(face>>1 != 1)
 				{
-					neighbour.Value--;
 					if(neighbour.Pos[face>>1] < -14 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 14)
 						continue;
 				}
-				else
-				{
-					if(neighbour.Pos.y < 0 || neighbour.Pos.y >= Highest)
-						continue;
-					else if(neighbour.Value == 15 && face == Face::Top)
-						continue;
-					else if(neighbour.Value != 15)
-						neighbour.Value --;
-				}
+				else if(neighbour.Pos.y < 0 || neighbour.Pos.y >= Highest)
+					continue;
 
-				if(BlockMethods::LightCanPass(Grid[index]) && (Result[index] >> 4) < neighbour.Value)
+				if(neighbour.Value != 15 || face != Face::Bottom)
+					neighbour.Value--;
+
+				if(BlockMethods::LightCanPass(Grid[index]) &&
+						(Result[index] >> 4) < neighbour.Value)
 				{
 					Result[index] = neighbour.Value << 4;
 					//no need to care about the torchlight data
@@ -694,47 +684,52 @@ namespace ChunkAlgorithm
 		}
 	}
 
-	void SunLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue, std::queue<LightBFSNode> &SunLightQueue)
+	void SunLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue,
+							std::queue<LightBFSNode> &SunLightQueue)
 	{
+		std::vector<glm::ivec3> SunLightVector;
 		while(!RemovalQueue.empty())
 		{
 			LightBFSNode node = RemovalQueue.front();
 			RemovalQueue.pop();
 
-			for(short face=0; face<6; ++face)
+			for (short face = 0; face < 6; ++face)
 			{
-				LightBFSNode neighbour = node;
-				neighbour.Pos = Util::FaceExtend(node.Pos, face);
+				glm::ivec3 neighbour = Util::FaceExtend(node.Pos, face);
 
-				if(face >> 1 == 1)
-					if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
+				//std::cout << "233 " << (int)neighbour.Value << std::endl;
+
+				if (face >> 1 == 1)
+					if (neighbour.y < 0 || neighbour.y >= WORLD_HEIGHT_BLOCK)
 						continue;
-				//if(!BlockMethods::LightCanPass(wld->GetBlock(neighbour.Pos)))
-				//	continue;
 
-				uint8_t cLight = wld->GetLight(neighbour.Pos);
+				uint8_t cLight = wld->GetLight(neighbour);
 				uint8_t neighbourLevel = cLight >> 4;
 
-				if(neighbourLevel == 0)
+				if (neighbourLevel == 0)
 					continue;
-				if(face == Face::Bottom && node.Value == 15)
+
+				if (face == Face::Bottom && node.Value == 15)
 				{
-					wld->SetLight(neighbour.Pos, cLight & (uint8_t)0xF, true);
-					RemovalQueue.push(neighbour);
-				}
-				else
+					wld->SetLight(neighbour, cLight & (uint8_t) 0x0F, true);
+					RemovalQueue.push({neighbour, 15});
+				} else
 				{
-					if(neighbourLevel < node.Value)
+					if (neighbourLevel < node.Value)
 					{
-						wld->SetLight(neighbour.Pos, cLight & (uint8_t)0xF, true);
-						RemovalQueue.push(neighbour);
-					}
-					else if (neighbourLevel >= node.Value)
-					{
-						SunLightQueue.push({neighbour.Pos, neighbourLevel});
-					}
+						wld->SetLight(neighbour, cLight & (uint8_t) 0x0F, true);
+						RemovalQueue.push({neighbour, neighbourLevel});
+					} else if (neighbourLevel >= node.Value)
+						SunLightVector.push_back(neighbour);
 				}
 			}
+		}
+
+		for(const glm::ivec3 &i : SunLightVector)
+		{
+			uint8_t light = wld->GetLight(i) >> 4;
+			if(light)
+				SunLightQueue.push({i, light});
 		}
 	}
 }

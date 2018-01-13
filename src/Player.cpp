@@ -3,7 +3,7 @@
 //
 
 //DO NOT CHANGE THIS ORDER
-#include "Settings.hpp"
+#include "Setting.hpp"
 #include "World.hpp"
 
 #include "Player.hpp"

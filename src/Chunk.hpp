@@ -7,7 +7,7 @@
 #include <queue>
 
 #include "Block.hpp"
-#include "Settings.hpp"
+#include "Setting.hpp"
 
 #include <MyGL/VertexObject.hpp>
 

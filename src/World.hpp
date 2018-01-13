@@ -6,7 +6,7 @@
 #define WORLD_HPP
 
 #include "Chunk.hpp"
-#include "Settings.hpp"
+#include "Setting.hpp"
 
 #include <glm/gtx/hash.hpp>
 
@@ -65,11 +65,14 @@ private:
 	void ChunkLoadingWorker();
 	void ChunkInitialLightingWorker();
 	void ChunkMeshingWorker();
+	void ChunkMeshUpdateWorker();
 	bool Running;
 
 	//chunk update
 	void ProcessChunkUpdates();
-	std::unordered_set<glm::ivec3> MeshUpdateSet;
+	std::unordered_set<glm::ivec3> MeshDirectlyUpdateSet, MeshThreadedUpdateSet;
+	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshUpdateInfoMap;
+	std::vector<glm::ivec3> MeshUpdateVector;
 	std::queue<LightBFSNode> SunLightQueue, SunLightRemovalQueue;
 
 public:

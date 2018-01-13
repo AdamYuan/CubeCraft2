@@ -11,7 +11,7 @@
 #include <queue>
 #include <glm/glm.hpp>
 #include "Block.hpp"
-#include "Settings.hpp"
+#include "Setting.hpp"
 
 struct ChunkRenderVertex;
 struct LightBFSNode;
