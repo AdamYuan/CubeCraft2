@@ -806,8 +806,6 @@ namespace ChunkAlgorithm
 				if (face >> 1 == 1)
 					if (neighbour.y < 0 || neighbour.y >= WORLD_HEIGHT_BLOCK)
 						continue;
-				if (!BlockMethods::LightCanPass(wld->GetBlock(neighbour)))
-					continue;
 				uint8_t neighbourLevel = wld->GetTorchLight(neighbour);
 
 				if (neighbourLevel == 0)

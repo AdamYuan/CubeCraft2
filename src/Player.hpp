@@ -43,6 +43,8 @@ private:
 
 public:
 
+	uint8_t UsingBlock;
+
 	//all the move function will return false if the movement is blocked
 
 	explicit Player(World &wld);

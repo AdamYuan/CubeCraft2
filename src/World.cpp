@@ -15,7 +15,7 @@ World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardwar
 	LoadingVector.reserve(_SIZE);
 	PreMeshingVector.reserve(_SIZE);
 	PreInitialLightingVector.reserve(_SIZE);
-	std::cout << "Max thread support: " << ThreadsSupport << std::endl;
+
 	for(unsigned i=0; i<ThreadsSupport; ++i)
 	{
 		Threads.emplace_back(&World::ChunkLoadingWorker, this);
@@ -103,6 +103,12 @@ void World::ProcessChunkUpdates()
 		for(const glm::ivec3 &pos : MeshDirectlyUpdateSet)
 		{
 			MeshThreadedUpdateSet.erase(pos);
+
+			if(!ChunkExist(pos))
+				continue;
+			if(!GetChunk(pos)->InitializedMesh)
+				continue;
+
 			std::vector<ChunkRenderVertex> mesh;
 			ChunkAlgorithm::Meshing(this, pos, mesh);
 			ChunkAlgorithm::ApplyMesh(GetChunk(pos), mesh);
@@ -436,13 +442,16 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 	if(!chk)
 		return;
 
-	uint8_t lastTorchLight = chk->GetTorchLight(bPos),
-			lastSunLight = chk->GetSunLight(bPos),
-			lastBlock = chk->GetBlock(bPos);
+	uint8_t lastSunLight = chk->GetSunLight(bPos),
+			lastBlock = chk->GetBlock(bPos),
+			lastTorchLight = BlockMethods::GetLightLevel(lastBlock);
 	if(lastBlock == blk)
 		return;
 
+	LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
+
 	chk->SetBlock(bPos, blk);
+	chk->SetTorchLight(bPos, torchlightNow);
 
 
 	if(checkUpdate)
@@ -461,7 +470,6 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 			for(short face = 0; face < 6; ++face)
 			{
 				glm::ivec3 neighbour = Util::FaceExtend(pos, face);
-
 				LightLevel light;
 
 				if(!lastSunLight)
@@ -480,19 +488,12 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 			}
 		}
 
-		LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
 		if(torchlightNow != lastTorchLight)
 		{
 			if(torchlightNow < lastTorchLight && lastTorchLight)
-			{
 				TorchLightRemovalQueue.push({pos, lastTorchLight});
-				chk->SetTorchLight(bPos, 0);
-			}
 			if(torchlightNow)
-			{
 				TorchLightQueue.push({pos, torchlightNow});
-				chk->SetTorchLight(bPos, torchlightNow);
-			}
 		}
 	}
 }

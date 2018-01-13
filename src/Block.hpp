@@ -4,8 +4,8 @@
 #include <cinttypes>
 #include "Util.hpp"
 
-#define BLOCKS_NUM 8
-#define BLOCKS_TEXTURE_NUM 9
+#define BLOCKS_NUM 9
+#define BLOCKS_TEXTURE_NUM 10
 
 enum Blocks
 {
@@ -16,7 +16,8 @@ enum Blocks
 	Bedrock = 4,
 	Wood = 5,
 	Leaves = 6,
-	Glowstone = 7
+	Glowstone = 7,
+	Plank = 8
 };
 
 //they are of the same type but different name
@@ -27,6 +28,7 @@ typedef uint8_t DLightLevel;
 
 struct BlockProperty
 {
+	char Name[10];
 	bool Transparent, LightCanPass, Hitbox;
 	LightLevel Light;
 	int Textures[6];
@@ -36,6 +38,10 @@ namespace BlockMethods
 {
 	extern const BlockProperty BlockProperties[BLOCKS_NUM];
 
+	inline const char *GetName(Block block)
+	{
+		return BlockProperties[block].Name;
+	}
 
 	inline int GetTexture(Block block, Face face)
 	{

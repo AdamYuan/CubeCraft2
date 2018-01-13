@@ -3,7 +3,6 @@
 //
 
 //DO NOT CHANGE THIS ORDER
-#include "Setting.hpp"
 #include "World.hpp"
 
 #include "Player.hpp"
@@ -15,7 +14,7 @@
 
 Player::Player(World &wld) : flying(false),
 							 BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
-							 wld(&wld)
+							 wld(&wld), UsingBlock(1)
 {
 
 }
@@ -41,7 +40,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		if((rightFirst || glfwGetTime() - lastTime >= INTERVAL) &&
 				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(NewBlockSelection)))
 		{
-			wld->SetBlock(NewBlockSelection, Blocks::Glowstone, true);
+			wld->SetBlock(NewBlockSelection, UsingBlock, true);
 			lastTime = glfwGetTime();
 			rightFirst = false;
 		}

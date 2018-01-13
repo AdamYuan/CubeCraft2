@@ -92,27 +92,34 @@ public:
 	}
 	inline void AddRelatedChunks(const glm::ivec3 &bPos, std::unordered_set<glm::ivec3> &chunkPos)
 	{
-		std::vector<glm::ivec3> _tmp;
-		glm::ivec3 cPos = BlockPosToChunkPos(bPos), _bPos = bPos - cPos * CHUNK_SIZE;
-		_tmp.push_back(cPos);
+		glm::ivec3 arr[8];
+		short size = 1, _size;
+
+		glm::ivec3 cPos = BlockPosToChunkPos(bPos), _bPos = bPos - cPos * CHUNK_SIZE, tmp;
+		arr[0] = cPos;
 		for(short axis = 0; axis < 3; ++ axis)
 			if(_bPos[axis] == 0)
-				for(glm::ivec3 i : _tmp)
+			{
+				_size = size;
+				for(short i=0; i<_size; ++i)
 				{
-					i[axis]--;
-					ChunkPtr chk = GetChunk(i);
-					if(chk && chk->InitializedMesh)
-						_tmp.push_back(i);
+					tmp = arr[i];
+					tmp[axis]--;
+					arr[size++] = tmp;
 				}
+			}
 			else if(_bPos[axis] == CHUNK_SIZE-1)
-				for(glm::ivec3 i : _tmp)
+			{
+				_size = size;
+				for(short i=0; i<_size; ++i)
 				{
-					i[axis]++;
-					ChunkPtr chk = GetChunk(i);
-					if(chk && chk->InitializedMesh)
-						_tmp.push_back(i);
+					tmp = arr[i];
+					tmp[axis]++;
+					arr[size++] = tmp;
 				}
-		for(const glm::ivec3 &i : _tmp) chunkPos.insert(i);
+			}
+		for(short i=0; i<size; ++i)
+			chunkPos.insert(arr[i]);
 	}
 
 	void Update(const glm::ivec3 &center);

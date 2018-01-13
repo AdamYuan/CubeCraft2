@@ -15,17 +15,17 @@ out vec3 frag_pos;
 
 const float AOcurve[4] = float[4](0.54, 0.7569, 0.87, 1.0);
 const float LIcurve[16] = float[16](
-		0.205891, 0.228768, 0.254186, 0.282429, 
-		0.313811, 0.348678, 0.387420, 0.430467, 
-		0.478297, 0.531441, 0.590490, 0.656100, 
-		0.729000, 0.810000, 0.900000, 1.000000);
+		0.134934, 0.154210, 0.176240, 0.201417, 
+		0.230191, 0.263076, 0.300658, 0.343609, 
+		0.392696, 0.448795, 0.512909, 0.586182, 
+		0.669922, 0.765625, 0.875000, 1.000000);
 const float intensities[6] = float[6](0.7, 0.7, 1.0, 0.6, 0.85, 0.85);
 
 void main()
 {
-	frag_lighting.x = intensities[int(face+0.5f)];
-	frag_lighting.y = AOcurve[int(lighting.x+0.5f)];
-	frag_lighting.z = LIcurve[int(max(lighting.y, lighting.z)+0.5f)];
+	frag_lighting.x = intensities[int(face + 0.5f)];
+	frag_lighting.y = AOcurve[int(lighting.x + 0.5f)];
+	frag_lighting.z = LIcurve[min(int(max(lighting.y, lighting.z + 1.0f) + 0.5f), 15)];
 
 	gl_Position = matrix * position;
 

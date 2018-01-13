@@ -42,6 +42,18 @@ void Application::keyCallback(GLFWwindow *window, int key, int scancode, int act
 			app->showUI = !app->showUI;
 	}
 }
+void Application::scrollCallback(GLFWwindow *window, double xOffset, double yOffset)
+{
+	auto app = getCallbackInstance(window);
+	auto y = (int)yOffset;
+
+	uint8_t &target = app->GamePlayer.UsingBlock;
+	target -= y;
+	if(target >= BLOCKS_NUM)
+		target = 1;
+	else if(target <= 0)
+		target = BLOCKS_NUM - 1;
+}
 
 Application::Application() : world(), GamePlayer(world),
 							 showFramewire(false), control(true), showUI(true)
@@ -86,6 +98,7 @@ void Application::InitWindow()
 	glfwSetWindowFocusCallback(Window, focusCallback);
 	glfwSetFramebufferSizeCallback(Window, framebufferSizeCallback);
 	glfwSetKeyCallback(Window, keyCallback);
+	glfwSetScrollCallback(Window, scrollCallback);
 
 	glCullFace(GL_CCW);
 }
@@ -168,8 +181,11 @@ void Application::RenderUI()
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
+		ImGui::Separator();
+		ImGui::Text("using block: %s", BlockMethods::GetName(GamePlayer.UsingBlock));
 
 		ImGui::End();
 	}
 	ImGui::PopStyleColor();
 }
+
