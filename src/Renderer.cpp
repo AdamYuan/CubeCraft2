@@ -19,9 +19,6 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-
-	glPolygonOffset(1, 1);
 
 	Resource::ChunkShader->Use();
 
@@ -44,7 +41,6 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 			chk->VertexBuffer->Render(GL_TRIANGLES);
 	}
 
-	glDisable(GL_POLYGON_OFFSET_FILL);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 }

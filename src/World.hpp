@@ -73,7 +73,8 @@ private:
 	std::unordered_set<glm::ivec3> MeshDirectlyUpdateSet, MeshThreadedUpdateSet;
 	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshUpdateInfoMap;
 	std::vector<glm::ivec3> MeshUpdateVector;
-	std::queue<LightBFSNode> SunLightQueue, SunLightRemovalQueue;
+	std::queue<LightBFSNode> SunLightQueue, SunLightRemovalQueue,
+			TorchLightQueue, TorchLightRemovalQueue;
 
 public:
 	World();
@@ -123,6 +124,7 @@ public:
 	void SetSunLight(const glm::ivec3 &pos, LightLevel val, bool checkUpdate);
 
 	LightLevel GetTorchLight(const glm::ivec3 &pos) const;
+	void SetTorchLight(const glm::ivec3 &pos, LightLevel val, bool checkUpdate);
 
 	uint GetRunningThreadNum() const;
 

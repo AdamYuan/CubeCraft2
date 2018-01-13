@@ -1,14 +1,5 @@
 #include "Block.hpp"
 
-/*enum Blocks
-{
-	Air = 0,
-	Dirt = 1,
-	Grass = 2,
-	Stone = 3,
- 	Bedrock = 4
-};*/
-
 namespace BlockMethods
 {
 	const BlockProperty BlockProperties[BLOCKS_NUM] =
@@ -19,7 +10,8 @@ namespace BlockMethods
 					{false,	false,	true,	0,	{3, 3, 3, 3, 3, 3}},	//Stone
 					{false,	false,	true,	0,	{4, 4, 4, 4, 4, 4}},	//Bedrock
 					{false,	false,	true,	0,	{5, 5, 6, 6, 5, 5}},	//Wood
-					{true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}}		//Leaves
+					{true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}},	//Leaves
+					{false,	false,	true,	15,	{8, 8, 8, 8, 8, 8}}		//Glowstone
 			};
 
 }

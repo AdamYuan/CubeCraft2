@@ -615,9 +615,6 @@ namespace ChunkAlgorithm
 
 			Queue.pop();
 
-			//if((wld->GetLight(node.Pos) >> 4) > node.Value)
-			//	continue;
-
 			for(short face=0; face<6; ++face)
 			{
 				LightBFSNode neighbour = node;
@@ -630,10 +627,10 @@ namespace ChunkAlgorithm
 				if(neighbour.Value != 15 || face != Face::Bottom)
 					neighbour.Value--;
 
-				uint8_t cLight = wld->GetSunLight(neighbour.Pos);
+				uint8_t neighbourLevel = wld->GetSunLight(neighbour.Pos);
 
 				if(BlockMethods::LightCanPass(wld->GetBlock(neighbour.Pos)) &&
-						cLight < neighbour.Value)
+						neighbourLevel < neighbour.Value)
 				{
 					wld->SetSunLight(neighbour.Pos, neighbour.Value, true);
 					Queue.push(neighbour);
@@ -650,9 +647,6 @@ namespace ChunkAlgorithm
 		{
 			LightBFSNode node = Queue.front();
 			Queue.pop();
-
-			//if((Result[LiXYZ(node.Pos)] >> 4) > node.Value)
-			//	continue;
 
 			for(short face=0; face<6; ++face)
 			{
@@ -676,9 +670,8 @@ namespace ChunkAlgorithm
 				if(BlockMethods::LightCanPass(Grid[index]) &&
 						(Result[index] >> 4) < neighbour.Value)
 				{
-					Result[index] = neighbour.Value << 4;
-					//no need to care about the torchlight data
-					//Result[index] = (Result[index] & (uint8_t)0xF) | (neighbour.Value << 4);
+					//Result[index] = neighbour.Value << 4;
+					Result[index] = (Result[index] & (uint8_t)0xF) | (neighbour.Value << 4);
 					Queue.push(neighbour);
 				}
 			}
@@ -701,9 +694,9 @@ namespace ChunkAlgorithm
 				if (face >> 1 == 1)
 					if (neighbour.y < 0 || neighbour.y >= WORLD_HEIGHT_BLOCK)
 						continue;
-
+				if (!BlockMethods::LightCanPass(wld->GetBlock(neighbour)))
+					continue;
 				uint8_t neighbourLevel = wld->GetSunLight(neighbour);
-
 				if (neighbourLevel == 0)
 					continue;
 
@@ -728,6 +721,112 @@ namespace ChunkAlgorithm
 			uint8_t light = wld->GetSunLight(i);
 			if(light)
 				SunLightQueue.push({i, light});
+		}
+	}
+
+	void TorchLightBFS(World *wld, std::queue<LightBFSNode> &Queue)
+	{
+		while(!Queue.empty())
+		{
+			LightBFSNode node = Queue.front();
+
+			Queue.pop();
+
+			LightBFSNode neighbour = node;
+			neighbour.Value--;
+
+			for(short face=0; face<6; ++face)
+			{
+				neighbour.Pos = Util::FaceExtend(node.Pos, face);
+
+				if(face>>1 == 1)
+					if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
+						continue;
+
+				uint8_t neighbourLevel = wld->GetTorchLight(neighbour.Pos);
+
+				if(BlockMethods::LightCanPass(wld->GetBlock(neighbour.Pos)) &&
+				   neighbourLevel < neighbour.Value)
+				{
+					wld->SetTorchLight(neighbour.Pos, neighbour.Value, true);
+					Queue.push(neighbour);
+				}
+			}
+		}
+	}
+	void TorchLightBFSThreaded(const uint8_t (&Grid)[LICHUNK_INFO_SIZE],
+							 uint8_t (&Result)[LICHUNK_INFO_SIZE],
+							 std::queue<LightBFSNode> &Queue)
+	{
+		while(!Queue.empty())
+		{
+			LightBFSNode node = Queue.front();
+			Queue.pop();
+
+			LightBFSNode neighbour = node;
+			neighbour.Value --;
+
+			for(short face=0; face<6; ++face)
+			{
+				neighbour.Pos = Util::FaceExtend(node.Pos, face);
+
+				int index = LiXYZ(neighbour.Pos);
+				//deal with out chunk situations
+				if(face>>1 != 1)
+				{
+					if(neighbour.Pos[face>>1] < -14 || neighbour.Pos[face>>1] >= CHUNK_SIZE + 14)
+						continue;
+				}
+				else if(neighbour.Pos.y < 0 || neighbour.Pos.y >= WORLD_HEIGHT_BLOCK)
+					continue;
+
+				if(BlockMethods::LightCanPass(Grid[index]) &&
+				   (Result[index] & (uint8_t)0x0F) < neighbour.Value)
+				{
+					Result[index] = (Result[index] & (uint8_t)0xF0) | neighbour.Value;
+					Queue.push(neighbour);
+				}
+			}
+		}
+	}
+
+	void TorchLightRemovalBFS(World *wld, std::queue<LightBFSNode> &RemovalQueue,
+							  std::queue<LightBFSNode> &TorchLightQueue)
+	{
+		std::vector<glm::ivec3> TorchLightVector;
+		while(!RemovalQueue.empty())
+		{
+			LightBFSNode node = RemovalQueue.front();
+			RemovalQueue.pop();
+
+			for (short face = 0; face < 6; ++face)
+			{
+				glm::ivec3 neighbour = Util::FaceExtend(node.Pos, face);
+
+				if (face >> 1 == 1)
+					if (neighbour.y < 0 || neighbour.y >= WORLD_HEIGHT_BLOCK)
+						continue;
+				if (!BlockMethods::LightCanPass(wld->GetBlock(neighbour)))
+					continue;
+				uint8_t neighbourLevel = wld->GetTorchLight(neighbour);
+
+				if (neighbourLevel == 0)
+					continue;
+
+				if (neighbourLevel < node.Value)
+				{
+					wld->SetTorchLight(neighbour, 0, true);
+					RemovalQueue.push({neighbour, neighbourLevel});
+				} else if (neighbourLevel >= node.Value)
+					TorchLightVector.push_back(neighbour);
+			}
+		}
+
+		for(const glm::ivec3 &i : TorchLightVector)
+		{
+			uint8_t light = wld->GetTorchLight(i);
+			if(light)
+				TorchLightQueue.push({i, light});
 		}
 	}
 }

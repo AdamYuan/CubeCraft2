@@ -97,6 +97,8 @@ void World::ProcessChunkUpdates()
 	{
 		ChunkAlgorithm::SunLightRemovalBFS(this, SunLightRemovalQueue, SunLightQueue);
 		ChunkAlgorithm::SunLightBFS(this, SunLightQueue);
+		ChunkAlgorithm::TorchLightRemovalBFS(this, TorchLightRemovalQueue, TorchLightQueue);
+		ChunkAlgorithm::TorchLightBFS(this, TorchLightQueue);
 
 		for(const glm::ivec3 &pos : MeshDirectlyUpdateSet)
 		{
@@ -427,23 +429,31 @@ void World::ChunkMeshUpdateWorker()
 
 void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 {
-	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos),
+			bPos = pos - chkPos * CHUNK_SIZE;
 
 	ChunkPtr chk = GetChunk(chkPos);
 	if(!chk)
 		return;
-	chk->SetBlock(pos - chkPos*CHUNK_SIZE, blk);
+
+	uint8_t lastTorchLight = chk->GetTorchLight(bPos),
+			lastSunLight = chk->GetSunLight(bPos),
+			lastBlock = chk->GetBlock(bPos);
+	if(lastBlock == blk)
+		return;
+
+	chk->SetBlock(bPos, blk);
+
 
 	if(checkUpdate)
 	{
 		AddRelatedChunks(pos, MeshDirectlyUpdateSet);
 		if(!BlockMethods::LightCanPass(blk))
 		{
-			LightLevel light = GetSunLight(pos);
-			if(light)//have sunlight
+			if(lastSunLight)//have sunlight
 			{
-				SunLightRemovalQueue.push({pos, light});
-				SetSunLight(pos, 0, false);
+				SunLightRemovalQueue.push({pos, lastSunLight});
+				chk->SetSunLight(bPos, 0);
 			}
 		}
 		else
@@ -451,9 +461,37 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 			for(short face = 0; face < 6; ++face)
 			{
 				glm::ivec3 neighbour = Util::FaceExtend(pos, face);
-				LightLevel light = GetSunLight(neighbour);
-				if(light)
-					SunLightQueue.push({neighbour, light});
+
+				LightLevel light;
+
+				if(!lastSunLight)
+				{
+					light = GetSunLight(neighbour);
+					if(light)
+						SunLightQueue.push({neighbour, light});
+				}
+
+				if(!lastTorchLight)
+				{
+					light = GetTorchLight(neighbour);
+					if(light)
+						TorchLightQueue.push({neighbour, light});
+				}
+			}
+		}
+
+		LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
+		if(torchlightNow != lastTorchLight)
+		{
+			if(torchlightNow < lastTorchLight && lastTorchLight)
+			{
+				TorchLightRemovalQueue.push({pos, lastTorchLight});
+				chk->SetTorchLight(bPos, 0);
+			}
+			if(torchlightNow)
+			{
+				TorchLightQueue.push({pos, torchlightNow});
+				chk->SetTorchLight(bPos, torchlightNow);
 			}
 		}
 	}
@@ -502,6 +540,19 @@ LightLevel World::GetTorchLight(const glm::ivec3 &pos) const
 	if(!chk)
 		return 0;
 	return chk->GetTorchLight(pos - chkPos*CHUNK_SIZE);
+}
+
+void World::SetTorchLight(const glm::ivec3 &pos, LightLevel val, bool checkUpdate)
+{
+	glm::ivec3 chkPos = BlockPosToChunkPos(pos);
+
+	ChunkPtr chk = GetChunk(chkPos);
+	if(!chk)
+		return;
+	chk->SetTorchLight(pos - chkPos*CHUNK_SIZE, val);
+
+	if(checkUpdate)
+		AddRelatedChunks(pos, MeshThreadedUpdateSet);
 }
 
 uint World::GetRunningThreadNum() const

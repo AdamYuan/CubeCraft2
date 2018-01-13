@@ -25,7 +25,7 @@ void main()
 {
 	frag_lighting.x = intensities[int(face+0.5f)];
 	frag_lighting.y = AOcurve[int(lighting.x+0.5f)];
-	frag_lighting.z = LIcurve[int(lighting.y+0.5f)];
+	frag_lighting.z = LIcurve[int(max(lighting.y, lighting.z)+0.5f)];
 
 	gl_Position = matrix * position;
 

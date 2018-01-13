@@ -13,6 +13,7 @@ make -j4
 ## Screenshots
 ![alt text](https://raw.githubusercontent.com/AdamYuan/CubeCraft2/master/screenshots/1.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/CubeCraft2/master/screenshots/2.png)
+![alt text](https://raw.githubusercontent.com/AdamYuan/CubeCraft2/master/screenshots/3.png)
 
 ## Built With
 * [GLEW](http://glew.sourceforge.net/) - For modern OpenGL methods

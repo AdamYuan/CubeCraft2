@@ -168,8 +168,6 @@ void Application::RenderUI()
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
-		ImGui::Separator();
-		//ImGui::Text("selection: %s", glm::to_string(GamePlayer.GetSelection(false)).c_str());
 
 		ImGui::End();
 	}

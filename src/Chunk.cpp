@@ -413,12 +413,13 @@ void ChunkInitialLightingInfo::Process()
 			++i;
 	}
 
+
 	std::fill(Result, Result + (Highest+1) * LICHUNK_SIZE_2, 0x00);
 	std::fill(Result + (Highest+1) * LICHUNK_SIZE_2, Result + LICHUNK_INFO_SIZE, 0xF0);
 
-	std::queue<LightBFSNode> SunLightQueue;
-
+	std::queue<LightBFSNode> Queue;
 	glm::ivec3 pos;
+
 	pos.y = Highest;
 	for(pos.x = -14; pos.x < CHUNK_SIZE + 14; ++pos.x)
 		for(pos.z = -14; pos.z < CHUNK_SIZE + 14; ++pos.z)
@@ -427,10 +428,31 @@ void ChunkInitialLightingInfo::Process()
 			if(!CanPass(index))
 				continue;
 			Result[index] = 15 << 4;
-			SunLightQueue.push({pos, 15});
+			Queue.push({pos, 15});
 		}
 
-	ChunkAlgorithm::SunLightBFSThreaded(Grid, Result, Highest, SunLightQueue);
+	ChunkAlgorithm::SunLightBFSThreaded(Grid, Result, Highest, Queue);
+
+
+	for(int i=0; i<LICHUNK_INFO_SIZE; ++i)
+	{
+		const LightLevel level = BlockMethods::GetLightLevel(Grid[i]);
+		if(level != 0)
+		{
+			Result[i] = (Result[i] & (uint8_t)0xF0) | level;
+
+			int _i = i;
+			pos.y = _i / LICHUNK_SIZE_2;
+			_i %= LICHUNK_SIZE_2;
+			pos.z = _i / LICHUNK_SIZE - 14;
+			pos.x = _i % LICHUNK_SIZE - 14;
+
+			Queue.push({pos, level});
+		}
+	}
+
+	ChunkAlgorithm::TorchLightBFSThreaded(Grid, Result, Queue);
+
 
 	Done = true;
 }
