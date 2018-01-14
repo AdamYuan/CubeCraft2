@@ -106,12 +106,13 @@ namespace Resource
 
 		static const float moonSize = sunSize / 4.0f;
 		static const float moonVertices[] = {
-				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
+				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
 				-moonSize, 1.0f, -moonSize, 0.0f, 0.0f,
-				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
 				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
+
+				moonSize, 1.0f, moonSize, 1.0f, 1.0f,
 				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
-				moonSize, 1.0f, moonSize, 1.0f, 1.0f
+				moonSize, 1.0f, -moonSize, 1.0f, 0.0f
 		};
 		MoonObject = MyGL::NewVertexObject();
 		MoonObject->SetDataArr(moonVertices, 30);

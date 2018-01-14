@@ -130,8 +130,8 @@ void Application::Render()
 	glm::mat4 ViewMatrix = GamePlayer.GetViewMatrix();
 	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
 
-	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d, world.GetTime());
-	Renderer::RenderSunAndMoon(glm::mat3(ViewMatrix), Matrices.Projection3d, world.GetSunModelMatrix());
+	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d,
+						world.GetSunModelMatrix(), world.GetTime());
 	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
 	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
 	if(control)
