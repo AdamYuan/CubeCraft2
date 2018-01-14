@@ -9,9 +9,9 @@ extern void generateIcosphereMesh(size_t lod, std::vector<uint32_t>& indices, st
 
 namespace Resource
 {
-	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader;
-	MyGL::TexturePtr ChunkTexture, SkyTexture;
-	MyGL::VertexObjectPtr CrosshairObject, BoxObject, SkyObject;
+	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader, SunShader;
+	MyGL::TexturePtr ChunkTexture, SkyTexture, SunTexture, MoonTexture;
+	MyGL::VertexObjectPtr CrosshairObject, BoxObject, SkyObject, SunObject, MoonObject;
 
 	const char *UNIF_SAMPLER = "sampler", *UNIF_MATRIX = "matrix";
 
@@ -30,6 +30,10 @@ namespace Resource
 		SkyShader->LoadFromFile(SHADER_PATH("sky.frag"), GL_FRAGMENT_SHADER);
 		SkyShader->LoadFromFile(SHADER_PATH("sky.vert"), GL_VERTEX_SHADER);
 
+		SunShader = MyGL::NewShader();
+		SunShader->LoadFromFile(SHADER_PATH("sun.frag"), GL_FRAGMENT_SHADER);
+		SunShader->LoadFromFile(SHADER_PATH("sun.vert"), GL_VERTEX_SHADER);
+
 		ChunkTexture = MyGL::NewTexture();
 		ChunkTexture->Load2dArray(TEXTURE_PATH("blocks.png"), BLOCKS_TEXTURE_NUM);
 		ChunkTexture->SetParameters(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST, GL_REPEAT);
@@ -38,6 +42,14 @@ namespace Resource
 		SkyTexture = MyGL::NewTexture();
 		SkyTexture->Load2d(TEXTURE_PATH("sky.png"));
 		SkyTexture->SetParameters(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
+
+		SunTexture = MyGL::NewTexture();
+		SunTexture->Load2d(TEXTURE_PATH("sun.png"));
+		SunTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
+
+		MoonTexture = MyGL::NewTexture();
+		MoonTexture->Load2d(TEXTURE_PATH("moon.png"));
+		MoonTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
 
 
 		float _size = 10.0, _width = 1.0f;
@@ -78,6 +90,32 @@ namespace Resource
 		SkyObject = MyGL::NewVertexObject();
 		SkyObject->SetDataVec(sphereVertices);
 		SkyObject->SetAttributes(1, ATTR_POSITION, 3);
+
+		static const float sunSize = 0.4f;
+		static const float sunVertices[] = {
+				sunSize, -1.0f, -sunSize, 1.0f, 0.0f,
+				-sunSize, -1.0f, -sunSize, 0.0f, 0.0f,
+				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
+				sunSize, -1.0f, -sunSize, 1.0f, 0.0f,
+				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
+				sunSize, -1.0f, sunSize, 1.0f, 1.0f
+		};
+		SunObject = MyGL::NewVertexObject();
+		SunObject->SetDataArr(sunVertices, 30);
+		SunObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+
+		static const float moonSize = sunSize / 4.0f;
+		static const float moonVertices[] = {
+				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
+				-moonSize, 1.0f, -moonSize, 0.0f, 0.0f,
+				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
+				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
+				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
+				moonSize, 1.0f, moonSize, 1.0f, 1.0f
+		};
+		MoonObject = MyGL::NewVertexObject();
+		MoonObject->SetDataArr(moonVertices, 30);
+		MoonObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 	}
 }
 

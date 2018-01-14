@@ -79,6 +79,8 @@ private:
 	//day night cycle
 	float InitialTime, Time;
 	//0.0f - 1024.0f(1.0f = 1 second)
+	glm::mat4 SunModelMatrix;
+	glm::vec3 SunPosition;
 
 public:
 	World();
@@ -154,17 +156,10 @@ public:
 	}
 	inline float GetDayLight() const
 	{
-		if (Time < HALF_DAY_TIME)
-		{
-			float t = (GetTime() - 0.25f) * 100.0f;
-			return std::max(1 / (1 + powf(2, -t)), 0.1f);
-		}
-		else
-		{
-			float t = (GetTime() - 0.85f) * 100.0f;
-			return std::max(1 - 1 / (1 + powf(2, -t)), 0.1f);
-		}
+		return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.02f, 1.0f);
 	}
+	inline glm::mat4 GetSunModelMatrix() const
+	{ return SunModelMatrix; }
 };
 
 

@@ -5,6 +5,7 @@
 #include "World.hpp"
 #include "ChunkAlgorithm.hpp"
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -12,7 +13,7 @@ glm::ivec3 World::s_center;
 
 World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
 				 RunningThreads(0), PosChanged(false),
-				 Time(0.1f), InitialTime((float)glfwGetTime())
+				 Time(0.25f * DAY_TIME), InitialTime((float)glfwGetTime())
 {
 	InitialTime -= Time;
 
@@ -48,6 +49,11 @@ void World::Update(const glm::ivec3 &center)
 	//update time
 	Time = (float)glfwGetTime() - InitialTime;
 	Time = fmodf(Time, DAY_TIME);
+
+	float radians = GetTime() * 6.28318530718f;
+	SunModelMatrix = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(1.0f, 0.0f, 0.0f));
+	SunPosition = glm::vec3(SunModelMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 1.0f));
+
 	//global flags
 	PosChanged = false;
 	s_center = center;

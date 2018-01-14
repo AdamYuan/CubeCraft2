@@ -9,9 +9,8 @@ uniform float dayLight;
 
 //x: intensity
 //y: ao
-//z: sunlight
-//w: torchlight
-out vec4 frag_lighting;
+//z: light
+out vec3 frag_lighting;
 out vec3 frag_texcoord;
 out vec3 frag_pos;
 
@@ -32,8 +31,9 @@ void main()
 {
 	frag_lighting.x = intensities[int(face + 0.5f)];
 	frag_lighting.y = AOcurve[int(lighting.x + 0.5f)];
-	frag_lighting.z = SunLightCurve[int(lighting.y + 0.5f)] * dayLight;
-	frag_lighting.w = TorchLightCurve[min(int(lighting.z + 1.5f), 15)];
+	float sunLight = SunLightCurve[int(lighting.y + 0.5f)] * max(dayLight, 0.15f);
+	float torchLight = TorchLightCurve[int(lighting.z + 0.5f)];
+	frag_lighting.z = max(sunLight, torchLight);
 
 	gl_Position = matrix * position;
 

@@ -29,7 +29,7 @@ private:
 	MyGL::FrameRateManager FramerateManager;
 
 	float FPS = 0.0f;
-	bool control, showFramewire, showUI;
+	bool control, showUI;
 
 	static void focusCallback(GLFWwindow* window, int focused);
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);

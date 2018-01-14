@@ -19,6 +19,8 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glCullFace(GL_CCW);
+	glCullFace(GL_BACK);
 
 	Resource::ChunkShader->Use();
 
@@ -71,6 +73,7 @@ void Renderer::RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &p
 
 void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, float Time)
 {
+	glm::mat4 vpMatrix = projection * glm::mat4(view);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
@@ -78,12 +81,43 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, flo
 	Resource::SkyTexture->Bind();
 
 	Resource::SkyShader->Use();
-	Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, projection * glm::mat4(view));
+	Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
 	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
 	Resource::SkyShader->PassFloat("Time", Time);
 
 	Resource::SkyObject->Render(GL_TRIANGLES);
 
 	glDepthMask(GL_TRUE);
+	glDisable(GL_DEPTH_TEST);
+}
+
+void Renderer::RenderSunAndMoon(const glm::mat3 &view, const glm::mat4 &projection,
+								const glm::mat4 &sunModelMatrix)
+{
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
+	glm::mat4 matrix = projection * glm::mat4(view) * sunModelMatrix;
+
+
+	Resource::SunShader->Use();
+
+	glActiveTexture(GL_TEXTURE0);
+	Resource::SunTexture->Bind();
+
+	Resource::SunShader->PassMat4(Resource::UNIF_MATRIX, matrix);
+	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
+
+	Resource::SunObject->Render(GL_TRIANGLES);
+
+	glActiveTexture(GL_TEXTURE0);
+	Resource::MoonTexture->Bind();
+
+	Resource::MoonObject->Render(GL_TRIANGLES);
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 }

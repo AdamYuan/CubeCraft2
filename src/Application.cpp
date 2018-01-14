@@ -34,8 +34,6 @@ void Application::keyCallback(GLFWwindow *window, int key, int scancode, int act
 			glfwSetCursorPos(window, app->Width / 2, app->Height / 2);
 			app->control = !app->control;
 		}
-		else if(key == GLFW_KEY_V)
-			app->showFramewire = !app->showFramewire;
 		else if(key == GLFW_KEY_F)
 			app->GamePlayer.flying = !app->GamePlayer.flying;
 		else if(key == GLFW_KEY_U)
@@ -56,7 +54,7 @@ void Application::scrollCallback(GLFWwindow *window, double xOffset, double yOff
 }
 
 Application::Application() : world(), GamePlayer(world),
-							 showFramewire(false), control(true), showUI(true)
+							 control(true), showUI(true)
 {
 	InitWindow();
 }
@@ -100,7 +98,6 @@ void Application::InitWindow()
 	glfwSetKeyCallback(Window, keyCallback);
 	glfwSetScrollCallback(Window, scrollCallback);
 
-	glCullFace(GL_CCW);
 }
 
 void Application::Run()
@@ -128,20 +125,17 @@ void Application::Run()
 void Application::Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(0.6f, 0.8f, 1.0f, 1.0f);
+	glClearColor(1, 1, 1, 1);
 
 	glm::mat4 ViewMatrix = GamePlayer.GetViewMatrix();
 	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
 
-	if(showFramewire)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	else
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d, world.GetTime());
+	Renderer::RenderSunAndMoon(glm::mat3(ViewMatrix), Matrices.Projection3d, world.GetSunModelMatrix());
 	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
-	Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
+	if(control)
+		Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 }
 
 void Application::LogicProcess()
@@ -182,7 +176,6 @@ void Application::RenderUI()
 		ImGui::Text("time: %f", world.GetTime());
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
-		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
 		ImGui::Separator();
 		ImGui::Text("using block: %s", BlockMethods::GetName(GamePlayer.UsingBlock));
 

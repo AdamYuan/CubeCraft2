@@ -1,5 +1,5 @@
 #version 330 core
-in vec4 frag_lighting;
+in vec3 frag_lighting;
 in vec3 frag_pos;
 in vec3 frag_texcoord;
 
@@ -31,7 +31,7 @@ void main()
     vec3 sky_color = vec3(texture2D(skySampler, vec2(Time, 1.0f - fog_height)));
 
 	vec3 color3 = color.rgb;
-	color3 *= frag_lighting.x * frag_lighting.y * max(frag_lighting.z, frag_lighting.w);
+	color3 *= frag_lighting.x * frag_lighting.y * frag_lighting.z;
 	//gamma correction
 	float gamma = 0.8;
 	color3 = pow(color3, vec3(1.0 / gamma));
