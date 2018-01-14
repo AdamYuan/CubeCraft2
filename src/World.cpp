@@ -6,11 +6,16 @@
 #include "ChunkAlgorithm.hpp"
 #include <glm/gtx/string_cast.hpp>
 
+#include <GLFW/glfw3.h>
+
 glm::ivec3 World::s_center;
 
 World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
-				 RunningThreads(0), PosChanged(false)
+				 RunningThreads(0), PosChanged(false),
+				 Time(0.1f), InitialTime((float)glfwGetTime())
 {
+	InitialTime -= Time;
+
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
 	LoadingVector.reserve(_SIZE);
 	PreMeshingVector.reserve(_SIZE);
@@ -40,6 +45,9 @@ World::~World()
 
 void World::Update(const glm::ivec3 &center)
 {
+	//update time
+	Time = (float)glfwGetTime() - InitialTime;
+	Time = fmodf(Time, DAY_TIME);
 	//global flags
 	PosChanged = false;
 	s_center = center;
@@ -444,7 +452,7 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 
 	uint8_t lastSunLight = chk->GetSunLight(bPos),
 			lastBlock = chk->GetBlock(bPos),
-			lastTorchLight = BlockMethods::GetLightLevel(lastBlock);
+			lastTorchLight = chk->GetTorchLight(bPos);
 	if(lastBlock == blk)
 		return;
 

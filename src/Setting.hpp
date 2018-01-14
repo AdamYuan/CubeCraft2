@@ -7,6 +7,9 @@
 #define CHUNK_SIZE 32 //should be greater than 14
 #define WORLD_HEIGHT 8
 
+#define DAY_TIME 64.0f //seconds
+constexpr float HALF_DAY_TIME = DAY_TIME / 2.0f;
+
 #define GRAVITY 4.0f
 #define WALK_SPEED 0.7f
 #define JUMP_DIST 1.0f

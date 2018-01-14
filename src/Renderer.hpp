@@ -14,6 +14,7 @@ namespace Renderer
 	extern void RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const glm::vec3 &position);
 	extern void RenderCrosshair(const glm::mat4 &vpMatrix);
 	extern void RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &position);
+	extern void RenderSky(const glm::mat3 &view, const glm::mat4 &projection, float Time);
 };
 
 

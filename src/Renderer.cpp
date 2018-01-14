@@ -25,11 +25,16 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 	//texture
 	glActiveTexture(GL_TEXTURE0);
 	Resource::ChunkTexture->Bind();
+	glActiveTexture(GL_TEXTURE1);
+	Resource::SkyTexture->Bind();
 
 	Resource::ChunkShader->PassInt(Resource::UNIF_SAMPLER, 0);
+	Resource::ChunkShader->PassInt("skySampler", 1);
 	Resource::ChunkShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
 
 	Resource::ChunkShader->PassFloat("viewDistance", range);
+	Resource::ChunkShader->PassFloat("Time", wld.GetTime());
+	Resource::ChunkShader->PassFloat("dayLight", wld.GetDayLight());
 	Resource::ChunkShader->PassVec3("camera", position);
 
 	for(const glm::ivec3 &pos : wld.RenderSet)
@@ -61,5 +66,24 @@ void Renderer::RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &p
 	Resource::LineShader->Use();
 	Resource::LineShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(position)));
 	Resource::BoxObject->Render(GL_LINES);
+	glDisable(GL_DEPTH_TEST);
+}
+
+void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, float Time)
+{
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	glActiveTexture(GL_TEXTURE0);
+	Resource::SkyTexture->Bind();
+
+	Resource::SkyShader->Use();
+	Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, projection * glm::mat4(view));
+	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
+	Resource::SkyShader->PassFloat("Time", Time);
+
+	Resource::SkyObject->Render(GL_TRIANGLES);
+
+	glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_TEST);
 }

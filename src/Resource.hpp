@@ -15,9 +15,9 @@ namespace Resource
 
 	extern const char *UNIF_SAMPLER, *UNIF_MATRIX;
 
-	extern MyGL::ShaderPtr ChunkShader, LineShader;
-	extern MyGL::TexturePtr ChunkTexture;
-	extern MyGL::VertexObjectPtr CrosshairObject, BoxObject;
+	extern MyGL::ShaderPtr ChunkShader, LineShader, SkyShader;
+	extern MyGL::TexturePtr ChunkTexture, SkyTexture;
+	extern MyGL::VertexObjectPtr CrosshairObject, BoxObject, SkyObject;
 
 	extern void InitResources();
 }

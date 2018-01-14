@@ -312,10 +312,13 @@ namespace ChunkAlgorithm
 							}
 
 							if (QuadLighting.AO[0] + QuadLighting.AO[2] +
-								QuadLighting.SunLight[0] + QuadLighting.SunLight[2]
+								QuadLighting.SunLight[0] + QuadLighting.SunLight[2] +
+								QuadLighting.TorchLight[0] + QuadLighting.TorchLight[2]
 								>
 								QuadLighting.AO[1] + QuadLighting.AO[3] +
-								QuadLighting.SunLight[1] + QuadLighting.SunLight[3]) {
+								QuadLighting.SunLight[1] + QuadLighting.SunLight[3] +
+								QuadLighting.TorchLight[1] + QuadLighting.TorchLight[3])
+							{
 								//11--------10
 								//|       / |
 								//|    /    |
@@ -328,7 +331,9 @@ namespace ChunkAlgorithm
 								result.push_back(v00);
 								result.push_back(v10);
 								result.push_back(v11);
-							} else {
+							}
+							else
+							{
 								//11--------10
 								//| \       |
 								//|    \    |
@@ -556,10 +561,13 @@ namespace ChunkAlgorithm
 							}
 
 							if (QuadLighting.AO[0] + QuadLighting.AO[2] +
-								QuadLighting.SunLight[0] + QuadLighting.SunLight[2]
+								QuadLighting.SunLight[0] + QuadLighting.SunLight[2] +
+								QuadLighting.TorchLight[0] + QuadLighting.TorchLight[2]
 								>
 								QuadLighting.AO[1] + QuadLighting.AO[3] +
-								QuadLighting.SunLight[1] + QuadLighting.SunLight[3]) {
+								QuadLighting.SunLight[1] + QuadLighting.SunLight[3] +
+								QuadLighting.TorchLight[1] + QuadLighting.TorchLight[3])
+							{
 								//11--------10
 								//|       / |
 								//|    /    |
@@ -572,7 +580,9 @@ namespace ChunkAlgorithm
 								result.push_back(v00);
 								result.push_back(v10);
 								result.push_back(v11);
-							} else {
+							}
+							else
+							{
 								//11--------10
 								//| \       |
 								//|    \    |

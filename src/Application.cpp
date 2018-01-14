@@ -138,6 +138,7 @@ void Application::Render()
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d, world.GetTime());
 	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
 	Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
@@ -178,6 +179,7 @@ void Application::RenderUI()
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
+		ImGui::Text("time: %f", world.GetTime());
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Text("frame wire [V]: %s", showFramewire ? "true" : "false");
