@@ -21,8 +21,10 @@ void Application::framebufferSizeCallback(GLFWwindow *window, int width, int hei
 	app->Width = width;
 	app->Height = height;
 	glViewport(0, 0, width, height);
-	glfwSetCursorPos(window, width / 2, height / 2);
 	app->Matrices.UpdateMatrices(width, height, WALK_FOVY);
+
+	if(app->control)
+		glfwSetCursorPos(window, width / 2, height / 2);
 }
 void Application::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {

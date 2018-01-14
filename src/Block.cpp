@@ -12,6 +12,7 @@ namespace BlockMethods
 					{"Wood",		false,	false,	true,	0,	{5, 5, 6, 6, 5, 5}},
 					{"Leaves",		true,	false,	true,	0,	{7, 7, 7, 7, 7, 7}},
 					{"Glowstone",	false,	false,	true,	15,	{8, 8, 8, 8, 8, 8}},
-					{"Plank",		false,	false,	true,	0,	{9, 9, 9, 9, 9, 9}}
+					{"Plank",		false,	false,	true,	0,	{9, 9, 9, 9, 9, 9}},
+					{"Glass",		true,	true,	true,	0,	{10, 10, 10, 10, 10, 10}}
 			};
 }

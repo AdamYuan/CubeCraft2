@@ -4,8 +4,8 @@
 #include <cinttypes>
 #include "Util.hpp"
 
-#define BLOCKS_NUM 9
-#define BLOCKS_TEXTURE_NUM 10
+#define BLOCKS_NUM 10
+#define BLOCKS_TEXTURE_NUM 11
 
 enum Blocks
 {
@@ -17,7 +17,8 @@ enum Blocks
 	Wood = 5,
 	Leaves = 6,
 	Glowstone = 7,
-	Plank = 8
+	Plank = 8,
+	Glass = 9
 };
 
 //they are of the same type but different name

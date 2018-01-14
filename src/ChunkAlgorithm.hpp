@@ -43,6 +43,8 @@ namespace ChunkAlgorithm
 			return false;
 		if(!trans && !transN)
 			return false;
+		if(trans && transN && now != neighbour && neighbour == Blocks::Glass)
+			return true;
 		return !(trans && neighbour);
 	}
 
