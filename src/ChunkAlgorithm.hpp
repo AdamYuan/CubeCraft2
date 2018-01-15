@@ -27,6 +27,7 @@ namespace ChunkAlgorithm
 	struct FaceLighting
 	{
 		uint8_t SunLight[4], TorchLight[4], AO[4];
+		bool Flip;
 		void SetValues(
 				int face,
 				const uint8_t (&neighbours)[27],

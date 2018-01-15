@@ -13,9 +13,9 @@ glm::ivec3 World::s_center;
 
 World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
 				 RunningThreads(0), PosChanged(false),
-				 Time(0.25f * DAY_TIME), InitialTime((float)glfwGetTime())
+				 Timer(0.25f * DAY_TIME), InitialTime((float)glfwGetTime())
 {
-	InitialTime -= Time;
+	InitialTime -= Timer;
 
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
 	LoadingVector.reserve(_SIZE);
@@ -47,10 +47,10 @@ World::~World()
 void World::Update(const glm::ivec3 &center)
 {
 	//update time
-	Time = (float)glfwGetTime() - InitialTime;
-	Time = fmodf(Time, DAY_TIME);
+	Timer = (float)glfwGetTime() - InitialTime;
+	Timer = fmodf(Timer, DAY_TIME);
 
-	float radians = GetTime() * 6.28318530718f;
+	float radians = GetDayTime() * 6.28318530718f;
 	SunModelMatrix = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(1.0f, 0.0f, 0.0f));
 	SunPosition = glm::vec3(SunModelMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 1.0f));
 

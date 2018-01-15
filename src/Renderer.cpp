@@ -35,7 +35,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 	Resource::ChunkShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
 
 	Resource::ChunkShader->PassFloat("viewDistance", range);
-	Resource::ChunkShader->PassFloat("Time", wld.GetTime());
+	Resource::ChunkShader->PassFloat("dayTime", wld.GetDayTime());
 	Resource::ChunkShader->PassFloat("dayLight", wld.GetDayLight());
 	Resource::ChunkShader->PassVec3("camera", position);
 
@@ -71,7 +71,7 @@ void Renderer::RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &p
 	glDisable(GL_DEPTH_TEST);
 }
 
-void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sunModelMatrix, float Time)
+void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sunModelMatrix, float dayTime)
 {
 	glm::mat4 vpMatrix = projection * glm::mat4(view);
 	glEnable(GL_CULL_FACE);
@@ -81,43 +81,41 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	glDepthMask(GL_FALSE);
 
 	//sky
-	{
-		glCullFace(GL_FRONT);
-		glActiveTexture(GL_TEXTURE0);
-		Resource::SkyTexture->Bind();
+	glCullFace(GL_FRONT);
+	glActiveTexture(GL_TEXTURE0);
+	Resource::SkyTexture->Bind();
 
-		Resource::SkyShader->Use();
-		Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
-		Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
-		Resource::SkyShader->PassFloat("Time", Time);
+	Resource::SkyShader->Use();
+	Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
+	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
+	Resource::SkyShader->PassFloat("dayTime", dayTime);
 
-		Resource::SkyObject->Render(GL_TRIANGLES);
-	}
+	Resource::SkyObject->Render(GL_TRIANGLES);
 
 	//moon and sun
+	glCullFace(GL_BACK);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	Resource::SunShader->Use();
+	Resource::SunShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix * sunModelMatrix);
+	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+	if(dayTime >= 0.2 && dayTime <= 0.8)
 	{
-		glCullFace(GL_BACK);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		Resource::SunShader->Use();
-
-		glActiveTexture(GL_TEXTURE0);
 		Resource::SunTexture->Bind();
-
-		Resource::SunShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix * sunModelMatrix);
-		Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
-
 		Resource::SunObject->Render(GL_TRIANGLES);
-
-		glActiveTexture(GL_TEXTURE0);
-		Resource::MoonTexture->Bind();
-
-		Resource::MoonObject->Render(GL_TRIANGLES);
-
-		glDisable(GL_BLEND);
 	}
+
+	if(dayTime <= 0.3 || dayTime >= 0.7)
+	{
+		Resource::MoonTexture->Bind();
+		Resource::MoonObject->Render(GL_TRIANGLES);
+	}
+
+	glDisable(GL_BLEND);
 
 	glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_TEST);

@@ -133,7 +133,7 @@ void Application::Render()
 	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
 
 	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d,
-						world.GetSunModelMatrix(), world.GetTime());
+						world.GetSunModelMatrix(), world.GetDayTime());
 	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
 	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
 	if(control)
@@ -175,11 +175,12 @@ void Application::RenderUI()
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
-		ImGui::Text("time: %f", world.GetTime());
+		ImGui::Text("time: %f", world.GetDayTime());
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
 		ImGui::Separator();
 		ImGui::Text("using block: %s", BlockMethods::GetName(GamePlayer.UsingBlock));
+		ImGui::Text("torch light: %d", (int)world.GetTorchLight(GamePlayer.GetSelection(true)));
 
 		ImGui::End();
 	}

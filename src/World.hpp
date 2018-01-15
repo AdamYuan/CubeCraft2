@@ -77,7 +77,7 @@ private:
 			TorchLightQueue, TorchLightRemovalQueue;
 
 	//day night cycle
-	float InitialTime, Time;
+	float InitialTime, Timer;
 	//0.0f - 1024.0f(1.0f = 1 second)
 	glm::mat4 SunModelMatrix;
 	glm::vec3 SunPosition;
@@ -150,13 +150,13 @@ public:
 
 	std::unordered_set<glm::ivec3> RenderSet;
 
-	inline float GetTime() const
+	inline float GetDayTime() const
 	{
-		return Time / DAY_TIME;
+		return Timer / DAY_TIME;
 	}
 	inline float GetDayLight() const
 	{
-		return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.02f, 1.0f);
+		return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.2f, 1.0f);
 	}
 	inline glm::mat4 GetSunModelMatrix() const
 	{ return SunModelMatrix; }

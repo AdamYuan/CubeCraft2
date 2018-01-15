@@ -47,6 +47,7 @@ namespace ChunkAlgorithm
 
 		uint8_t sides[3];
 		bool trans[3];
+
 		for(int v=0; v<4; ++v)
 		{
 			for(int i=0; i<3; ++i)
@@ -75,6 +76,9 @@ namespace ChunkAlgorithm
 			this->SunLight[v] = sunLightSum / counter;
 			this->TorchLight[v] = torchLightSum / counter;
 		}
+
+		Flip = AO[0] + AO[2] + std::max(SunLight[1], SunLight[3]) + std::max(TorchLight[1], TorchLight[3]) >
+			   AO[1] + AO[3] + std::max(SunLight[0], SunLight[2]) + std::max(TorchLight[0], TorchLight[2]);
 	}
 
 	bool FaceLighting::operator==(const FaceLighting &f) const
@@ -104,7 +108,6 @@ namespace ChunkAlgorithm
 		}
 		return false;
 	}
-
 
 	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh)
 	{
@@ -311,13 +314,7 @@ namespace ChunkAlgorithm
 								std::swap(v11.V, v10.V);
 							}
 
-							if (QuadLighting.AO[0] + QuadLighting.AO[2] +
-								QuadLighting.SunLight[0] + QuadLighting.SunLight[2] +
-								QuadLighting.TorchLight[0] + QuadLighting.TorchLight[2]
-								>
-								QuadLighting.AO[1] + QuadLighting.AO[3] +
-								QuadLighting.SunLight[1] + QuadLighting.SunLight[3] +
-								QuadLighting.TorchLight[1] + QuadLighting.TorchLight[3])
+							if(QuadLighting.Flip)
 							{
 								//11--------10
 								//|       / |
@@ -560,13 +557,7 @@ namespace ChunkAlgorithm
 								std::swap(v11.V, v10.V);
 							}
 
-							if (QuadLighting.AO[0] + QuadLighting.AO[2] +
-								QuadLighting.SunLight[0] + QuadLighting.SunLight[2] +
-								QuadLighting.TorchLight[0] + QuadLighting.TorchLight[2]
-								>
-								QuadLighting.AO[1] + QuadLighting.AO[3] +
-								QuadLighting.SunLight[1] + QuadLighting.SunLight[3] +
-								QuadLighting.TorchLight[1] + QuadLighting.TorchLight[3])
+							if(QuadLighting.Flip)
 							{
 								//11--------10
 								//|       / |

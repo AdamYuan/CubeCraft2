@@ -8,7 +8,7 @@ uniform sampler2DArray sampler;
 uniform sampler2D skySampler;
 uniform vec3 camera;
 uniform float viewDistance;
-uniform float Time;
+uniform float dayTime;
 
 float fog_factor;
 float fog_height;
@@ -28,7 +28,7 @@ void main()
 	float dx = distance(frag_pos.xz, camera.xz);
 	fog_height = (atan(dy, dx) + pi / 2) / pi;
 
-    vec3 sky_color = vec3(texture2D(skySampler, vec2(Time, 1.0f - fog_height)));
+    vec3 sky_color = vec3(texture2D(skySampler, vec2(dayTime, 1.0f - fog_height)));
 
 	vec3 color3 = color.rgb;
 	color3 *= frag_lighting.x * frag_lighting.y * frag_lighting.z;
