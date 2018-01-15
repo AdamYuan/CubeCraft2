@@ -30,14 +30,14 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 	glActiveTexture(GL_TEXTURE1);
 	Resource::SkyTexture->Bind();
 
-	Resource::ChunkShader->PassInt(Resource::UNIF_SAMPLER, 0);
-	Resource::ChunkShader->PassInt("skySampler", 1);
-	Resource::ChunkShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
+	Resource::ChunkShader->PassInt(Resource::ChunkShader_sampler, 0);
+	Resource::ChunkShader->PassInt(Resource::ChunkShader_skySampler, 1);
+	Resource::ChunkShader->PassMat4(Resource::ChunkShader_matrix, vpMatrix);
 
-	Resource::ChunkShader->PassFloat("viewDistance", range);
-	Resource::ChunkShader->PassFloat("dayTime", wld.GetDayTime());
-	Resource::ChunkShader->PassFloat("dayLight", wld.GetDayLight());
-	Resource::ChunkShader->PassVec3("camera", position);
+	Resource::ChunkShader->PassFloat(Resource::ChunkShader_viewDistance, range);
+	Resource::ChunkShader->PassFloat(Resource::ChunkShader_dayTime, wld.GetDayTime());
+	Resource::ChunkShader->PassFloat(Resource::ChunkShader_dayLight, wld.GetDayLight());
+	Resource::ChunkShader->PassVec3(Resource::ChunkShader_camera, position);
 
 	for(const glm::ivec3 &pos : wld.RenderSet)
 	{
@@ -57,7 +57,7 @@ void Renderer::RenderCrosshair(const glm::mat4 &vpMatrix)
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT);
 	Resource::LineShader->Use();
-	Resource::LineShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
+	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vpMatrix);
 	Resource::CrosshairObject->Render(GL_TRIANGLES);
 	glDisable(GL_COLOR_LOGIC_OP);
 }
@@ -66,7 +66,7 @@ void Renderer::RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &p
 {
 	glEnable(GL_DEPTH_TEST);
 	Resource::LineShader->Use();
-	Resource::LineShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(position)));
+	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vpMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(position)));
 	Resource::BoxObject->Render(GL_LINES);
 	glDisable(GL_DEPTH_TEST);
 }
@@ -86,9 +86,9 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	Resource::SkyTexture->Bind();
 
 	Resource::SkyShader->Use();
-	Resource::SkyShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix);
-	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
-	Resource::SkyShader->PassFloat("dayTime", dayTime);
+	Resource::SkyShader->PassMat4(Resource::SkyShader_matrix, vpMatrix);
+	Resource::SkyShader->PassInt(Resource::SkyShader_sampler, 0);
+	Resource::SkyShader->PassFloat(Resource::SkyShader_dayTime, dayTime);
 
 	Resource::SkyObject->Render(GL_TRIANGLES);
 
@@ -99,8 +99,8 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	Resource::SunShader->Use();
-	Resource::SunShader->PassMat4(Resource::UNIF_MATRIX, vpMatrix * sunModelMatrix);
-	Resource::SkyShader->PassInt(Resource::UNIF_SAMPLER, 0);
+	Resource::SunShader->PassMat4(Resource::SunShader_matrix, vpMatrix * sunModelMatrix);
+	Resource::SunShader->PassInt(Resource::SunShader_sampler, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	if(dayTime >= 0.2 && dayTime <= 0.8)

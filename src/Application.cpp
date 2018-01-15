@@ -104,7 +104,8 @@ void Application::InitWindow()
 
 void Application::Run()
 {
-	GamePlayer.SetPosition({GamePlayer.GetPosition().x, 150.0f, GamePlayer.GetPosition().z});
+	GamePlayer.Position.y = 150.0f;
+
 	while(!glfwWindowShouldClose(Window))
 	{
 		//logic process
@@ -134,7 +135,7 @@ void Application::Render()
 
 	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d,
 						world.GetSunModelMatrix(), world.GetDayTime());
-	Renderer::RenderWorld(world, vpMatrix, GamePlayer.GetPosition());
+	Renderer::RenderWorld(world, vpMatrix, GamePlayer.Position);
 	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
 	if(control)
 		Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
@@ -173,14 +174,12 @@ void Application::RenderUI()
 	{
 		ImGui::Text("fps: %f", FPS);
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
-		ImGui::Text("position: %s", glm::to_string(GamePlayer.GetPosition()).c_str());
+		ImGui::Text("position: %s", glm::to_string(GamePlayer.Position).c_str());
 		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
 		ImGui::Text("time: %f", world.GetDayTime());
 		ImGui::Separator();
 		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
-		ImGui::Separator();
 		ImGui::Text("using block: %s", BlockMethods::GetName(GamePlayer.UsingBlock));
-		ImGui::Text("torch light: %d", (int)world.GetTorchLight(GamePlayer.GetSelection(true)));
 
 		ImGui::End();
 	}

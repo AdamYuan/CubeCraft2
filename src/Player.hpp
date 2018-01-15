@@ -43,6 +43,8 @@ private:
 
 public:
 
+	glm::vec3 &Position;
+
 	uint8_t UsingBlock;
 
 	//all the move function will return false if the movement is blocked
@@ -60,11 +62,7 @@ public:
 	glm::ivec3 GetChunkPosition() const;
 
 	inline AABB GetBoundingBox() const
-	{ return AABB(BoundingBox.Min + Cam.Position, BoundingBox.Max + Cam.Position); }
-	inline glm::vec3 GetPosition() const
-	{ return Cam.Position; }
-	inline void SetPosition(const glm::vec3 &pos)
-	{ Cam.Position = pos; }
+	{ return {BoundingBox.Min + Cam.Position, BoundingBox.Max + Cam.Position}; }
 	inline glm::mat4 GetViewMatrix()
 	{ return ViewMatrix; }
 	inline glm::ivec3 GetSelection(bool addDirVec)

@@ -25,6 +25,7 @@ make -j4
 
 ## References
 * https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1 - Lighting
+* https://0fps.net/2012/07/07/meshing-minecraft-part-2/ - Greedy meshing
 * https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/ - Ambient occlusion
 * http://www.cse.yorku.ca/~amana/research/grid.pdf - Block selection
 * http://www.minecrafttexturepacks.com/xenocontendi/ - Block texture

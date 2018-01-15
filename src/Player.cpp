@@ -12,7 +12,7 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player(World &wld) : flying(false),
+Player::Player(World &wld) : Position(Cam.Position), flying(false),
 							 BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
 							 wld(&wld), UsingBlock(1)
 {
@@ -227,7 +227,7 @@ void Player::Control(bool focus, GLFWwindow *win, int width, int height, const M
 
 void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 {
-	float radius = 6.0f;
+	float radius = 10.0f;
 
 	glm::vec3 origin = Cam.Position;
 	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"

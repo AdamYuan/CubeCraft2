@@ -13,7 +13,10 @@ namespace Resource
 	MyGL::TexturePtr ChunkTexture, SkyTexture, SunTexture, MoonTexture;
 	MyGL::VertexObjectPtr CrosshairObject, BoxObject, SkyObject, SunObject, MoonObject;
 
-	const char *UNIF_SAMPLER = "sampler", *UNIF_MATRIX = "matrix";
+	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix;
+	GLint LineShader_matrix;
+	GLint SkyShader_matrix, SkyShader_sampler, SkyShader_dayTime;
+	GLint SunShader_matrix, SunShader_sampler;
 
 
 	void InitResources()
@@ -21,18 +24,31 @@ namespace Resource
 		ChunkShader = MyGL::NewShader();
 		ChunkShader->LoadFromFile(SHADER_PATH("block.frag"), GL_FRAGMENT_SHADER);
 		ChunkShader->LoadFromFile(SHADER_PATH("block.vert"), GL_VERTEX_SHADER);
+		ChunkShader_sampler = ChunkShader->GetUniform("sampler");
+		ChunkShader_skySampler = ChunkShader->GetUniform("skySampler");
+		ChunkShader_camera = ChunkShader->GetUniform("camera");
+		ChunkShader_viewDistance = ChunkShader->GetUniform("viewDistance");
+		ChunkShader_matrix = ChunkShader->GetUniform("matrix");
+		ChunkShader_dayLight = ChunkShader->GetUniform("dayLight");
+		ChunkShader_dayTime = ChunkShader->GetUniform("dayTime");
 
 		LineShader = MyGL::NewShader();
 		LineShader->LoadFromFile(SHADER_PATH("line.frag"), GL_FRAGMENT_SHADER);
 		LineShader->LoadFromFile(SHADER_PATH("line.vert"), GL_VERTEX_SHADER);
+		LineShader_matrix = LineShader->GetUniform("matrix");
 
 		SkyShader = MyGL::NewShader();
 		SkyShader->LoadFromFile(SHADER_PATH("sky.frag"), GL_FRAGMENT_SHADER);
 		SkyShader->LoadFromFile(SHADER_PATH("sky.vert"), GL_VERTEX_SHADER);
+		SkyShader_matrix = SkyShader->GetUniform("matrix");
+		SkyShader_dayTime = SkyShader->GetUniform("dayTime");
+		SkyShader_sampler = SkyShader->GetUniform("sampler");
 
 		SunShader = MyGL::NewShader();
 		SunShader->LoadFromFile(SHADER_PATH("sun.frag"), GL_FRAGMENT_SHADER);
 		SunShader->LoadFromFile(SHADER_PATH("sun.vert"), GL_VERTEX_SHADER);
+		SunShader_matrix = SunShader->GetUniform("matrix");
+		SunShader_sampler = SunShader->GetUniform("sampler");
 
 		ChunkTexture = MyGL::NewTexture();
 		ChunkTexture->Load2dArray(TEXTURE_PATH("blocks.png"), BLOCKS_TEXTURE_NUM);

@@ -60,35 +60,6 @@ namespace MyGL
 		glUseProgram(programId);
 	}
 
-	void Shader::PassMat4(const std::string &str, const glm::mat4 &matrix4)
-	{
-		glUniformMatrix4fv(GetUniform(str), 1, GL_FALSE, glm::value_ptr(matrix4));
-	}
-
-	void Shader::PassMat3(const std::string &str, const glm::mat3 &matrix3)
-	{
-		glUniformMatrix3fv(GetUniform(str), 1, GL_FALSE, glm::value_ptr(matrix3));
-	}
-
-	void Shader::PassVec4(const std::string &str, const glm::vec4 &vector4)
-	{
-		glUniform4fv(GetUniform(str), 1, glm::value_ptr(vector4));
-	}
-
-	void Shader::PassVec3(const std::string &str, const glm::vec3 &vector3)
-	{
-		glUniform3fv(GetUniform(str), 1, glm::value_ptr(vector3));
-	}
-
-	void Shader::PassInt(const std::string &str, int i)
-	{
-		glUniform1i(GetUniform(str), i);
-	}
-
-	void Shader::PassFloat(const std::string &str, float f)
-	{
-		glUniform1f(GetUniform(str), f);
-	}
 
 	ShaderPtr NewShader()
 	{
