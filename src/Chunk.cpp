@@ -402,17 +402,12 @@ void ChunkInitialLightingInfo::Process()
 {
 	//Get Highest Layer
 	constexpr int LICHUNK_SIZE_2 = LICHUNK_SIZE*LICHUNK_SIZE;
-	for(int i=0; i<LICHUNK_INFO_SIZE; )
-	{
+	for(int i=LICHUNK_INFO_SIZE - 1; i>=0; i--)
 		if(!CanPass(i))
 		{
-			Highest = std::max(Highest, i / LICHUNK_SIZE_2);
-			i /= LICHUNK_SIZE_2;
-			i = i * LICHUNK_SIZE_2 + LICHUNK_SIZE_2;
-		} else
-			++i;
-	}
-
+			Highest = i / LICHUNK_SIZE_2;
+			break;
+		}
 
 	std::fill(Result, Result + (Highest+1) * LICHUNK_SIZE_2, 0x00);
 	std::fill(Result + (Highest+1) * LICHUNK_SIZE_2, Result + LICHUNK_INFO_SIZE, 0xF0);
@@ -432,7 +427,6 @@ void ChunkInitialLightingInfo::Process()
 		}
 
 	ChunkAlgorithm::SunLightBFSThreaded(Grid, Result, Highest, Queue);
-
 
 	for(int i=0; i<LICHUNK_INFO_SIZE; ++i)
 	{

@@ -2,7 +2,7 @@
 #define CHUNK_HPP
 
 #include <iostream>
-#include <functional>
+#include <atomic>
 #include <vector>
 #include <queue>
 
@@ -83,8 +83,9 @@ using ChunkPtr = Chunk*;
 class ChunkInfo
 {
 public:
-	bool Done = false;
+	std::atomic_bool Done;
 	virtual void Process()= 0;
+	ChunkInfo() : Done(false) {}
 };
 
 class ChunkLoadingInfo : public ChunkInfo
