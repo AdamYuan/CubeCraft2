@@ -7,6 +7,7 @@ out vec4 color;
 uniform sampler2DArray sampler;
 uniform sampler2D skySampler;
 uniform vec3 camera;
+uniform vec3 selection;
 uniform float viewDistance;
 uniform float dayTime;
 
@@ -37,5 +38,14 @@ void main()
 	color3 = pow(color3, vec3(1.0 / gamma));
 
 	color3 = mix(color3, sky_color, fog_factor);
+
+	//show selection box
+	vec3 max_pos = selection + vec3(1.0f);
+	if(
+		(frag_pos.x >= selection.x && frag_pos.x <= max_pos.x) &&
+		(frag_pos.y >= selection.y && frag_pos.y <= max_pos.y) &&
+		(frag_pos.z >= selection.z && frag_pos.z <= max_pos.z))
+		color3 *= 1.5f;
+
 	color = vec4(color3, color.a);
 }

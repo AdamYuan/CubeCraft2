@@ -165,7 +165,7 @@ void World::UpdateChunkLoadingList()
 			{
 				if(!GetChunk({iter.x, 0, iter.y})->LoadedTerrain && !LoadingInfoMap.count(iter))
 				{
-					LoadingInfoMap[iter] = std::make_unique<ChunkLoadingInfo>(iter);
+					LoadingInfoMap.emplace(iter, std::make_unique<ChunkLoadingInfo>(iter));
 					LoadingVector.push_back(iter);
 				}
 			}
@@ -238,7 +238,7 @@ void World::UpdateChunkSunLightingList()
 										*iter, cmp2);
 			InitialLightingList.insert(pos, *iter);
 
-			InitialLightingInfoMap[*iter] = std::make_unique<ChunkInitialLightingInfo>(arr);
+			InitialLightingInfoMap.emplace(*iter, std::make_unique<ChunkInitialLightingInfo>(arr));
 
 			iter = PreInitialLightingVector.erase(iter);
 		}
@@ -312,8 +312,7 @@ void World::UpdateChunkMeshingList()
 		{
 			auto pos = std::lower_bound(MeshingList.begin(), MeshingList.end(), *iter, cmp3);
 			MeshingList.insert(pos, *iter);
-
-			MeshingInfoMap[*iter] = std::make_unique<ChunkMeshingInfo>(neighbours);
+			MeshingInfoMap.emplace(*iter, std::make_unique<ChunkMeshingInfo>(neighbours));
 
 			iter = PreMeshingVector.erase(iter);
 		}
@@ -379,7 +378,7 @@ void World::ChunkLoadingWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-		LoadingInfoMap[pos]->Process();
+		LoadingInfoMap.at(pos)->Process();
 		RunningThreads --;
 	}
 }
@@ -400,7 +399,7 @@ void World::ChunkInitialLightingWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-		InitialLightingInfoMap[pos]->Process();
+		InitialLightingInfoMap.at(pos)->Process();
 		RunningThreads --;
 	}
 }
@@ -421,7 +420,7 @@ void World::ChunkMeshingWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-		MeshingInfoMap[pos]->Process();
+		MeshingInfoMap.at(pos)->Process();
 		RunningThreads --;
 	}
 }
@@ -442,7 +441,7 @@ void World::ChunkMeshUpdateWorker()
 		lk.unlock();
 
 		RunningThreads ++;
-		MeshUpdateInfoMap[pos]->Process();
+		MeshUpdateInfoMap.at(pos)->Process();
 		RunningThreads --;
 	}
 }
@@ -471,43 +470,47 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 	if(checkUpdate)
 	{
 		AddRelatedChunks(pos, MeshDirectlyUpdateSet);
-		if(!BlockMethods::LightCanPass(blk))
-		{
-			if(lastSunLight)//have sunlight
-			{
-				SunLightRemovalQueue.push({pos, lastSunLight});
-				chk->SetSunLight(bPos, 0);
-			}
-		}
-		else
-		{
-			for(short face = 0; face < 6; ++face)
-			{
-				glm::ivec3 neighbour = Util::FaceExtend(pos, face);
-				LightLevel light;
 
-				if(!lastSunLight)
+		//update lighting
+		if(BlockMethods::LightCanPass(blk) != BlockMethods::LightCanPass(lastBlock))
+		{
+			if(!BlockMethods::LightCanPass(blk))
+			{
+				if(lastSunLight)//have sunlight
 				{
-					light = GetSunLight(neighbour);
-					if(light)
-						SunLightQueue.push({neighbour, light});
-				}
-
-				if(!lastTorchLight)
-				{
-					light = GetTorchLight(neighbour);
-					if(light)
-						TorchLightQueue.push({neighbour, light});
+					SunLightRemovalQueue.push({pos, lastSunLight});
+					chk->SetSunLight(bPos, 0);
 				}
 			}
-		}
+			else
+			{
+				for(short face = 0; face < 6; ++face)
+				{
+					glm::ivec3 neighbour = Util::FaceExtend(pos, face);
+					LightLevel light;
 
-		if(torchlightNow != lastTorchLight)
-		{
-			if(torchlightNow < lastTorchLight && lastTorchLight)
-				TorchLightRemovalQueue.push({pos, lastTorchLight});
-			if(torchlightNow)
-				TorchLightQueue.push({pos, torchlightNow});
+					if(!lastSunLight)
+					{
+						light = GetSunLight(neighbour);
+						if(light)
+							SunLightQueue.push({neighbour, light});
+					}
+
+					if(!lastTorchLight)
+					{
+						light = GetTorchLight(neighbour);
+						if(light)
+							TorchLightQueue.push({neighbour, light});
+					}
+				}
+			}
+			if(torchlightNow != lastTorchLight)
+			{
+				if(torchlightNow < lastTorchLight && lastTorchLight)
+					TorchLightRemovalQueue.push({pos, lastTorchLight});
+				if(torchlightNow)
+					TorchLightQueue.push({pos, torchlightNow});
+			}
 		}
 	}
 }
@@ -528,9 +531,9 @@ LightLevel World::GetSunLight(const glm::ivec3 &pos) const
 
 	ChunkPtr chk = GetChunk(chkPos);
 	if(pos.y < 0)
-		return 0x00;
+		return 0x0;
 	else if(pos.y >= WORLD_HEIGHT_BLOCK || !chk)
-		return 0xF0;
+		return 0xF;
 	return chk->GetSunLight(pos - chkPos*CHUNK_SIZE);
 }
 

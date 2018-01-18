@@ -5,10 +5,9 @@
 #include "Resource.hpp"
 #include "World.hpp"
 #include <MyGL/Frustum.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
-void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
-						   const glm::vec3 &position)
+void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const glm::vec3 &position,
+						   const glm::ivec3 &selection)
 {
 	static MyGL::Frustum frustum = {};
 	static constexpr float range = CHUNK_SIZE*(CHUNK_LOADING_RANGE - 1);
@@ -38,6 +37,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix,
 	Resource::ChunkShader->PassFloat(Resource::ChunkShader_dayTime, wld.GetDayTime());
 	Resource::ChunkShader->PassFloat(Resource::ChunkShader_dayLight, wld.GetDayLight());
 	Resource::ChunkShader->PassVec3(Resource::ChunkShader_camera, position);
+	Resource::ChunkShader->PassVec3(Resource::ChunkShader_selection, selection);
 
 	for(const glm::ivec3 &pos : wld.RenderSet)
 	{
@@ -60,15 +60,6 @@ void Renderer::RenderCrosshair(const glm::mat4 &vpMatrix)
 	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vpMatrix);
 	Resource::CrosshairObject->Render(GL_TRIANGLES);
 	glDisable(GL_COLOR_LOGIC_OP);
-}
-
-void Renderer::RenderSelectionBox(const glm::mat4 &vpMatrix, const glm::ivec3 &position)
-{
-	glEnable(GL_DEPTH_TEST);
-	Resource::LineShader->Use();
-	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vpMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(position)));
-	Resource::BoxObject->Render(GL_LINES);
-	glDisable(GL_DEPTH_TEST);
 }
 
 void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sunModelMatrix, float dayTime)

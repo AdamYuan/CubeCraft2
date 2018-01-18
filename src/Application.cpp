@@ -135,8 +135,7 @@ void Application::Render()
 
 	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d,
 						world.GetSunModelMatrix(), world.GetDayTime());
-	Renderer::RenderWorld(world, vpMatrix, GamePlayer.Position);
-	Renderer::RenderSelectionBox(vpMatrix, GamePlayer.GetSelection(false));
+	Renderer::RenderWorld(world, vpMatrix, GamePlayer.Position, GamePlayer.GetSelection(false));
 	if(control)
 		Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 }

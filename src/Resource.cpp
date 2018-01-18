@@ -11,9 +11,9 @@ namespace Resource
 {
 	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader, SunShader;
 	MyGL::TexturePtr ChunkTexture, SkyTexture, SunTexture, MoonTexture;
-	MyGL::VertexObjectPtr CrosshairObject, BoxObject, SkyObject, SunObject, MoonObject;
+	MyGL::VertexObjectPtr CrosshairObject, SkyObject, SunObject, MoonObject;
 
-	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix;
+	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix, ChunkShader_selection;
 	GLint LineShader_matrix;
 	GLint SkyShader_matrix, SkyShader_sampler, SkyShader_dayTime;
 	GLint SunShader_matrix, SunShader_sampler;
@@ -31,6 +31,7 @@ namespace Resource
 		ChunkShader_matrix = ChunkShader->GetUniform("matrix");
 		ChunkShader_dayLight = ChunkShader->GetUniform("dayLight");
 		ChunkShader_dayTime = ChunkShader->GetUniform("dayTime");
+		ChunkShader_selection = ChunkShader->GetUniform("selection");
 
 		LineShader = MyGL::NewShader();
 		LineShader->LoadFromFile(SHADER_PATH("line.frag"), GL_FRAGMENT_SHADER);
@@ -68,33 +69,16 @@ namespace Resource
 		MoonTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
 
 
-		float _size = 10.0, _width = 1.0f;
-		static const float crosshairVertices[] = {-_width, -_size, -_width, _size, _width, -_size,
-												  _width, -_size, -_width, _size, _width, _size,
-												  -_size, _width, _size, -_width, -_size, -_width,
-												  _size, _width, _size, -_width, -_size, _width,
-												  -_width, -_width, -_width, _width, _width, -_width,
-												  _width, -_width, -_width, _width, _width, _width};
+		static constexpr float chSize = 10.0, chWidth = 1.0f;
+		static constexpr float crosshairVertices[] = {-chWidth, -chSize, -chWidth, chSize, chWidth, -chSize,
+												  chWidth, -chSize, -chWidth, chSize, chWidth, chSize,
+												  -chSize, chWidth, chSize, -chWidth, -chSize, -chWidth,
+												  chSize, chWidth, chSize, -chWidth, -chSize, chWidth,
+												  -chWidth, -chWidth, -chWidth, chWidth, chWidth, -chWidth,
+												  chWidth, -chWidth, -chWidth, chWidth, chWidth, chWidth};
 		CrosshairObject = MyGL::NewVertexObject();
 		CrosshairObject->SetDataArr(crosshairVertices, 36);
 		CrosshairObject->SetAttributes(1, ATTR_POSITION, 2);
-
-		static const float boxVertices[] = {
-				1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-				1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-				1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-				0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-				1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-				1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-				1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-				1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
-		BoxObject = MyGL::NewVertexObject();
-		BoxObject->SetDataArr(boxVertices, 72);
-		BoxObject->SetAttributes(1, ATTR_POSITION, 3);
 
 		std::vector<uint32_t> sphereIndices;
 		std::vector<glm::vec3> spherePositions, sphereVertices;
@@ -107,8 +91,8 @@ namespace Resource
 		SkyObject->SetDataVec(sphereVertices);
 		SkyObject->SetAttributes(1, ATTR_POSITION, 3);
 
-		static const float sunSize = 0.4f;
-		static const float sunVertices[] = {
+		static constexpr float sunSize = 0.4f;
+		static constexpr float sunVertices[] = {
 				sunSize, -1.0f, -sunSize, 1.0f, 0.0f,
 				-sunSize, -1.0f, -sunSize, 0.0f, 0.0f,
 				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
@@ -120,8 +104,8 @@ namespace Resource
 		SunObject->SetDataArr(sunVertices, 30);
 		SunObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
-		static const float moonSize = sunSize / 4.0f;
-		static const float moonVertices[] = {
+		static constexpr float moonSize = sunSize / 4.0f;
+		static constexpr float moonVertices[] = {
 				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
 				-moonSize, 1.0f, -moonSize, 0.0f, 0.0f,
 				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
