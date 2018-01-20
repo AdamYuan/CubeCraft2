@@ -95,11 +95,12 @@ class ChunkLoadingInfo : public ChunkInfo
 private:
 	Block Result[WORLD_HEIGHT * CHUNK_INFO_SIZE];
 	glm::ivec2 Position;
+	WorldData &Data;
 
 public:
-	explicit ChunkLoadingInfo(const glm::ivec2 &pos);
+	explicit ChunkLoadingInfo(const glm::ivec2 &pos, WorldData &data);
 	void Process() override;
-	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT], WorldData &data);
+	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 
 

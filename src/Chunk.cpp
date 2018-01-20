@@ -18,7 +18,7 @@ Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
 
 //Terrain Generation
 
-ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos)
+ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos, WorldData &data) : Data(data)
 {
 	this->Position = pos;
 }
@@ -120,12 +120,14 @@ void ChunkLoadingInfo::Process()
 			}
 		}
 	FastNoiseSIMD::FreeNoiseSet(treeMap);
+
+	Data.LoadBlocks(Position, Result);
+
 	Done = true;
 }
 
-void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT], WorldData &data)
+void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
-	data.LoadBlocks(Position, Result);
 	for(int i=0; i<WORLD_HEIGHT; ++i) {
 		std::copy(this->Result + i*CHUNK_INFO_SIZE,
 				  this->Result + i*CHUNK_INFO_SIZE + CHUNK_INFO_SIZE,

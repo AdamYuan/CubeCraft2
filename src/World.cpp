@@ -156,7 +156,7 @@ void World::UpdateChunkLoadingList()
 				for(; pos.y < WORLD_HEIGHT; pos.y++)
 					arr[pos.y] = GetChunk(pos);
 
-				iter->second->ApplyTerrain(arr, Database);
+				iter->second->ApplyTerrain(arr);
 			}
 			iter = LoadingInfoMap.erase(iter);
 		}
@@ -172,7 +172,7 @@ void World::UpdateChunkLoadingList()
 			{
 				if(!GetChunk({iter.x, 0, iter.y})->LoadedTerrain && !LoadingInfoMap.count(iter))
 				{
-					LoadingInfoMap.emplace(iter, std::make_unique<ChunkLoadingInfo>(iter));
+					LoadingInfoMap.emplace(iter, std::make_unique<ChunkLoadingInfo>(iter, Database));
 					LoadingVector.push_back(iter);
 				}
 			}
@@ -585,9 +585,3 @@ uint World::GetRunningThreadNum() const
 {
 	return RunningThreads;
 }
-
-
-
-
-
-

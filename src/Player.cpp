@@ -173,6 +173,12 @@ bool Player::MoveAxis(int axis, float velocity)
 
 void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 {
+	glm::ivec3 chunkPos = GetChunkPosition();
+	if(!wld->ChunkExist(chunkPos))
+		return;
+	if(!wld->GetChunk(chunkPos)->LoadedTerrain)
+		return;
+
 	static double lastTime = glfwGetTime();
 	if(flying)
 	{
