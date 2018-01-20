@@ -8,7 +8,7 @@
 #include "Setting.hpp"
 #include <glm/glm.hpp>
 #include <string>
-#include <sqlite3.h>
+#include <sqlite/sqlite3.h>
 
 class Player;
 class WorldData

@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 project(CubeCraft2)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2 -ldl")
+
+add_definitions(-DSQLITE_THREADSAFE=1)
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)
@@ -25,12 +27,6 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules" ${CMAKE_MODULE_PATH})
 
-find_package (SQLite3 REQUIRED)
-if (SQLITE3_FOUND)
-    include_directories(${SQLITE3_INCLUDE_DIRS})
-    link_libraries(${SQLITE3_LIBRARIES})
-endif (SQLITE3_FOUND)
-
 find_package(GLFW3 3.2 REQUIRED)
 if (GLFW3_FOUND)
 	include_directories(${GLFW3_INCLUDE_PATH})
@@ -38,6 +34,6 @@ if (GLFW3_FOUND)
 endif()
 
 #add source files
-file(GLOB SOURCE_FILES main.cpp src/*.cpp dep/*/*.cpp)
+file(GLOB SOURCE_FILES main.cpp src/*.cpp dep/*/*.cpp dep/*/*.c)
 include_directories(dep)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
