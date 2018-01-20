@@ -36,15 +36,16 @@ void main()
 	//gamma correction
 	float gamma = 0.8;
 	color3 = pow(color3, vec3(1.0 / gamma));
-
 	color3 = mix(color3, sky_color, fog_factor);
 
 	//show selection box
-	vec3 max_pos = selection + vec3(1.0f);
+	const float delta = 0.0001f;
+	vec3 min_pos = selection - vec3(delta);
+	vec3 max_pos = selection + vec3(1.0f + delta);
 	if(
-		(frag_pos.x >= selection.x && frag_pos.x <= max_pos.x) &&
-		(frag_pos.y >= selection.y && frag_pos.y <= max_pos.y) &&
-		(frag_pos.z >= selection.z && frag_pos.z <= max_pos.z))
+		(frag_pos.x >= min_pos.x && frag_pos.x <= max_pos.x) &&
+		(frag_pos.y >= min_pos.y && frag_pos.y <= max_pos.y) &&
+		(frag_pos.z >= min_pos.z && frag_pos.z <= max_pos.z))
 		color3 *= 1.5f;
 
 	color = vec4(color3, color.a);

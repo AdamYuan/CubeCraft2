@@ -37,7 +37,7 @@ void Application::keyCallback(GLFWwindow *window, int key, int scancode, int act
 			app->control = !app->control;
 		}
 		else if(key == GLFW_KEY_F)
-			app->GamePlayer.flying = !app->GamePlayer.flying;
+			app->world.player.flying = !app->world.player.flying;
 		else if(key == GLFW_KEY_U)
 			app->showUI = !app->showUI;
 	}
@@ -47,7 +47,7 @@ void Application::scrollCallback(GLFWwindow *window, double xOffset, double yOff
 	auto app = getCallbackInstance(window);
 	auto y = (int)yOffset;
 
-	uint8_t &target = app->GamePlayer.UsingBlock;
+	uint8_t &target = app->world.player.UsingBlock;
 	target -= y;
 	if(target >= BLOCKS_NUM)
 		target = 1;
@@ -55,8 +55,7 @@ void Application::scrollCallback(GLFWwindow *window, double xOffset, double yOff
 		target = BLOCKS_NUM - 1;
 }
 
-Application::Application() : world(), GamePlayer(world),
-							 control(true), showUI(true)
+Application::Application() : world("world"), control(true), showUI(true)
 {
 	InitWindow();
 }
@@ -104,8 +103,6 @@ void Application::InitWindow()
 
 void Application::Run()
 {
-	GamePlayer.Position.y = 150.0f;
-
 	while(!glfwWindowShouldClose(Window))
 	{
 		//logic process
@@ -130,12 +127,12 @@ void Application::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1, 1, 1, 1);
 
-	glm::mat4 ViewMatrix = GamePlayer.GetViewMatrix();
+	glm::mat4 ViewMatrix = world.player.GetViewMatrix();
 	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
 
 	Renderer::RenderSky(glm::mat3(ViewMatrix), Matrices.Projection3d,
 						world.GetSunModelMatrix(), world.GetDayTime());
-	Renderer::RenderWorld(world, vpMatrix, GamePlayer.Position, GamePlayer.GetSelection(false));
+	Renderer::RenderWorld(world, vpMatrix, world.player.Position, world.player.GetSelection(false));
 	if(control)
 		Renderer::RenderCrosshair(Matrices.Matrix2dCenter);
 }
@@ -152,9 +149,9 @@ void Application::LogicProcess()
 		FPS = FramerateManager.GetFps();
 	}
 
-	GamePlayer.Control(control, Window, Width, Height, FramerateManager, Matrices.Projection3d);
+	world.player.Control(control, Window, Width, Height, FramerateManager, Matrices.Projection3d);
 
-	world.Update(GamePlayer.GetChunkPosition());
+	world.Update(world.player.GetChunkPosition());
 }
 
 void Application::RenderUI()
@@ -173,12 +170,12 @@ void Application::RenderUI()
 	{
 		ImGui::Text("fps: %f", FPS);
 		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
-		ImGui::Text("position: %s", glm::to_string(GamePlayer.Position).c_str());
-		ImGui::Text("chunk position: %s", glm::to_string(GamePlayer.GetChunkPosition()).c_str());
+		ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
+		ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());
 		ImGui::Text("time: %f", world.GetDayTime());
 		ImGui::Separator();
-		ImGui::Text("flying [F]: %s", GamePlayer.flying ? "true" : "false");
-		ImGui::Text("using block: %s", BlockMethods::GetName(GamePlayer.UsingBlock));
+		ImGui::Text("flying [F]: %s", world.player.flying ? "true" : "false");
+		ImGui::Text("using block: %s", BlockMethods::GetName(world.player.UsingBlock));
 
 		ImGui::End();
 	}

@@ -4,6 +4,7 @@
 #include "Chunk.hpp"
 #include "Resource.hpp"
 #include "ChunkAlgorithm.hpp"
+#include "WorldData.hpp"
 
 using namespace std::placeholders; //for std::bind
 
@@ -122,8 +123,9 @@ void ChunkLoadingInfo::Process()
 	Done = true;
 }
 
-void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
+void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT], WorldData &data)
 {
+	data.LoadBlocks(Position, Result);
 	for(int i=0; i<WORLD_HEIGHT; ++i) {
 		std::copy(this->Result + i*CHUNK_INFO_SIZE,
 				  this->Result + i*CHUNK_INFO_SIZE + CHUNK_INFO_SIZE,

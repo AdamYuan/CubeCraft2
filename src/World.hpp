@@ -5,8 +5,10 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
+#include "WorldData.hpp"
 #include "Chunk.hpp"
 #include "Setting.hpp"
+#include "Player.hpp"
 
 #include <glm/gtx/hash.hpp>
 
@@ -82,8 +84,13 @@ private:
 	glm::mat4 SunModelMatrix;
 	glm::vec3 SunPosition;
 
+	//data saving
+	WorldData Database;
+
 public:
-	World();
+	Player player;
+
+	explicit World(const std::string &name);
 	~World();
 
 	inline void SetChunk(const glm::ivec3 &pos)

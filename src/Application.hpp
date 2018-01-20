@@ -22,7 +22,6 @@ private:
 
 	World world;
 
-	Player GamePlayer;
 	UI GameUI;
 
 	MyGL::Matrices Matrices;

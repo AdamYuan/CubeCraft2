@@ -11,11 +11,15 @@
 
 glm::ivec3 World::s_center;
 
-World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
-				 RunningThreads(0), PosChanged(false),
-				 Timer(0.25f * DAY_TIME), InitialTime((float)glfwGetTime())
+World::World(const std::string &name)
+		: Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
+		  RunningThreads(0), PosChanged(false),
+		  Database(name), player(*this)
 {
-	InitialTime -= Timer;
+	Timer = Database.LoadTime();
+	InitialTime = (float)glfwGetTime() - Timer;
+
+	Database.LoadPlayer(player);
 
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
 	LoadingVector.reserve(_SIZE);
@@ -33,6 +37,9 @@ World::World() : Running(true), ThreadsSupport(std::max(1u, std::thread::hardwar
 
 World::~World()
 {
+	Database.SavePlayer(player);
+	Database.SaveTime(Timer);
+
 	Running = false;
 	Mutex.unlock();
 	Cond.notify_all();
@@ -149,7 +156,7 @@ void World::UpdateChunkLoadingList()
 				for(; pos.y < WORLD_HEIGHT; pos.y++)
 					arr[pos.y] = GetChunk(pos);
 
-				iter->second->ApplyTerrain(arr);
+				iter->second->ApplyTerrain(arr, Database);
 			}
 			iter = LoadingInfoMap.erase(iter);
 		}
@@ -469,6 +476,7 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 
 	if(checkUpdate)
 	{
+		Database.InsertBlock({chkPos.x, chkPos.z}, XYZ(bPos.x, pos.y, bPos.z), blk);
 		AddRelatedChunks(pos, MeshDirectlyUpdateSet);
 
 		//update lighting

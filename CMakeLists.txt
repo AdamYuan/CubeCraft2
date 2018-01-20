@@ -25,6 +25,12 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules" ${CMAKE_MODULE_PATH})
 
+find_package (SQLite3 REQUIRED)
+if (SQLITE3_FOUND)
+    include_directories(${SQLITE3_INCLUDE_DIRS})
+    link_libraries(${SQLITE3_LIBRARIES})
+endif (SQLITE3_FOUND)
+
 find_package(GLFW3 3.2 REQUIRED)
 if (GLFW3_FOUND)
 	include_directories(${GLFW3_INCLUDE_PATH})

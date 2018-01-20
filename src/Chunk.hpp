@@ -13,6 +13,8 @@
 
 #include <glm/glm.hpp>
 
+class WorldData;
+
 static inline int XYZ(const glm::ivec3 &pos)
 { return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
 static inline int XYZ(int x, int y, int z)
@@ -97,7 +99,7 @@ private:
 public:
 	explicit ChunkLoadingInfo(const glm::ivec2 &pos);
 	void Process() override;
-	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT]);
+	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT], WorldData &data);
 };
 
 
