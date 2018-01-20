@@ -37,13 +37,14 @@ private:
 	inline static Application *getCallbackInstance(GLFWwindow* window)
 	{ return reinterpret_cast<Application*>(glfwGetWindowUserPointer(window)); }
 
-public:
-	Application();
-	void Run();
 	void InitWindow();
 	void Render();
 	void RenderUI();
 	void LogicProcess();
+
+public:
+	Application();
+	void Run();
 
 };
 

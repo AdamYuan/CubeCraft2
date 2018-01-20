@@ -9,15 +9,16 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <sqlite/sqlite3.h>
+#include <mutex>
 
 class Player;
 class WorldData
 {
 private:
 	sqlite3 *DB;
+	std::mutex DBMutex;
 	sqlite3_stmt *DeleteBlockStmt, *LoadBlocksStmt, *InsertBlockStmt;
 	std::string PlayerFileName, TimeFileName;
-	void deleteBlock(const glm::ivec2 &chunkPos, int index);
 public:
 	explicit WorldData(const std::string &name);
 	~WorldData();
