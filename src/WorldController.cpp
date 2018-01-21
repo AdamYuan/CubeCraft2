@@ -161,7 +161,7 @@ void WorldController::RenderUI()
 				glfwSetCursorPos(Window, Width / 2, Height / 2);
 				control = true;
 			}
-			if(ImGui::Button("Save and Quit", ImVec2(500.0f, 0.0f)))
+			if(ImGui::Button("Save and Back to menu", ImVec2(500.0f, 0.0f)))
 				isQuit = true;
 
 			ImGui::End();

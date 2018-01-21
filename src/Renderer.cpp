@@ -113,3 +113,15 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	glDisable(GL_CULL_FACE);
 }
 
+void Renderer::RenderMenuBg()
+{
+	glActiveTexture(GL_TEXTURE0);
+	Resource::SkyTexture->Bind();
+
+	Resource::BgShader->Use();
+	Resource::BgShader->PassInt(Resource::BgShader_sampler, 0);
+	Resource::BgShader->PassMat4(Resource::BgShader_matrix, glm::mat4(1.0f));
+
+	Resource::BgObject->Render(GL_TRIANGLES);
+}
+

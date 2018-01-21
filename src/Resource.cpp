@@ -9,14 +9,15 @@ extern void generateIcosphereMesh(size_t lod, std::vector<uint32_t>& indices, st
 
 namespace Resource
 {
-	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader, SunShader;
+	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader, SunShader, BgShader;
 	MyGL::TexturePtr ChunkTexture, SkyTexture, SunTexture, MoonTexture;
-	MyGL::VertexObjectPtr CrosshairObject, SkyObject, SunObject, MoonObject;
+	MyGL::VertexObjectPtr CrosshairObject, SkyObject, SunObject, MoonObject, BgObject;
 
 	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix, ChunkShader_selection;
 	GLint LineShader_matrix;
 	GLint SkyShader_matrix, SkyShader_sampler, SkyShader_dayTime;
 	GLint SunShader_matrix, SunShader_sampler;
+	GLint BgShader_matrix, BgShader_sampler;
 
 
 	void InitResources()
@@ -50,6 +51,12 @@ namespace Resource
 		SunShader->LoadFromFile(SHADER_PATH("sun.vert"), GL_VERTEX_SHADER);
 		SunShader_matrix = SunShader->GetUniform("matrix");
 		SunShader_sampler = SunShader->GetUniform("sampler");
+
+		BgShader = MyGL::NewShader();
+		BgShader->LoadFromFile(SHADER_PATH("bg.frag"), GL_FRAGMENT_SHADER);
+		BgShader->LoadFromFile(SHADER_PATH("bg.vert"), GL_VERTEX_SHADER);
+		BgShader_matrix = BgShader->GetUniform("matrix");
+		BgShader_sampler = BgShader->GetUniform("sampler");
 
 		ChunkTexture = MyGL::NewTexture();
 		ChunkTexture->Load2dArray(TEXTURE_PATH("blocks.png"), BLOCKS_TEXTURE_NUM);
@@ -117,6 +124,21 @@ namespace Resource
 		MoonObject = MyGL::NewVertexObject();
 		MoonObject->SetDataArr(moonVertices, 30);
 		MoonObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+
+
+		static constexpr float bgTime = 0.5f;
+		static constexpr float bgVertices[] = {
+				-1.0f,  1.0f,  bgTime, 1.0f,
+				-1.0f, -1.0f,  bgTime, 0.4f,
+				1.0f, -1.0f,  bgTime, 0.4f,
+
+				-1.0f,  1.0f,  bgTime, 1.0f,
+				1.0f, -1.0f,  bgTime, 0.4f,
+				1.0f,  1.0f,  bgTime, 1.0f
+		};
+		BgObject = MyGL::NewVertexObject();
+		BgObject->SetDataArr(bgVertices, 24);
+		BgObject->SetAttributes(2, ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
 	}
 }
 

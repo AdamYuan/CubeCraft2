@@ -60,13 +60,15 @@ void Application::Run()
 		else
 		{
 			gameMenu->Update();
-			if(gameMenu->IsQuit())
+			if(gameMenu->EnterGame())
 			{
 				std::string worldName = gameMenu->GetWorldName();
 				gameMenu.reset();
 				worldController = std::make_unique<WorldController>(Window, worldName);
 				InGame = true;
 			}
+			else if(gameMenu->IsQuit()) //close game
+				glfwSetWindowShouldClose(Window, true);
 		}
 
 		glfwSwapBuffers(Window);

@@ -25,7 +25,6 @@ private:
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
-	void Resize(int width, int height);
 	void Render();
 	void RenderUI();
 	void LogicProcess();
@@ -33,6 +32,7 @@ private:
 public:
 	explicit WorldController(GLFWwindow *window, const std::string &worldName);
 	bool IsQuit();
+	void Resize(int width, int height);
 	void Update();
 	~WorldController();
 };

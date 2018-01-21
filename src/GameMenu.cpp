@@ -4,29 +4,28 @@
 
 #include "GameMenu.hpp"
 #include "UI.hpp"
+#include "Renderer.hpp"
 #include <GLFW/glfw3.h>
 
-GameMenu::GameMenu(GLFWwindow *window) : Window(window), isQuit(false)
+GameMenu::GameMenu(GLFWwindow *window) : Window(window), isQuit(false), enterGame(false)
 {
 	UI::CaptureEvent(window, true);
 }
 
-bool GameMenu::IsQuit()
-{
-	return isQuit;
-}
-
-std::string GameMenu::GetWorldName()
-{
-	return "world";
-}
-
 void GameMenu::Update()
 {
+	int width, height;
+	glfwGetFramebufferSize(Window, &width, &height);
+	glViewport(0, 0, width, height);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+	Renderer::RenderMenuBg();
+
 	UI::NewFrame();
+
+	static ImVec2 buttonSize(250.0f, 0.0f);
 
 	ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
@@ -35,7 +34,9 @@ void GameMenu::Update()
 					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::Text("CubeCraft");
-		if(ImGui::Button("Start", ImVec2(100.0f, 0.0f)))
+		if(ImGui::Button("Start", buttonSize))
+			enterGame = true;
+		if(ImGui::Button("Quit", buttonSize))
 			isQuit = true;
 
 		ImGui::End();
@@ -45,3 +46,4 @@ void GameMenu::Update()
 	UI::Render();
 	glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
+

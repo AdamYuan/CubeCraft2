@@ -13,12 +13,14 @@ class GameMenu
 {
 private:
 	GLFWwindow *Window;
-	bool isQuit;
+	bool isQuit, enterGame;
 public:
 	explicit GameMenu(GLFWwindow *window);
-	bool IsQuit();
+	bool EnterGame() { return enterGame; }
+	bool IsQuit() { return isQuit; }
+	std::string GetWorldName() { return "world"; }
+
 	void Update();
-	std::string GetWorldName();
 };
 
 
