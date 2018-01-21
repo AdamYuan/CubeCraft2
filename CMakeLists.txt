@@ -4,7 +4,7 @@ project(CubeCraft2)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2 -ldl")
 
-add_definitions(-DSQLITE_THREADSAFE=1)
+add_definitions(-DSQLITE_THREADSAFE=0)
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)

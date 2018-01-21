@@ -50,7 +50,7 @@ void WorldData::LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INF
 			Grid[index] = block;
 		else
 		{
-			//delete block
+			//delete block from database
 			sqlite3_reset(DeleteBlockStmt);
 			sqlite3_bind_int(DeleteBlockStmt, 1, chunkPos.x);
 			sqlite3_bind_int(DeleteBlockStmt, 2, chunkPos.y);

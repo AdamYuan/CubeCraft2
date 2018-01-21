@@ -13,7 +13,7 @@
 #define MOUSE_SENSITIVITY 0.17f
 
 Player::Player(World &wld) : Position(Cam.Position), flying(false),
-							 BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
+							 BoundingBox({-0.25, -1.5, -0.25}, {0.25, 0.25, 0.25}),
 							 wld(&wld), UsingBlock(1)
 {
 
@@ -57,6 +57,12 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 
 void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate)
 {
+	glm::ivec3 chunkPos = GetChunkPosition();
+	if(!wld->ChunkExist(chunkPos))
+		return;
+	if(!wld->GetChunk(chunkPos)->LoadedTerrain)
+		return;
+
 	float dist = framerate.GetMovementDistance(WALK_SPEED);
 
 	glm::vec3 oldPos = Cam.Position;
@@ -173,12 +179,6 @@ bool Player::MoveAxis(int axis, float velocity)
 
 void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 {
-	glm::ivec3 chunkPos = GetChunkPosition();
-	if(!wld->ChunkExist(chunkPos))
-		return;
-	if(!wld->GetChunk(chunkPos)->LoadedTerrain)
-		return;
-
 	static double lastTime = glfwGetTime();
 	if(flying)
 	{

@@ -20,27 +20,7 @@ private:
 	GLFWwindow *Window;//must be the first
 	int Width = 720, Height = 480;
 
-	World world;
-
-	UI GameUI;
-
-	MyGL::Matrices Matrices;
-	MyGL::FrameRateManager FramerateManager;
-
-	float FPS = 0.0f;
-	bool control, showUI;
-
-	static void focusCallback(GLFWwindow* window, int focused);
-	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	static void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
-	inline static Application *getCallbackInstance(GLFWwindow* window)
-	{ return reinterpret_cast<Application*>(glfwGetWindowUserPointer(window)); }
-
 	void InitWindow();
-	void Render();
-	void RenderUI();
-	void LogicProcess();
 
 public:
 	Application();

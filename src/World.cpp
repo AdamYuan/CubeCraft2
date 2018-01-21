@@ -465,14 +465,12 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 	uint8_t lastSunLight = chk->GetSunLight(bPos),
 			lastBlock = chk->GetBlock(bPos),
 			lastTorchLight = chk->GetTorchLight(bPos);
+	LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
+
 	if(lastBlock == blk)
 		return;
 
-	LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
-
 	chk->SetBlock(bPos, blk);
-	chk->SetTorchLight(bPos, torchlightNow);
-
 
 	if(checkUpdate)
 	{
@@ -515,9 +513,15 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool checkUpdate)
 			if(torchlightNow != lastTorchLight)
 			{
 				if(torchlightNow < lastTorchLight && lastTorchLight)
+				{
 					TorchLightRemovalQueue.push({pos, lastTorchLight});
+					chk->SetTorchLight(bPos, 0);
+				}
 				if(torchlightNow)
+				{
 					TorchLightQueue.push({pos, torchlightNow});
+					chk->SetTorchLight(bPos, torchlightNow);
+				}
 			}
 		}
 	}

@@ -46,7 +46,7 @@ namespace ChunkAlgorithm
 		const int Lookup1[6] = {22, 4, 16, 10, 14, 12};
 
 		uint8_t sides[3];
-		bool trans[3];
+		bool trans[3], canPass[3];
 
 		for(int v=0; v<4; ++v)
 		{
@@ -54,6 +54,7 @@ namespace ChunkAlgorithm
 			{
 				sides[i] = neighbours[Lookup3[face][v][i]];
 				trans[i] = BlockMethods::IsTransparent(sides[i]);
+				canPass[i] = BlockMethods::LightCanPass(sides[i]);
 			}
 
 			this->AO[v] = (LightLevel)(!trans[0] && !trans[2] ? 0 : 3 - !trans[0] - !trans[1] - !trans[2]);
@@ -63,10 +64,10 @@ namespace ChunkAlgorithm
 			uint8_t counter = 1,
 					sunLightSum = sunlightNeighbours[Lookup1[face]],
 					torchLightSum = torchlightNeighbours[Lookup1[face]];
-			if(!sides[0] || !sides[2])
+			if(canPass[0] || canPass[2])
 				for(int i=0; i<3; ++i)
 				{
-					if(sides[i])
+					if(!canPass[i])
 						continue;
 					counter++;
 					sunLightSum += sunlightNeighbours[Lookup3[face][v][i]];
