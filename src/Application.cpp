@@ -2,9 +2,9 @@
 #include <GL/glew.h>
 #include "Application.hpp"
 #include "Resource.hpp"
-#include "WorldController.hpp"
+#include "UI.hpp"
 
-Application::Application()
+Application::Application() : Width(720), Height(480), InGame(false)
 {
 	InitWindow();
 }
@@ -21,7 +21,6 @@ void Application::InitWindow()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
 	Window = glfwCreateWindow(Width, Height, "CubeCraft2", nullptr, nullptr);
-    glfwSetWindowUserPointer(Window, reinterpret_cast<void *>(this));
 
 	if(Window == nullptr)
 	{
@@ -37,18 +36,47 @@ void Application::InitWindow()
 		printf("ERROR WHEN INITIALIZE GLEW");
 		exit(EXIT_FAILURE);
 	}
+
+	UI::Init(Window);
 	Resource::InitResources();
 }
 
 void Application::Run()
 {
-	WorldController worldController(Window, "world");
+	gameMenu = std::make_unique<GameMenu>(Window);
 	while(!glfwWindowShouldClose(Window))
 	{
-		worldController.Update();
+		if(InGame)
+		{
+			worldController->Update();
+
+			if(worldController->IsQuit())
+			{
+				worldController.reset();
+				gameMenu = std::make_unique<GameMenu>(Window);
+				InGame = false;
+			}
+		}
+		else
+		{
+			gameMenu->Update();
+			if(gameMenu->IsQuit())
+			{
+				std::string worldName = gameMenu->GetWorldName();
+				gameMenu.reset();
+				worldController = std::make_unique<WorldController>(Window, worldName);
+				InGame = true;
+			}
+		}
 
 		glfwSwapBuffers(Window);
 		glfwPollEvents();
 	}
+}
+
+Application::~Application()
+{
+	UI::Shutdown();
+	glfwDestroyWindow(Window);
 }
 

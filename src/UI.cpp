@@ -14,15 +14,21 @@ void UI::Render()
 	ImGui::Render();
 }
 
-void UI::Init(GLFWwindow *window, bool captureEvent)
+void UI::Init(GLFWwindow *window)
 {
-	ImGui_ImplGlfwGL3_Init(window, captureEvent);
-	ImGui::GetIO().WantCaptureKeyboard = captureEvent;
-	ImGui::GetIO().WantCaptureMouse = captureEvent;
+	ImGui_ImplGlfwGL3_Init(window);
 	ImGui::GetIO().Fonts->AddFontFromFileTTF("resources/DroidSans.ttf", 16);
 }
 
-UI::~UI()
+void UI::CaptureEvent(GLFWwindow *window, bool value)
+{
+	ImGui::GetIO().WantCaptureKeyboard = value;
+	ImGui::GetIO().WantCaptureMouse = value;
+	if(value)
+		ImGui_ImplGlfwGL3_InstallCallbacks(window);
+}
+
+void UI::Shutdown()
 {
 	ImGui_ImplGlfwGL3_Shutdown();
 }

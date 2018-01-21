@@ -57,11 +57,6 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 
 void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate)
 {
-	glm::ivec3 chunkPos = GetChunkPosition();
-	if(!wld->ChunkExist(chunkPos))
-		return;
-	if(!wld->GetChunk(chunkPos)->LoadedTerrain)
-		return;
 
 	float dist = framerate.GetMovementDistance(WALK_SPEED);
 
@@ -216,14 +211,20 @@ glm::ivec3 Player::GetChunkPosition() const
 void Player::Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
 					 const glm::mat4 &projection)
 {
-	//positions
-	if(focus)
+	glm::ivec3 chunkPos = GetChunkPosition();
+	ChunkPtr chk = wld->GetChunk(chunkPos);
+	bool flag = (chk && chk->LoadedTerrain) || (chunkPos.y < 0 || chunkPos.y >= WORLD_HEIGHT);
+	if(flag)
 	{
-		MouseControl(win, width, height);
-		KeyControl(win, framerate);
-	}
-	UpdatePhysics(framerate);
+		//positions
+		if(focus)
+		{
+			MouseControl(win, width, height);
+			KeyControl(win, framerate);
+		}
+		UpdatePhysics(framerate);
 
+	}
 	//update matrix
 	ViewMatrix = Cam.GetViewMatrix();
 

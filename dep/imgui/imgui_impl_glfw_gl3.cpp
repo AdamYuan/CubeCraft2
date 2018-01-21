@@ -309,7 +309,7 @@ void    ImGui_ImplGlfwGL3_InvalidateDeviceObjects()
 	}
 }
 
-bool    ImGui_ImplGlfwGL3_Init(GLFWwindow* window, bool install_callbacks)
+bool    ImGui_ImplGlfwGL3_Init(GLFWwindow* window)
 {
 	g_Window = window;
 
@@ -341,14 +341,6 @@ bool    ImGui_ImplGlfwGL3_Init(GLFWwindow* window, bool install_callbacks)
 #ifdef _WIN32
 	io.ImeWindowHandle = glfwGetWin32Window(g_Window);
 #endif
-
-	if (install_callbacks)
-	{
-		glfwSetMouseButtonCallback(window, ImGui_ImplGlfwGL3_MouseButtonCallback);
-		glfwSetScrollCallback(window, ImGui_ImplGlfwGL3_ScrollCallback);
-		glfwSetKeyCallback(window, ImGui_ImplGlfwGL3_KeyCallback);
-		glfwSetCharCallback(window, ImGui_ImplGlfwGL3_CharCallback);
-	}
 
 	return true;
 }
@@ -415,4 +407,12 @@ void ImGui_ImplGlfwGL3_NewFrame()
 
 	// Start the frame. This call will update the io.WantCaptureMouse, io.WantCaptureKeyboard flag that you can use to dispatch inputs (or not) to your application.
 	ImGui::NewFrame();
+}
+
+void ImGui_ImplGlfwGL3_InstallCallbacks(GLFWwindow *window)
+{
+	glfwSetMouseButtonCallback(window, ImGui_ImplGlfwGL3_MouseButtonCallback);
+	glfwSetScrollCallback(window, ImGui_ImplGlfwGL3_ScrollCallback);
+	glfwSetKeyCallback(window, ImGui_ImplGlfwGL3_KeyCallback);
+	glfwSetCharCallback(window, ImGui_ImplGlfwGL3_CharCallback);
 }

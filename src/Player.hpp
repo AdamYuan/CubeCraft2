@@ -18,7 +18,6 @@ class Player
 private:
 	const AABB BoundingBox;
 
-	MyGL::Camera Cam;
 	bool HitTest(glm::vec3 &pos, int axis, float velocity);
 
 	glm::mat4 ViewMatrix;
@@ -67,6 +66,8 @@ public:
 	{ return ViewMatrix; }
 	inline glm::ivec3 GetSelection(bool addDirVec)
 	{ return addDirVec ? NewBlockSelection : Selection; }
+
+	MyGL::Camera Cam;
 };
 
 

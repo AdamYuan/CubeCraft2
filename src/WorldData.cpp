@@ -107,7 +107,7 @@ void WorldData::LoadPlayer(Player &player)
 	std::ifstream file(PlayerFileName);
 
 	if(file.is_open())
-		file >> pos.x >> pos.y >> pos.z >> flying;
+		file >> pos.x >> pos.y >> pos.z >> flying >> player.Cam.Yaw >> player.Cam.Pitch >> player.UsingBlock;
 
 	player.Position = pos;
 	player.flying = flying;
@@ -118,5 +118,6 @@ void WorldData::SavePlayer(const Player &player)
 	std::ofstream file(PlayerFileName);
 	file.precision(PRECISION);
 	file << player.Position.x << ' ' << player.Position.y << ' ' << player.Position.z << ' '
-		 << player.flying << std::endl;
+		 << player.flying << ' ' << player.Cam.Yaw << ' ' << player.Cam.Pitch << ' '
+		 << player.UsingBlock << std::endl;
 }

@@ -44,6 +44,7 @@ private:
 	void UpdateChunkMeshingList();
 
 	static glm::ivec3 s_center;
+	glm::ivec3 LastCenter;
 	bool PosChanged;
 
 	inline static bool cmp2(const glm::ivec2 &l, const glm::ivec2 &r)

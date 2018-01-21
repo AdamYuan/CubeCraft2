@@ -14,7 +14,7 @@ glm::ivec3 World::s_center;
 World::World(const std::string &name)
 		: Running(true), ThreadsSupport(std::max(1u, std::thread::hardware_concurrency() - 1)),
 		  RunningThreads(0), PosChanged(false),
-		  Database(name), player(*this)
+		  Database(name), player(*this), LastCenter(INT_MAX)
 {
 	Timer = Database.LoadTime();
 	InitialTime = (float)glfwGetTime() - Timer;
@@ -46,6 +46,7 @@ World::~World()
 	for(auto &i : Threads)
 		i.join();
 
+	Threads.clear();
 	SuperChunk.clear();
 }
 
@@ -65,12 +66,10 @@ void World::Update(const glm::ivec3 &center)
 	PosChanged = false;
 	s_center = center;
 
-	static glm::ivec3 s_lastCenter = glm::ivec3(INT_MAX);
-
-	if(center.x != s_lastCenter.x || center.z != s_lastCenter.z)
+	if(center.x != LastCenter.x || center.z != LastCenter.z)
 	{
 		PosChanged = true;
-		s_lastCenter = center;
+		LastCenter = center;
 	}
 
 	if(PosChanged)

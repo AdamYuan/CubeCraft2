@@ -8,13 +8,13 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw_gl3.h>
 
-class UI
+namespace UI
 {
-public:
-	void Init(GLFWwindow *window, bool captureEvent);
-	void NewFrame();
-	void Render();
-	~UI();
+	extern void Init(GLFWwindow *window);
+	extern void CaptureEvent(GLFWwindow *window, bool value);
+	extern void NewFrame();
+	extern void Render();
+	extern void Shutdown();
 };
 
 

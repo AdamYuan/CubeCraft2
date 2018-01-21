@@ -4,59 +4,52 @@
 
 #include "Renderer.hpp"
 #include "WorldController.hpp"
+#include "UI.hpp"
 #include <glm/gtx/string_cast.hpp>
 
 void WorldController::focusCallback(GLFWwindow *window, int focused)
 {
-	auto app = (WorldController*)glfwGetWindowUserPointer(window);
-	if(!app)
-		return;
+	auto target = (WorldController*)glfwGetWindowUserPointer(window);
 	if(!focused)
-		app->control = false;
+		target->control = false;
 }
 void WorldController::framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
-	auto app = (WorldController*)glfwGetWindowUserPointer(window);
-	if(!app)
-		return;
-	app->Resize(width, height);
+	auto target = (WorldController*)glfwGetWindowUserPointer(window);
+	target->Resize(width, height);
 }
 void WorldController::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	auto app = (WorldController*)glfwGetWindowUserPointer(window);
-	if(!app)
-		return;
+	auto target = (WorldController*)glfwGetWindowUserPointer(window);
 	if(action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_ESCAPE)
 		{
-			glfwSetCursorPos(window, app->Width / 2, app->Height / 2);
-			app->control = !app->control;
+			glfwSetCursorPos(window, target->Width / 2, target->Height / 2);
+			target->control = !target->control;
 		}
 		else if(key == GLFW_KEY_F)
-			app->world.player.flying = !app->world.player.flying;
+			target->world.player.flying = !target->world.player.flying;
 		else if(key == GLFW_KEY_U)
-			app->showUI = !app->showUI;
+			target->showUI = !target->showUI;
 	}
 }
 void WorldController::scrollCallback(GLFWwindow *window, double xOffset, double yOffset)
 {
-	auto app = (WorldController*)glfwGetWindowUserPointer(window);
-	if(!app)
-		return;
+	auto target = (WorldController*)glfwGetWindowUserPointer(window);
 
 	auto y = (int)yOffset;
 
-	uint8_t &target = app->world.player.UsingBlock;
-	target -= y;
-	if(target >= BLOCKS_NUM)
-		target = 1;
-	else if(target <= 0)
-		target = BLOCKS_NUM - 1;
+	uint8_t &usingBlock = target->world.player.UsingBlock;
+	usingBlock -= y;
+	if(usingBlock >= BLOCKS_NUM)
+		usingBlock = 1;
+	else if(usingBlock <= 0)
+		usingBlock = BLOCKS_NUM - 1;
 }
 
 WorldController::WorldController(GLFWwindow *window, const std::string &worldName) :
-		Window(window), world(worldName), control(true), showUI(true)
+		Window(window), world(worldName), control(true), showUI(true), isQuit(false)
 {
 	glfwSetWindowUserPointer(window, (void*)this);
 
@@ -65,7 +58,7 @@ WorldController::WorldController(GLFWwindow *window, const std::string &worldNam
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetScrollCallback(window, scrollCallback);
 
-	GameUI.Init(window, false);
+	UI::CaptureEvent(window, false);
 
 	int width, height;
 	glfwGetFramebufferSize(Window, &width, &height);
@@ -75,6 +68,11 @@ WorldController::WorldController(GLFWwindow *window, const std::string &worldNam
 WorldController::~WorldController()
 {
 	glfwSetWindowUserPointer(Window, nullptr);
+
+	glfwSetWindowFocusCallback(Window, nullptr);
+	glfwSetFramebufferSizeCallback(Window, nullptr);
+	glfwSetKeyCallback(Window, nullptr);
+	glfwSetScrollCallback(Window, nullptr);
 }
 
 void WorldController::Update()
@@ -85,9 +83,9 @@ void WorldController::Update()
 	Render();
 	if(showUI)
 	{
-		GameUI.NewFrame();
+		UI::NewFrame();
 		RenderUI();
-		GameUI.Render();
+		UI::Render();
 	}
 	glfwSetInputMode(Window, GLFW_CURSOR, control ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 }
@@ -120,36 +118,56 @@ void WorldController::LogicProcess()
 	}
 
 	world.player.Control(control, Window, Width, Height, FramerateManager, Matrices.Projection3d);
-
 	world.Update(world.player.GetChunkPosition());
 }
 
 void WorldController::RenderUI()
 {
-	//copied from IMGUI example
-
 	//information box
-	const float DISTANCE = 10.0f;
-	int corner = 0;
-	ImVec2 window_pos = ImVec2((corner & 1) ? ImGui::GetIO().DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? ImGui::GetIO().DisplaySize.y - DISTANCE : DISTANCE);
-	ImVec2 window_pos_pivot = ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
-	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
-	if (ImGui::Begin("INFO", nullptr,
-					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
+	if(control)
 	{
-		ImGui::Text("fps: %f", FPS);
-		ImGui::Text("running threads: %u", world.GetRunningThreadNum());
-		ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
-		ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());
-		ImGui::Text("time: %f", world.GetDayTime());
-		ImGui::Separator();
-		ImGui::Text("flying [F]: %s", world.player.flying ? "true" : "false");
-		ImGui::Text("using block: %s", BlockMethods::GetName(world.player.UsingBlock));
+		const static ImVec2 window_pos = ImVec2(10.0f, 10.0f);
+		const static ImVec2 window_pos_pivot = ImVec2(1.0f, 1.0f);
 
-		ImGui::End();
+		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
+		if (ImGui::Begin("INFO", nullptr,
+						 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
+						 |ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
+		{
+			ImGui::Text("fps: %f", FPS);
+			ImGui::Text("running threads: %u", world.GetRunningThreadNum());
+			ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
+			ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());
+			ImGui::Text("time: %f", world.GetDayTime());
+			ImGui::Text("flying [F]: %s", world.player.flying ? "true" : "false");
+			ImGui::Text("using block: %s", BlockMethods::GetName(world.player.UsingBlock));
+
+			ImGui::End();
+		}
+		ImGui::PopStyleColor();
 	}
-	ImGui::PopStyleColor();
+	else //game menu
+	{
+		ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
+		if (ImGui::Begin("MENU", nullptr,
+						 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
+						 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+		{
+			ImGui::Text("Game menu");
+			if(ImGui::Button("Continue [ESC]", ImVec2(500.0f, 0.0f)))
+			{
+				glfwSetCursorPos(Window, Width / 2, Height / 2);
+				control = true;
+			}
+			if(ImGui::Button("Save and Quit", ImVec2(500.0f, 0.0f)))
+				isQuit = true;
+
+			ImGui::End();
+		}
+		ImGui::PopStyleColor();
+	}
 }
 
 void WorldController::Resize(int width, int height)
@@ -161,5 +179,10 @@ void WorldController::Resize(int width, int height)
 
 	if(control)
 		glfwSetCursorPos(Window, width / 2, height / 2);
+}
+
+bool WorldController::IsQuit()
+{
+	return isQuit;
 }
 
