@@ -81,12 +81,10 @@ void WorldController::Update()
 	LogicProcess();
 	//render
 	Render();
-	if(showUI)
-	{
-		UI::NewFrame();
-		RenderUI();
-		UI::Render();
-	}
+
+	UI::NewFrame();
+	RenderUI();
+	UI::Render();
 	glfwSetInputMode(Window, GLFW_CURSOR, control ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 }
 
@@ -126,26 +124,29 @@ void WorldController::RenderUI()
 	//information box
 	if(control)
 	{
-		const static ImVec2 window_pos = ImVec2(10.0f, 10.0f);
-		const static ImVec2 window_pos_pivot = ImVec2(1.0f, 1.0f);
-
-		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
-		if (ImGui::Begin("INFO", nullptr,
-						 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
-						 |ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
+		if(showUI)
 		{
-			ImGui::Text("fps: %f", FPS);
-			ImGui::Text("running threads: %u", world.GetRunningThreadNum());
-			ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
-			ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());
-			ImGui::Text("time: %f", world.GetDayTime());
-			ImGui::Text("flying [F]: %s", world.player.flying ? "true" : "false");
-			ImGui::Text("using block: %s", BlockMethods::GetName(world.player.UsingBlock));
+			const static ImVec2 window_pos = ImVec2(10.0f, 10.0f);
+			const static ImVec2 window_pos_pivot = ImVec2(1.0f, 1.0f);
 
-			ImGui::End();
+			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
+			if (ImGui::Begin("INFO", nullptr,
+							 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
+							 |ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
+			{
+				ImGui::Text("fps: %f", FPS);
+				ImGui::Text("running threads: %u", world.GetRunningThreadNum());
+				ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
+				ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());
+				ImGui::Text("time: %f", world.GetDayTime());
+				ImGui::Text("flying [F]: %s", world.player.flying ? "true" : "false");
+				ImGui::Text("using block: %s", BlockMethods::GetName(world.player.UsingBlock));
+
+				ImGui::End();
+			}
+			ImGui::PopStyleColor();
 		}
-		ImGui::PopStyleColor();
 	}
 	else //game menu
 	{

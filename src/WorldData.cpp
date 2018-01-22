@@ -6,7 +6,7 @@
 #include "Player.hpp"
 #include <fstream>
 
-WorldData::WorldData(const std::string &name)
+WorldData::WorldData(const std::string &name) : Running(true)
 {
 	PlayerFileName = name+"_player.dat";
 	TimeFileName = name+"_time.dat";
@@ -34,6 +34,8 @@ WorldData::WorldData(const std::string &name)
 	static const char *deleteBlockQuery =
 			"delete from block where x = ? and y = ? and i = ?;";
 	sqlite3_prepare_v2(DB, deleteBlockQuery, -1, &DeleteBlockStmt, nullptr);
+
+	InsertBlockThread = std::thread(&WorldData::InsertBlockWorker, this);
 }
 
 void WorldData::LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INFO_SIZE * WORLD_HEIGHT])
@@ -62,17 +64,17 @@ void WorldData::LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INF
 
 void WorldData::InsertBlock(const glm::ivec2 &chunkPos, int index, uint8_t block)
 {
-	std::lock_guard<std::mutex> lockGuard(DBMutex);
-	sqlite3_reset(InsertBlockStmt);
-	sqlite3_bind_int(InsertBlockStmt, 1, chunkPos.x);
-	sqlite3_bind_int(InsertBlockStmt, 2, chunkPos.y);
-	sqlite3_bind_int(InsertBlockStmt, 3, index);
-	sqlite3_bind_int(InsertBlockStmt, 4, (int)block);
-	sqlite3_step(InsertBlockStmt);
+	std::lock_guard<std::mutex> lockGuard(QueueMutex);
+	InsertBlockQueue.push({chunkPos, index, block});
+	Cond.notify_one();
 }
 
 WorldData::~WorldData()
 {
+	Running = false;
+	Cond.notify_one();
+	InsertBlockThread.join();
+
 	sqlite3_finalize(InsertBlockStmt);
 	sqlite3_finalize(DeleteBlockStmt);
 	sqlite3_finalize(LoadBlocksStmt);
@@ -120,4 +122,27 @@ void WorldData::SavePlayer(const Player &player)
 	file << player.Position.x << ' ' << player.Position.y << ' ' << player.Position.z << ' '
 		 << player.flying << ' ' << player.Cam.Yaw << ' ' << player.Cam.Pitch << ' '
 		 << player.UsingBlock << std::endl;
+}
+
+void WorldData::InsertBlockWorker()
+{
+	while(Running)
+	{
+		std::unique_lock<std::mutex> lk(QueueMutex);
+		Cond.wait(lk, [this]{return !Running || !InsertBlockQueue.empty();});
+		if(!Running)
+			return;
+
+		auto i = InsertBlockQueue.front();
+		InsertBlockQueue.pop();
+		lk.unlock();
+
+		std::lock_guard<std::mutex> dbLk(DBMutex);
+		sqlite3_reset(InsertBlockStmt);
+		sqlite3_bind_int(InsertBlockStmt, 1, i.chunkPos.x);
+		sqlite3_bind_int(InsertBlockStmt, 2, i.chunkPos.y);
+		sqlite3_bind_int(InsertBlockStmt, 3, i.index);
+		sqlite3_bind_int(InsertBlockStmt, 4, (int)i.block);
+		sqlite3_step(InsertBlockStmt);
+	}
 }

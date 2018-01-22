@@ -9,12 +9,29 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <sqlite/sqlite3.h>
+#include <thread>
 #include <mutex>
+#include <queue>
+#include <condition_variable>
 
 class Player;
+
+struct DBInsertBlockInfo
+{
+	glm::ivec2 chunkPos;
+	int index;
+	uint8_t block;
+};
+
 class WorldData
 {
 private:
+	bool Running;
+	std::mutex QueueMutex;
+	std::thread InsertBlockThread;
+	std::queue<DBInsertBlockInfo> InsertBlockQueue;
+	std::condition_variable Cond;
+
 	sqlite3 *DB;
 	std::mutex DBMutex;
 	sqlite3_stmt *DeleteBlockStmt, *LoadBlocksStmt, *InsertBlockStmt;
@@ -24,6 +41,8 @@ public:
 	~WorldData();
 	void LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INFO_SIZE * WORLD_HEIGHT]);
 	void InsertBlock(const glm::ivec2 &chunkPos, int index, uint8_t block);
+
+	void InsertBlockWorker();
 
 	void LoadPlayer(Player &player);
 	void SavePlayer(const Player &player);
