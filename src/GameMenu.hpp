@@ -14,6 +14,7 @@ class GameMenu
 private:
 	GLFWwindow *Window;
 	bool isQuit, enterGame;
+	void RenderUI();
 public:
 	explicit GameMenu(GLFWwindow *window);
 	bool EnterGame() { return enterGame; }

@@ -17,7 +17,7 @@ World::World(const std::string &name)
 		  Database(name), player(*this), LastCenter(INT_MAX)
 {
 	Timer = Database.LoadTime();
-	InitialTime = (float)glfwGetTime() - Timer;
+	InitialTime = (float)glfwGetTime() - Timer * DAY_TIME;
 
 	Database.LoadPlayer(player);
 
@@ -55,8 +55,8 @@ World::~World()
 void World::Update(const glm::ivec3 &center)
 {
 	//update time
-	Timer = (float)glfwGetTime() - InitialTime;
-	Timer = fmodf(Timer, DAY_TIME);
+	Timer = ((float)glfwGetTime() - InitialTime) / DAY_TIME;
+	Timer = fmodf(Timer, 1);
 
 	float radians = GetDayTime() * 6.28318530718f;
 	SunModelMatrix = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(1.0f, 0.0f, 0.0f));

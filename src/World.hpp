@@ -80,8 +80,7 @@ private:
 			TorchLightQueue, TorchLightRemovalQueue;
 
 	//day night cycle
-	float InitialTime, Timer;
-	//0.0f - 1024.0f(1.0f = 1 second)
+	float InitialTime, Timer; //0 - 1
 	glm::mat4 SunModelMatrix;
 	glm::vec3 SunPosition;
 
@@ -115,25 +114,14 @@ public:
 			if(_bPos[axis] == 0)
 			{
 				_size = size;
-				for(short i=0; i<_size; ++i)
-				{
-					tmp = arr[i];
-					tmp[axis]--;
-					arr[size++] = tmp;
-				}
+				for(short i=0; i<_size; ++i) { tmp = arr[i]; tmp[axis]--; arr[size++] = tmp; }
 			}
 			else if(_bPos[axis] == CHUNK_SIZE-1)
 			{
 				_size = size;
-				for(short i=0; i<_size; ++i)
-				{
-					tmp = arr[i];
-					tmp[axis]++;
-					arr[size++] = tmp;
-				}
+				for(short i=0; i<_size; ++i) { tmp = arr[i]; tmp[axis]++; arr[size++] = tmp; }
 			}
-		for(short i=0; i<size; ++i)
-			chunkPos.insert(arr[i]);
+		for(short i=0; i<size; ++i) chunkPos.insert(arr[i]);
 	}
 
 	void Update(const glm::ivec3 &center);
@@ -160,7 +148,7 @@ public:
 
 	inline float GetDayTime() const
 	{
-		return Timer / DAY_TIME;
+		return Timer;
 	}
 	inline float GetDayLight() const
 	{

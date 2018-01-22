@@ -258,9 +258,7 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 	// Cube containing origin point.
 	glm::vec3 xyz = glm::floor(origin);
 	// Break out direction vector.
-	glm::vec3 direction = glm::unProject(glm::vec3(width / 2, height / 2, 1.0f),
-										 glm::mat4(), projection * ViewMatrix,
-										 glm::vec4(0.0f, 0.0f, width, height)) - origin;
+	glm::vec3 direction = Cam.GetLookDirection();
 	// Direction to increment x,y,z when stepping.
 	glm::ivec3 step = glm::sign(direction);
 	// See description above. The initial values depend on the fractional

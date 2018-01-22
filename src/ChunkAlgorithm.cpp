@@ -78,8 +78,8 @@ namespace ChunkAlgorithm
 			this->TorchLight[v] = torchLightSum / counter;
 		}
 
-		Flip = AO[0] + AO[2] + std::max(SunLight[1], SunLight[3]) + std::max(TorchLight[1], TorchLight[3]) >
-			   AO[1] + AO[3] + std::max(SunLight[0], SunLight[2]) + std::max(TorchLight[0], TorchLight[2]);
+		Flip = AO[0] + AO[2] + SunLight[1] + SunLight[3] + std::max(TorchLight[1], TorchLight[3]) >
+			   AO[1] + AO[3] + SunLight[0] + SunLight[2] + std::max(TorchLight[0], TorchLight[2]);
 	}
 
 	bool FaceLighting::operator==(const FaceLighting &f) const

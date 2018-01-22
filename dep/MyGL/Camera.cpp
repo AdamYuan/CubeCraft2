@@ -3,11 +3,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 namespace MyGL
 {
+	glm::vec3 Camera::GetLookDirection() const
+	{
+		glm::mat4 matrix;
+		matrix = glm::rotate(matrix, glm::radians(Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+		matrix = glm::rotate(matrix, glm::radians(Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		return glm::mat3(matrix) * glm::vec3(0.0f, 0.0f, -1.0f);
+	}
 	glm::mat4 Camera::GetViewMatrix() const
 	{
 		glm::mat4 view;
-		view = glm::rotate(view, glm::radians(-Pitch), glm::vec3(1.0f,0.0f,0.0f));
-		view = glm::rotate(view, glm::radians(-Yaw), glm::vec3(0.0f,1.0f,0.0f));
+		view = glm::rotate(view, glm::radians(-Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(-Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
 		view = glm::translate(view, -Position);
 
 		return view;
@@ -40,4 +47,5 @@ namespace MyGL
 		else if(Yaw > 360.0f)
 			Yaw -= 360;
 	}
+
 }

@@ -20,7 +20,6 @@ WorldData::WorldData(const std::string &name) : Running(true)
 					");";
 	sqlite3_open((name + ".db").c_str(), &DB);
 	sqlite3_exec(DB, createQuery, nullptr, nullptr, nullptr);
-	sqlite3_exec(DB, "PRAGMA synchronous=OFF", nullptr, nullptr, nullptr);
 
 	static const char *insertBlockQuery =
 			"insert or replace into block (x, y, i, b)"
@@ -85,7 +84,7 @@ WorldData::~WorldData()
 
 float WorldData::LoadTime()
 {
-	float t = .25f * DAY_TIME;
+	float t = .25f;
 
 	std::ifstream file(TimeFileName);
 	if(file.is_open())
@@ -126,11 +125,11 @@ void WorldData::SavePlayer(const Player &player)
 
 void WorldData::InsertBlockWorker()
 {
-	while(Running)
+	while(true)
 	{
 		std::unique_lock<std::mutex> lk(QueueMutex);
 		Cond.wait(lk, [this]{return !Running || !InsertBlockQueue.empty();});
-		if(!Running)
+		if(!Running && InsertBlockQueue.empty())
 			return;
 
 		auto i = InsertBlockQueue.front();
