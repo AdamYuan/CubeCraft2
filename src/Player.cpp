@@ -13,7 +13,7 @@
 #define MOUSE_SENSITIVITY 0.17f
 
 Player::Player(World &wld) : Position(Cam.Position), flying(false),
-							 BoundingBox({-0.25, -1.25, -0.25}, {0.25, 0.25, 0.25}),
+							 BoundingBox({-0.25, -1.375, -0.25}, {0.25, 0.25, 0.25}),
 							 wld(&wld), UsingBlock(1)
 {
 
