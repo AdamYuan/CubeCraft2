@@ -10,6 +10,7 @@
 #include <string>
 #include <sqlite/sqlite3.h>
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include <queue>
 #include <condition_variable>
@@ -26,7 +27,7 @@ struct DBInsertBlockInfo
 class WorldData
 {
 private:
-	bool Running;
+	std::atomic_bool Running;
 	std::mutex QueueMutex;
 	std::thread InsertBlockThread;
 	std::queue<DBInsertBlockInfo> InsertBlockQueue;

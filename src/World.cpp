@@ -34,11 +34,13 @@ World::World(const std::string &name)
 
 World::~World()
 {
+	{
+		std::lock_guard<std::mutex> lk(Mutex);
+		SuperChunk.clear();
+	}
+
 	Database.SavePlayer(player);
 	Database.SaveTime(Timer);
-
-	Mutex.unlock();
-	SuperChunk.clear();
 }
 
 
@@ -262,38 +264,43 @@ void World::UpdateChunkMeshingList()
 
 void World::ChunkLoadingWorker(const glm::ivec2 &pos)
 {
-	std::unique_lock<std::mutex> lk(Mutex);
 	glm::ivec3 i(pos.x, 0, pos.y);
-	if(!ChunkExist(i))
 	{
-		LoadingThreadNum --;
-		return;
+		std::lock_guard<std::mutex> lk(Mutex);
+		if(!ChunkExist(i))
+		{
+			LoadingThreadNum --;
+			return;
+		}
 	}
-	lk.unlock();
 
 	RunningThreads ++;
 	ChunkLoadingInfo info(pos, Database);
 	info.Process();
 	RunningThreads --;
 
-	lk.lock();
-	LoadingInfoSet.erase(pos);
-	if(ChunkExist(i))
 	{
-		ChunkPtr arr[WORLD_HEIGHT];
-		for(; i.y < WORLD_HEIGHT; i.y++)
-			arr[i.y] = GetChunk(i);
+		std::lock_guard<std::mutex> lk(Mutex);
+		LoadingInfoSet.erase(pos);
+		if (ChunkExist(i))
+		{
+			ChunkPtr arr[WORLD_HEIGHT];
+			for (; i.y < WORLD_HEIGHT; i.y++)
+				arr[i.y] = GetChunk(i);
 
-		info.ApplyTerrain(arr);
+			info.ApplyTerrain(arr);
+		}
+		LoadingThreadNum--;
 	}
-	LoadingThreadNum --;
 }
 
 void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
 {
 	ChunkPtr copyArr[WORLD_HEIGHT * 9], resultArr[WORLD_HEIGHT];
-	std::unique_lock<std::mutex> lk(Mutex);
+
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		bool flag = true;
 		int index = 0;
 		glm::ivec3 i(pos.x, 0, pos.y);
@@ -315,15 +322,15 @@ void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
 			return;
 		}
 	}
-	lk.unlock();
 
 	RunningThreads ++;
 	ChunkInitialLightingInfo info(copyArr);
 	info.Process();
 	RunningThreads --;
 
-	lk.lock();
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		glm::ivec3 i(pos.x, 0, pos.y);
 		if(ChunkExist(i))
 		{
@@ -339,10 +346,10 @@ void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
 
 void World::ChunkMeshingWorker(const glm::ivec3 &pos)
 {
-	std::unique_lock<std::mutex> lk(Mutex);
-
 	ChunkPtr arr[27];
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		bool flag = true;
 		for (int i=0; i<27; ++i)
 		{
@@ -361,15 +368,15 @@ void World::ChunkMeshingWorker(const glm::ivec3 &pos)
 			return;
 		}
 	}
-	lk.unlock();
 
 	RunningThreads ++;
 	ChunkMeshingInfo info(arr);
 	info.Process();
 	RunningThreads --;
 
-	lk.lock();
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		MeshingInfoSet.erase(pos);
 		ChunkPtr chk = GetChunk(pos);
 		if(chk)
@@ -385,8 +392,10 @@ void World::ChunkMeshingWorker(const glm::ivec3 &pos)
 void World::ChunkMeshUpdateWorker(const glm::ivec3 &pos)
 {
 	ChunkPtr arr[27];
-	std::unique_lock<std::mutex> lk(Mutex);
+
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		if(!ChunkExist(pos))
 			return;
 		if(!GetChunk(pos)->InitializedMesh)
@@ -394,15 +403,15 @@ void World::ChunkMeshUpdateWorker(const glm::ivec3 &pos)
 		for(int i=0; i<27; ++i)
 			arr[i] = GetChunk(pos + MeshingLookup[i]);
 	}
-	lk.unlock();
 
 	RunningThreads ++;
 	ChunkMeshingInfo info(arr);
 	info.Process();
 	RunningThreads --;
 
-	lk.lock();
 	{
+		std::lock_guard<std::mutex> lk(Mutex);
+
 		ChunkPtr chk = GetChunk(pos);
 		if(chk)
 		{

@@ -39,6 +39,8 @@ WorldData::WorldData(const std::string &name) : Running(true)
 
 void WorldData::LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INFO_SIZE * WORLD_HEIGHT])
 {
+	if(!Running)
+		return;
 	std::lock_guard<std::mutex> lockGuard(DBMutex);
 	sqlite3_reset(LoadBlocksStmt);
 	sqlite3_bind_int(LoadBlocksStmt, 1, chunkPos.x);
@@ -71,9 +73,11 @@ void WorldData::InsertBlock(const glm::ivec2 &chunkPos, int index, uint8_t block
 WorldData::~WorldData()
 {
 	Running = false;
+
 	Cond.notify_one();
 	InsertBlockThread.join();
 
+	std::lock_guard<std::mutex> lockGuard(DBMutex);
 	sqlite3_finalize(InsertBlockStmt);
 	sqlite3_finalize(DeleteBlockStmt);
 	sqlite3_finalize(LoadBlocksStmt);
@@ -129,7 +133,7 @@ void WorldData::InsertBlockWorker()
 	{
 		std::unique_lock<std::mutex> lk(QueueMutex);
 		Cond.wait(lk, [this]{return !Running || !InsertBlockQueue.empty();});
-		if(!Running && InsertBlockQueue.empty())
+		if(!Running)
 			return;
 
 		auto i = InsertBlockQueue.front();

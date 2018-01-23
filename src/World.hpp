@@ -140,7 +140,8 @@ public:
 						  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
 	}
 
-	std::unordered_set<glm::ivec3> RenderSet, RenderAdditionSet, RenderRemovalSet; //these two are for multi-threading
+	std::unordered_set<glm::ivec3> RenderSet, RenderAdditionSet, RenderRemovalSet;
+	//these two are for multi-threading
 
 	inline float GetDayTime() const
 	{
