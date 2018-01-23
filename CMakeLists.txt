@@ -34,6 +34,6 @@ if (GLFW3_FOUND)
 endif()
 
 #add source files
-file(GLOB SOURCE_FILES main.cpp src/*.cpp dep/*/*.cpp dep/*/*.c)
+file(GLOB SOURCE_FILES main.cpp src/*.cpp dep/*/*.cpp dep/*/*.c src/Setting.hpp)
 include_directories(dep)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

@@ -22,6 +22,7 @@ make -j4
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) - Image loading
 * [FastNoiseSIMD](https://github.com/Auburns/FastNoiseSIMD) - Terrain generation
 * [ImGui](https://github.com/ocornut/imgui) - UI rendering
+* [nbsdx/ThreadPool](https://github.com/nbsdx/ThreadPool) - Multi-threaded world loading and update
 
 ## References
 * https://www.seedofandromeda.com/blogs/29-fast-flood-fill-lighting-in-a-blocky-voxel-game-pt-1 - Lighting

@@ -16,66 +16,62 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <queue>
 #include <vector>
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
 #include <condition_variable>
 #include <atomic>
+#include <functional>
+
+#include <ThreadPool.h>
 
 class World
 {
 private:
 	std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>> SuperChunk;
 
-	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLoadingInfo>> LoadingInfoMap;
-	std::vector<glm::ivec2> LoadingVector;
+	ThreadPool threadPool;
 
-	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkInitialLightingInfo>> InitialLightingInfoMap;
-	std::list<glm::ivec2> InitialLightingList;
+	int LoadingThreadNum, LightingThreadNum, MeshingThreadNum;
+	std::unordered_set<glm::ivec2> LoadingInfoSet;
+	std::vector<glm::ivec2> PreLoadingVector;
+
+	std::unordered_set<glm::ivec2> InitialLightingInfoSet;
 	std::vector<glm::ivec2> PreInitialLightingVector;
 
-	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshingInfoMap;
-	std::list<glm::ivec3> MeshingList;
+	glm::ivec3 MeshingLookup[27];
+	std::unordered_set<glm::ivec3> MeshingInfoSet;
 	std::vector<glm::ivec3> PreMeshingVector;
+
+	std::unordered_set<glm::ivec3> MeshUpdateInfoSet;
 
 	void UpdateChunkLoadingList();
 	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
 
-	static glm::ivec3 s_center;
-	glm::ivec3 LastCenter;
+	glm::ivec3 LastCenter, Center;
 	bool PosChanged;
 
-	inline static bool cmp2(const glm::ivec2 &l, const glm::ivec2 &r)
-	{
-		return glm::length((glm::vec2)l - glm::vec2(s_center.x, s_center.z)) >
-			   glm::length((glm::vec2)r - glm::vec2(s_center.x, s_center.z));
-	}
-	inline static bool cmp3(const glm::ivec3 &l, const glm::ivec3 &r)
-	{
-		return glm::length((glm::vec3)l - (glm::vec3)s_center) > glm::length((glm::vec3)r - (glm::vec3)s_center);
-	}
+	inline bool cmp2_impl(const glm::ivec2 &l, const glm::ivec2 &r)
+	{ return glm::length((glm::vec2)l - glm::vec2(Center.x, Center.z)) < glm::length((glm::vec2)r - glm::vec2(Center.x, Center.z)); }
+	inline bool cmp3_impl(const glm::ivec3 &l, const glm::ivec3 &r)
+	{ return glm::length((glm::vec3)l - (glm::vec3)Center) < glm::length((glm::vec3)r - (glm::vec3)Center); }
+	std::function<bool(const glm::ivec2&, const glm::ivec2&)> cmp2;
+	std::function<bool(const glm::ivec3&, const glm::ivec3&)> cmp3;
 
 	//multi threading stuff
-	unsigned ThreadsSupport;
-
 	std::atomic_uint RunningThreads;
-
-	std::vector<std::thread> Threads;
 	std::mutex Mutex;
-	std::condition_variable Cond;
-	void ChunkLoadingWorker();
-	void ChunkInitialLightingWorker();
-	void ChunkMeshingWorker();
-	void ChunkMeshUpdateWorker();
-	bool Running;
+	void ChunkLoadingWorker(const glm::ivec2 &pos);
+	void ChunkInitialLightingWorker(const glm::ivec2 &pos);
+	void ChunkMeshingWorker(const glm::ivec3 &pos);
+	void ChunkMeshUpdateWorker(const glm::ivec3 &pos);
 
 	//chunk update
 	void ProcessChunkUpdates();
 	std::unordered_set<glm::ivec3> MeshDirectlyUpdateSet, MeshThreadedUpdateSet;
-	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> MeshUpdateInfoMap;
-	std::vector<glm::ivec3> MeshUpdateVector;
 	std::queue<LightBFSNode> SunLightQueue, SunLightRemovalQueue,
 			TorchLightQueue, TorchLightRemovalQueue;
 
@@ -144,7 +140,7 @@ public:
 						  (pos.z + (pos.z < 0)) / CHUNK_SIZE - (pos.z < 0));
 	}
 
-	std::unordered_set<glm::ivec3> RenderSet;
+	std::unordered_set<glm::ivec3> RenderSet, RenderAdditionSet, RenderRemovalSet; //these two are for multi-threading
 
 	inline float GetDayTime() const
 	{

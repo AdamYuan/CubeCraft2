@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 
 class WorldData;
+struct ChunkRenderVertex { float X, Y, Z, U, V, Tex, Face, AO, SunLight, TorchLight; };
 
 static inline int XYZ(const glm::ivec3 &pos)
 { return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
@@ -79,15 +80,15 @@ public:
 		int index = XYZ(pos);
 		Light[index] = (Light[index] & (uint8_t)0x0F) | (val << 4);
 	}
+
+	std::vector<ChunkRenderVertex> Mesh;
 };
 using ChunkPtr = Chunk*;
 
 class ChunkInfo
 {
 public:
-	std::atomic_bool Done;
 	virtual void Process()= 0;
-	ChunkInfo() : Done(false) {}
 };
 
 class ChunkLoadingInfo : public ChunkInfo
@@ -104,10 +105,6 @@ public:
 };
 
 
-struct ChunkRenderVertex
-{
-	float X, Y, Z, U, V, Tex, Face, AO, SunLight, TorchLight;
-};
 
 
 class ChunkMeshingInfo : public ChunkInfo
@@ -122,7 +119,7 @@ private:
 public:
 	explicit ChunkMeshingInfo(ChunkPtr (&chk)[27]);
 	void Process() override;
-	void ApplyMesh(ChunkPtr chk);
+	void ApplyResult(ChunkPtr chk);
 };
 
 

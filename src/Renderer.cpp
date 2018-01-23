@@ -4,6 +4,7 @@
 #include "Renderer.hpp"
 #include "Resource.hpp"
 #include "World.hpp"
+#include "ChunkAlgorithm.hpp"
 #include <MyGL/Frustum.hpp>
 
 void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const glm::vec3 &position,
@@ -41,9 +42,16 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 
 	for(const glm::ivec3 &pos : wld.RenderSet)
 	{
-		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		ChunkPtr chk = wld.GetChunk(pos);
-		if (chk && frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
+		if(!chk)
+			continue;
+		if(!chk->Mesh.empty())
+		{
+			ChunkAlgorithm::ApplyMesh(chk, chk->Mesh);
+			chk->Mesh.clear(); chk->Mesh.shrink_to_fit();
+		}
+		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
+		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
 			glm::distance((glm::vec3)pos, p_center) < (float)CHUNK_LOADING_RANGE + 1)
 			chk->VertexBuffer->Render(GL_TRIANGLES);
 	}

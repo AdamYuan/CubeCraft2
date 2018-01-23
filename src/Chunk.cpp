@@ -122,8 +122,6 @@ void ChunkLoadingInfo::Process()
 	FastNoiseSIMD::FreeNoiseSet(treeMap);
 
 	Data.LoadBlocks(Position, Result);
-
-	Done = true;
 }
 
 void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
@@ -144,14 +142,12 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 void ChunkMeshingInfo::Process()
 {
 	ChunkAlgorithm::MeshingThreaded(Grid, Light, Position, Result);
-	Done = true;
 }
 
-void ChunkMeshingInfo::ApplyMesh(ChunkPtr chk)
+void ChunkMeshingInfo::ApplyResult(ChunkPtr chk)
 {
-	ChunkAlgorithm::ApplyMesh(chk, Result);
+	chk->Mesh = std::move(Result);
 	chk->InitializedMesh = true;
-	//std::cout << Result.size() << std::endl;
 }
 
 ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
@@ -450,9 +446,6 @@ void ChunkInitialLightingInfo::Process()
 	}
 
 	ChunkAlgorithm::TorchLightBFSThreaded(Grid, Result, Queue);
-
-
-	Done = true;
 }
 
 void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])

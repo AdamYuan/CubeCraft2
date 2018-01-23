@@ -39,7 +39,7 @@ void main()
 	color3 = mix(color3, sky_color, fog_factor);
 
 	//show selection box
-	const float delta = 0.0001f;
+	const float delta = 0.001f;
 	vec3 min_pos = selection - vec3(delta);
 	vec3 max_pos = selection + vec3(1.0f + delta);
 	if(
