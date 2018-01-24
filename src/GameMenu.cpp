@@ -109,6 +109,7 @@ void GameMenu::WorldList()
 
 		ImGui::End();
 	}
+	ImGui::PopStyleColor();
 }
 
 void GameMenu::UpdateWorldVector()

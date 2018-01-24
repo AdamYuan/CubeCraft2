@@ -8,7 +8,6 @@
 
 WorldData::WorldData(const std::string &name) : Running(true)
 {
-	sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 	std::string dirPath = WORLD_DIR(name);
 	DataFileName = dirPath + DATA_FILE_NAME;
 	SeedFileName = dirPath + SEED_FILE_NAME;

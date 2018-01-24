@@ -6,6 +6,6 @@ out float Y;
 
 void main()
 {
-	Y = 0.5f - (position.y / 2.0f);
+	Y = 0.5f - position.y / 2.0f;
 	gl_Position = matrix * position;
 }
