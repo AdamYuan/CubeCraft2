@@ -30,6 +30,8 @@
 class World
 {
 private:
+	int Seed;
+	std::string WorldName;
 	std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>> SuperChunk;
 
 	ThreadPool threadPool;
@@ -83,16 +85,16 @@ private:
 	//data saving
 	WorldData Database;
 
+	friend class WorldData;
+
 public:
 	Player player;
 
 	explicit World(const std::string &name);
 	~World();
 
-	inline void SetChunk(const glm::ivec3 &pos)
-	{ SuperChunk[pos] = std::make_unique<Chunk>(pos); }
-	inline bool ChunkExist(const glm::ivec3 &pos) const
-	{ return static_cast<bool>(SuperChunk.count(pos)); }
+	inline void SetChunk(const glm::ivec3 &pos) { SuperChunk[pos] = std::make_unique<Chunk>(pos); }
+	inline bool ChunkExist(const glm::ivec3 &pos) const { return static_cast<bool>(SuperChunk.count(pos)); }
 	inline ChunkPtr GetChunk(const glm::ivec3 &pos) const
 	{
 		if(!ChunkExist(pos))
@@ -143,16 +145,11 @@ public:
 	std::unordered_set<glm::ivec3> RenderSet, RenderAdditionSet, RenderRemovalSet;
 	//these two are for multi-threading
 
-	inline float GetDayTime() const
-	{
-		return Timer;
-	}
-	inline float GetDayLight() const
-	{
-		return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.2f, 1.0f);
-	}
-	inline glm::mat4 GetSunModelMatrix() const
-	{ return SunModelMatrix; }
+	inline float GetDayTime() const { return Timer; }
+	inline float GetDayLight() const { return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.2f, 1.0f); }
+	inline glm::mat4 GetSunModelMatrix() const { return SunModelMatrix; }
+	inline int GetSeed() const { return Seed; }
+	inline std::string GetName() const { return WorldName; }
 };
 
 

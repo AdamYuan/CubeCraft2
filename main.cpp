@@ -1,12 +1,18 @@
 #include <iostream>
 #include "src/Application.hpp"
 
-using namespace std;
-
 int main(int argc, char *argv[])
 {
-	Application App;
-	App.Run();
+	try
+	{
+		Application App;
+		App.Run();
+	}
+	catch(std::exception &e)
+	{
+		std::cout << e.what() << std::endl;
+	}
+
 
 	return 0;
 }

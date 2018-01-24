@@ -39,40 +39,13 @@ namespace BlockMethods
 {
 	extern const BlockProperty BlockProperties[BLOCKS_NUM];
 
-	inline const char *GetName(Block block)
-	{
-		return BlockProperties[block].Name;
-	}
-
-	inline int GetTexture(Block block, Face face)
-	{
-		return BlockProperties[block].Textures[face];
-	}
-
-	inline bool IsTransparent(Block block)
-	{
-		return BlockProperties[block].Transparent;
-	}
-
-	inline bool HaveHitbox(Block block)
-	{
-		return BlockProperties[block].Hitbox;
-	}
-
-	inline LightLevel GetLightLevel(Block block)
-	{
-		return BlockProperties[block].Light;
-	}
-
-	inline bool LightCanPass(Block block)
-	{
-		return BlockProperties[block].LightCanPass;
-	}
-
-	inline AABB GetBlockAABB(const glm::ivec3 &pos)
-	{
-		return {(glm::vec3)pos, (glm::vec3)pos + glm::vec3(1.0f)};
-	}
+	inline const char *GetName(Block block) { return BlockProperties[block].Name; }
+	inline int GetTexture(Block block, Face face) { return BlockProperties[block].Textures[face]; }
+	inline bool IsTransparent(Block block) { return BlockProperties[block].Transparent; }
+	inline bool HaveHitbox(Block block) { return BlockProperties[block].Hitbox; }
+	inline LightLevel GetLightLevel(Block block) { return BlockProperties[block].Light; }
+	inline bool LightCanPass(Block block) { return BlockProperties[block].LightCanPass; }
+	inline AABB GetBlockAABB(const glm::ivec3 &pos) { return {(glm::vec3)pos, (glm::vec3)pos + glm::vec3(1.0f)}; }
 }
 
 #endif // BLOCK_HPP

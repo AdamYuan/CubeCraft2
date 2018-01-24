@@ -14,6 +14,7 @@ World::World(const std::string &name)
 		  cmp2(std::bind(&World::cmp2_impl, this, std::placeholders::_1, std::placeholders::_2)),
 		  cmp3(std::bind(&World::cmp3_impl, this, std::placeholders::_1, std::placeholders::_2))
 {
+	WorldName = name;
 	LoadingThreadNum = LightingThreadNum = MeshingThreadNum = 0;
 	glm::ivec3 _;
 	int index = 0;
@@ -22,10 +23,7 @@ World::World(const std::string &name)
 			for(_.z = -1; _.z <= 1; ++_.z)
 				MeshingLookup[index++] = _;
 
-	Timer = Database.LoadTime();
-	InitialTime = (float)glfwGetTime() - Timer * DAY_TIME;
-
-	Database.LoadPlayer(player);
+	Database.LoadWorld(*this);
 
 	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
 	PreMeshingVector.reserve(_SIZE);
@@ -38,9 +36,7 @@ World::~World()
 		std::lock_guard<std::mutex> lk(Mutex);
 		SuperChunk.clear();
 	}
-
-	Database.SavePlayer(player);
-	Database.SaveTime(Timer);
+	Database.SaveWorld(*this);
 }
 
 
@@ -275,7 +271,7 @@ void World::ChunkLoadingWorker(const glm::ivec2 &pos)
 	}
 
 	RunningThreads ++;
-	ChunkLoadingInfo info(pos, Database);
+	ChunkLoadingInfo info(pos, Seed, Database);
 	info.Process();
 	RunningThreads --;
 

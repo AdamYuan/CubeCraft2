@@ -27,4 +27,12 @@ constexpr int LICHUNK_INFO_SIZE = LICHUNK_SIZE*LICHUNK_SIZE*WORLD_HEIGHT_BLOCK;
 
 extern const unsigned THREADS_SUPPORT;
 extern const unsigned MAX_THREAD_NUM;
+
+#define WORLD_NAME_LENGTH 32
+#define SAVES_DIR "saves/"
+#define WORLD_DIR(x) (std::string(SAVES_DIR) + (x) + "/")
+#define SEED_FILE_NAME "seed"
+#define DB_NAME "block.db"
+#define DATA_FILE_NAME "data"
+
 #endif // SETTINGS_HPP

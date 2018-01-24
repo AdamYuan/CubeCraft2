@@ -5,5 +5,5 @@
 #include <thread>
 
 const unsigned THREADS_SUPPORT = std::max(1u, std::thread::hardware_concurrency() - 1);
-const unsigned MAX_THREAD_NUM = THREADS_SUPPORT * 5;
+const unsigned MAX_THREAD_NUM = THREADS_SUPPORT;
 

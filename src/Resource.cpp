@@ -126,7 +126,7 @@ namespace Resource
 		MoonObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 
-		static constexpr float bgTime = 0.5f;
+		static constexpr float bgTime = 0.8f;
 		static constexpr float bgVertices[] = {
 				-1.0f,  1.0f,  bgTime, 1.0f,
 				-1.0f, -1.0f,  bgTime, 0.4f,

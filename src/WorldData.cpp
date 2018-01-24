@@ -3,13 +3,15 @@
 //
 
 #include "WorldData.hpp"
-#include "Player.hpp"
+#include "World.hpp"
 #include <fstream>
 
 WorldData::WorldData(const std::string &name) : Running(true)
 {
-	PlayerFileName = name+"_player.dat";
-	TimeFileName = name+"_time.dat";
+	sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+	std::string dirPath = WORLD_DIR(name);
+	DataFileName = dirPath + DATA_FILE_NAME;
+	SeedFileName = dirPath + SEED_FILE_NAME;
 	static const char *createQuery =
 			"create table if not exists block ("
 					"	x int not null,"
@@ -18,7 +20,7 @@ WorldData::WorldData(const std::string &name) : Running(true)
 					"	b int not null,"
 					"	primary key(x, y, i)"
 					");";
-	sqlite3_open((name + ".db").c_str(), &DB);
+	sqlite3_open((dirPath + DB_NAME).c_str(), &DB);
 	sqlite3_exec(DB, createQuery, nullptr, nullptr, nullptr);
 
 	static const char *insertBlockQuery =
@@ -39,9 +41,9 @@ WorldData::WorldData(const std::string &name) : Running(true)
 
 void WorldData::LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INFO_SIZE * WORLD_HEIGHT])
 {
+	std::lock_guard<std::mutex> lockGuard(DBMutex);
 	if(!Running)
 		return;
-	std::lock_guard<std::mutex> lockGuard(DBMutex);
 	sqlite3_reset(LoadBlocksStmt);
 	sqlite3_bind_int(LoadBlocksStmt, 1, chunkPos.x);
 	sqlite3_bind_int(LoadBlocksStmt, 2, chunkPos.y);
@@ -84,51 +86,10 @@ WorldData::~WorldData()
 	sqlite3_close(DB);
 }
 
-#define PRECISION 30
-
-float WorldData::LoadTime()
-{
-	float t = .25f;
-
-	std::ifstream file(TimeFileName);
-	if(file.is_open())
-		file >> t;
-
-	return t;
-}
-
-void WorldData::SaveTime(float time)
-{
-	std::ofstream file(TimeFileName);
-	file.precision(PRECISION);
-	file << time << std::endl;
-}
-
-void WorldData::LoadPlayer(Player &player)
-{
-	glm::vec3 pos(0.0f, 300.0f, 0.0f);
-	bool flying = false;
-
-	std::ifstream file(PlayerFileName);
-
-	if(file.is_open())
-		file >> pos.x >> pos.y >> pos.z >> flying >> player.Cam.Yaw >> player.Cam.Pitch >> player.UsingBlock;
-
-	player.Position = pos;
-	player.flying = flying;
-}
-
-void WorldData::SavePlayer(const Player &player)
-{
-	std::ofstream file(PlayerFileName);
-	file.precision(PRECISION);
-	file << player.Position.x << ' ' << player.Position.y << ' ' << player.Position.z << ' '
-		 << player.flying << ' ' << player.Cam.Yaw << ' ' << player.Cam.Pitch << ' '
-		 << player.UsingBlock << std::endl;
-}
 
 void WorldData::InsertBlockWorker()
 {
+	DBInsertBlockInfo info;
 	while(true)
 	{
 		std::unique_lock<std::mutex> lk(QueueMutex);
@@ -136,16 +97,56 @@ void WorldData::InsertBlockWorker()
 		if(!Running)
 			return;
 
-		auto i = InsertBlockQueue.front();
+		info = InsertBlockQueue.front();
 		InsertBlockQueue.pop();
 		lk.unlock();
 
 		std::lock_guard<std::mutex> dbLk(DBMutex);
 		sqlite3_reset(InsertBlockStmt);
-		sqlite3_bind_int(InsertBlockStmt, 1, i.chunkPos.x);
-		sqlite3_bind_int(InsertBlockStmt, 2, i.chunkPos.y);
-		sqlite3_bind_int(InsertBlockStmt, 3, i.index);
-		sqlite3_bind_int(InsertBlockStmt, 4, (int)i.block);
+		sqlite3_bind_int(InsertBlockStmt, 1, info.chunkPos.x);
+		sqlite3_bind_int(InsertBlockStmt, 2, info.chunkPos.y);
+		sqlite3_bind_int(InsertBlockStmt, 3, info.index);
+		sqlite3_bind_int(InsertBlockStmt, 4, (int)info.block);
 		sqlite3_step(InsertBlockStmt);
 	}
+}
+
+void WorldData::LoadWorld(World &world)
+{
+	world.Timer = .25f;
+	world.player.flying = false;
+	world.player.Position = glm::vec3(0.0f, 260.0f, 0.0f);
+
+	std::ifstream dataFile(DataFileName);
+	if(dataFile.is_open())
+	{
+		dataFile >> world.Timer;
+
+		Player &player = world.player;
+		dataFile >> player.Position.x >> player.Position.y >> player.Position.z
+				 >> player.flying
+				 >> player.Cam.Yaw >> player.Cam.Pitch
+				 >> player.UsingBlock;
+
+		dataFile.close();
+	}
+
+	world.InitialTime = (float)glfwGetTime() - world.Timer * DAY_TIME;
+
+	//get seed
+	std::ifstream seedFile(SeedFileName);
+	seedFile >> world.Seed;
+}
+
+void WorldData::SaveWorld(World &world)
+{
+	std::ofstream dataFile(DataFileName);
+	dataFile.precision(30);
+
+	Player &player = world.player;
+	dataFile << world.Timer << ' '
+			 << player.Position.x << ' ' << player.Position.y << ' ' << player.Position.z << ' '
+		 	 << player.flying << ' '
+			 << player.Cam.Yaw << ' ' << player.Cam.Pitch << ' '
+			 << player.UsingBlock << std::endl;
 }

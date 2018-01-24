@@ -126,16 +126,14 @@ void WorldController::RenderUI()
 	{
 		if(showUI)
 		{
-			const static ImVec2 window_pos = ImVec2(10.0f, 10.0f);
-			const static ImVec2 window_pos_pivot = ImVec2(1.0f, 1.0f);
-
-			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+			ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
 			if (ImGui::Begin("INFO", nullptr,
 							 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
 							 |ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
 			{
 				ImGui::Text("fps: %f", FPS);
+				ImGui::Text("world info: (name: %s, seed: %d)", world.GetName().c_str(), world.GetSeed());
 				ImGui::Text("running threads: %u", world.GetRunningThreadNum());
 				ImGui::Text("position: %s", glm::to_string(world.player.Position).c_str());
 				ImGui::Text("chunk position: %s", glm::to_string(world.player.GetChunkPosition()).c_str());

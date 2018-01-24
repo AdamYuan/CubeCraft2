@@ -8,13 +8,14 @@
 #include "Setting.hpp"
 #include <glm/glm.hpp>
 #include <string>
-#include <sqlite/sqlite3.h>
+#include <sqlite3.h>
 #include <thread>
 #include <atomic>
 #include <mutex>
 #include <queue>
 #include <condition_variable>
 
+class World;
 class Player;
 
 struct DBInsertBlockInfo
@@ -36,20 +37,17 @@ private:
 	sqlite3 *DB;
 	std::mutex DBMutex;
 	sqlite3_stmt *DeleteBlockStmt, *LoadBlocksStmt, *InsertBlockStmt;
-	std::string PlayerFileName, TimeFileName;
+	std::string DataFileName, SeedFileName;
+
+	void InsertBlockWorker();
 public:
 	explicit WorldData(const std::string &name);
 	~WorldData();
 	void LoadBlocks(const glm::ivec2 &chunkPos, uint8_t (&Grid)[CHUNK_INFO_SIZE * WORLD_HEIGHT]);
 	void InsertBlock(const glm::ivec2 &chunkPos, int index, uint8_t block);
 
-	void InsertBlockWorker();
-
-	void LoadPlayer(Player &player);
-	void SavePlayer(const Player &player);
-
-	float LoadTime();
-	void SaveTime(float time);
+	void LoadWorld(World &world);
+	void SaveWorld(World &world);
 };
 
 

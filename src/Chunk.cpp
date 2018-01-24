@@ -18,16 +18,15 @@ Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
 
 //Terrain Generation
 
-ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos, WorldData &data) : Data(data)
-{
-	this->Position = pos;
-}
+ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data) : Position(pos), Seed(seed), Data(data) {}
 
 void ChunkLoadingInfo::Process()
 {
 	std::fill(std::begin(Result), std::end(Result), Blocks::Air);
 
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	fastNoise->SetSeed(Seed);
+
 	constexpr int _SIZE = CHUNK_SIZE + 4, _SIZE2 = _SIZE * _SIZE;
 
 	//generate height map
