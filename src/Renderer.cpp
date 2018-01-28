@@ -11,7 +11,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 						   const glm::ivec3 &selection)
 {
 	static MyGL::Frustum frustum = {};
-	static constexpr float range = CHUNK_SIZE*(CHUNK_LOADING_RANGE - 1);
+	const float range = CHUNK_SIZE*(Setting::ChunkLoadRange - 1);
 
 	glm::vec3 p_center = (glm::vec3)(World::BlockPosToChunkPos(glm::floor(position)));
 
@@ -52,7 +52,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 		}
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
-			glm::distance((glm::vec3)pos, p_center) < (float)CHUNK_LOADING_RANGE + 1)
+			glm::distance((glm::vec3)pos, p_center) < (float)Setting::ChunkLoadRange + 1)
 			chk->VertexBuffer->Render(GL_TRIANGLES);
 	}
 

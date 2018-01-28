@@ -85,7 +85,7 @@ namespace Resource
 												  chWidth, -chWidth, -chWidth, chWidth, chWidth, chWidth};
 		CrosshairObject = MyGL::NewVertexObject();
 		CrosshairObject->SetDataArr(crosshairVertices, 36);
-		CrosshairObject->SetAttributes(1, ATTR_POSITION, 2);
+		CrosshairObject->SetAttributes(ATTR_POSITION, 2);
 
 		std::vector<uint32_t> sphereIndices;
 		std::vector<glm::vec3> spherePositions, sphereVertices;
@@ -96,7 +96,7 @@ namespace Resource
 
 		SkyObject = MyGL::NewVertexObject();
 		SkyObject->SetDataVec(sphereVertices);
-		SkyObject->SetAttributes(1, ATTR_POSITION, 3);
+		SkyObject->SetAttributes(ATTR_POSITION, 3);
 
 		static constexpr float sunSize = 0.4f;
 		static constexpr float sunVertices[] = {
@@ -109,7 +109,7 @@ namespace Resource
 		};
 		SunObject = MyGL::NewVertexObject();
 		SunObject->SetDataArr(sunVertices, 30);
-		SunObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+		SunObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 		static constexpr float moonSize = sunSize / 4.0f;
 		static constexpr float moonVertices[] = {
@@ -123,7 +123,7 @@ namespace Resource
 		};
 		MoonObject = MyGL::NewVertexObject();
 		MoonObject->SetDataArr(moonVertices, 30);
-		MoonObject->SetAttributes(2, ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+		MoonObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 
 		static constexpr float bgTime = 0.8f;
@@ -138,7 +138,7 @@ namespace Resource
 		};
 		BgObject = MyGL::NewVertexObject();
 		BgObject->SetDataArr(bgVertices, 24);
-		BgObject->SetAttributes(2, ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
+		BgObject->SetAttributes(ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
 	}
 }
 

@@ -85,13 +85,7 @@ public:
 };
 using ChunkPtr = Chunk*;
 
-class ChunkInfo
-{
-public:
-	virtual void Process()= 0;
-};
-
-class ChunkLoadingInfo : public ChunkInfo
+class ChunkLoadingInfo
 {
 private:
 	Block Result[WORLD_HEIGHT * CHUNK_INFO_SIZE];
@@ -101,14 +95,11 @@ private:
 
 public:
 	explicit ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data);
-	void Process() override;
+	void Process();
 	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 
-
-
-
-class ChunkMeshingInfo : public ChunkInfo
+class ChunkMeshingInfo
 {
 private:
 	Block Grid[EXCHUNK_INFO_SIZE];
@@ -119,13 +110,11 @@ private:
 
 public:
 	explicit ChunkMeshingInfo(ChunkPtr (&chk)[27]);
-	void Process() override;
+	void Process();
 	void ApplyResult(ChunkPtr chk);
 };
 
-
-
-class ChunkInitialLightingInfo : public ChunkInfo
+class ChunkInitialLightingInfo
 {
 private:
 	int Highest;
@@ -137,7 +126,7 @@ private:
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
-	void Process() override;
+	void Process();
 	void ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 

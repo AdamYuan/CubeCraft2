@@ -1,9 +1,6 @@
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
 
-#define CHUNK_LOADING_RANGE 10
-#define CHUNK_DELETING_RANGE 15
-
 #define CHUNK_SIZE 32 //should be greater than 14
 #define WORLD_HEIGHT 8
 
@@ -25,14 +22,19 @@ constexpr int EXCHUNK_INFO_SIZE = EXCHUNK_SIZE*EXCHUNK_SIZE*EXCHUNK_SIZE;
 constexpr int LICHUNK_SIZE = CHUNK_SIZE + 28;
 constexpr int LICHUNK_INFO_SIZE = LICHUNK_SIZE*LICHUNK_SIZE*WORLD_HEIGHT_BLOCK;
 
-extern const unsigned THREADS_SUPPORT;
-extern const unsigned MAX_THREAD_NUM;
-
 #define WORLD_NAME_LENGTH 32
 #define SAVES_DIR "saves/"
 #define WORLD_DIR(x) (std::string(SAVES_DIR) + (x) + "/")
 #define SEED_FILE_NAME "seed"
 #define DB_NAME "block.db"
 #define DATA_FILE_NAME "data"
+
+namespace Setting
+{
+	extern int LoadingThreadsNum, ChunkLoadRange, ChunkDeleteRange;
+
+	extern void InitSetting();
+	extern void SaveSetting();
+}
 
 #endif // SETTINGS_HPP

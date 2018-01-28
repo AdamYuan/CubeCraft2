@@ -22,6 +22,7 @@ make -j4
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) - Image loading
 * [FastNoiseSIMD](https://github.com/Auburns/FastNoiseSIMD) - Terrain generation
 * [ImGui](https://github.com/ocornut/imgui) - UI rendering
+* [libconfig++](https://hyperrealm.github.io/libconfig/) - Save game settings
 * [progschj/ThreadPool](https://github.com/progschj/ThreadPool) - Multi-threaded world loading and update
 
 ## References

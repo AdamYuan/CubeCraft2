@@ -106,13 +106,7 @@ bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 	glm::ivec3 Min = glm::floor(now.Min);
 	glm::ivec3 Max = glm::floor(now.Max);
 
-	int u, v;
-	if(axis == 0)
-		u = 1, v = 2;
-	else if(axis == 1)
-		u = 0, v = 2;
-	else
-		u = 0, v = 1;
+	int u = (axis + 1) % 3, v = (axis + 2) % 3;
 
 	glm::ivec3 iter;
 	bool positive = velocity > 0;

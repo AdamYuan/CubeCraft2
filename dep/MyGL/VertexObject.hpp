@@ -14,6 +14,20 @@ namespace MyGL
 		void bindAll();
 		void unbindAll();
 
+		unsigned getAttrSum() { return 0; }
+		template<class... T>
+		unsigned getAttrSum(unsigned attrId, unsigned attrSize, T... args) { return attrSize + getAttrSum(args...); }
+
+		void setAttrImpl(unsigned, unsigned) { }
+		template<class... T>
+		void setAttrImpl(unsigned sum, unsigned current, unsigned attrId, unsigned attrSize, T... args)
+		{
+			glVertexAttribPointer(attrId, attrSize, GL_FLOAT, GL_FALSE,
+								  sum * sizeof(float), (void*)(current * sizeof(float)));
+			glEnableVertexAttribArray(attrId);
+			setAttrImpl(sum, current + attrSize, args...);
+		}
+
 	public:
 		VertexObject(const VertexObject &) = delete;
 		VertexObject();
@@ -25,11 +39,19 @@ namespace MyGL
 		template<class T>
 		void SetDataArr(const T *array, int arrSize);
 
-		void SetAttributes(int attr_count, ...);
+		template<class... T>
+		void SetAttributes(T... args)
+		{
+			bindAll();
+			unsigned sum = getAttrSum(args...);
+			setAttrImpl(sum, 0, args...);
+			unbindAll();
+			Elements = DataSize / sum;
+		}
+
 		void Render(GLenum mode);
 
 		bool Empty() const;
-		size_t Size() const;
 	};
 
 	using VertexObjectPtr = std::unique_ptr<VertexObject>;

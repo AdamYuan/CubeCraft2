@@ -11,7 +11,7 @@
 
 struct GLFWwindow;
 
-enum MenuState { Main = 0, WorldSelection, CreateWorld, DeleteWorld };
+enum MenuState { Main = 0, WorldSelection, CreateWorld, DeleteWorld, EditWorld, Settings };
 class GameMenu
 {
 private:
@@ -22,6 +22,7 @@ private:
 	std::vector<std::string> WorldVector;
 	void MainMenu();
 	void WorldList();
+	void Settings();
 	void CreateWorldDialog();
 	void DeleteWorldDialog();
 	void UpdateWorldVector();

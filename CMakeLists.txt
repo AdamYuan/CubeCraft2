@@ -46,3 +46,8 @@ if (SQLITE3_FOUND)
     target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
 endif()
 
+find_package(Config++ REQUIRED)
+if (CONFIG++_FOUND)
+    include_directories(${CONFIG++_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} ${CONFIG++_LIBRARY})
+endif()

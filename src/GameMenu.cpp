@@ -47,6 +47,8 @@ void GameMenu::Update()
 		CreateWorldDialog();
 	else if(State == MenuState::DeleteWorld)
 		DeleteWorldDialog();
+	else if(State == MenuState::Settings)
+		Settings();
 
 	UI::Render();
 	glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -55,9 +57,8 @@ void GameMenu::Update()
 
 void GameMenu::MainMenu()
 {
-
-	ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
+	ImGui::SetNextWindowPosCenter();
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 	if (ImGui::Begin("MENU", nullptr,
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
 					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
@@ -65,6 +66,8 @@ void GameMenu::MainMenu()
 		ImGui::Text("CubeCraft");
 		if(ImGui::Button("Start", s_buttonSize))
 			GoToWorldList();
+		if(ImGui::Button("Settings", s_buttonSize))
+			State = MenuState::Settings;
 		if(ImGui::Button("Quit", s_buttonSize))
 			isQuit = true;
 
@@ -75,9 +78,8 @@ void GameMenu::MainMenu()
 
 void GameMenu::WorldList()
 {
-	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y),
-							 ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
 	if (ImGui::Begin("WORLD LIST", nullptr,
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
@@ -125,7 +127,7 @@ void GameMenu::UpdateWorldVector()
 
 void GameMenu::CreateWorldDialog()
 {
-	ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+	ImGui::SetNextWindowPosCenter();
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
 	if (ImGui::Begin("CREATE", nullptr,
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
@@ -176,7 +178,7 @@ void GameMenu::CreateWorldDialog()
 
 void GameMenu::DeleteWorldDialog()
 {
-	ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+	ImGui::SetNextWindowPosCenter();
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
 	if (ImGui::Begin("DELETE", nullptr,
 					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
@@ -190,6 +192,28 @@ void GameMenu::DeleteWorldDialog()
 		}
 		if(ImGui::Button("Cancel", s_buttonSize))
 			GoToWorldList();
+
+		ImGui::End();
+	}
+	ImGui::PopStyleColor();
+}
+
+void GameMenu::Settings()
+{
+	ImGui::SetNextWindowPosCenter();
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
+	if (ImGui::Begin("SETTINGS", nullptr,
+					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
+					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+	{
+		ImGui::SliderInt("Max loading threads", &Setting::LoadingThreadsNum, 1, 64);
+		ImGui::SliderInt("Chunk loading range", &Setting::ChunkLoadRange, 4, 30);
+		ImGui::SliderInt("Chunk deleting range", &Setting::ChunkDeleteRange, Setting::ChunkLoadRange, 50);
+		if(Setting::ChunkDeleteRange < Setting::ChunkLoadRange)
+			Setting::ChunkDeleteRange = Setting::ChunkLoadRange;
+
+		if(ImGui::Button("Back", s_buttonSize))
+			State = MenuState::Main;
 
 		ImGui::End();
 	}

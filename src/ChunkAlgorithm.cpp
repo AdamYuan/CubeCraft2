@@ -113,7 +113,7 @@ namespace ChunkAlgorithm
 	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh)
 	{
 		chk->VertexBuffer->SetDataVec(mesh);
-		chk->VertexBuffer->SetAttributes(4,
+		chk->VertexBuffer->SetAttributes(
 										 Resource::ATTR_POSITION, 3,
 										 Resource::ATTR_TEXCOORD, 3,
 										 Resource::ATTR_CHUNK_FACE, 1,
@@ -257,7 +257,7 @@ namespace ChunkAlgorithm
 
 							int du[3] = {0}, dv[3] = {0};
 
-							Face QuadFace = (Face) ((axis << 1) | (QuadType <= 0));
+							auto QuadFace = (Face) ((axis << 1) | (QuadType <= 0));
 
 							if (QuadType > 0) {
 								dv[v] = height;

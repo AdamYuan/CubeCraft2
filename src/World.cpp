@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 World::World(const std::string &name)
-		: threadPool(THREADS_SUPPORT),
+		: threadPool((size_t)Setting::LoadingThreadsNum),
 		  RunningThreads(0), PosChanged(false),
 		  Database(name), player(*this), LastCenter(INT_MAX),
 		  cmp2(std::bind(&World::cmp2_impl, this, std::placeholders::_1, std::placeholders::_2)),
@@ -25,7 +25,7 @@ World::World(const std::string &name)
 
 	Database.LoadWorld(*this);
 
-	constexpr size_t _SIZE = (CHUNK_LOADING_RANGE*2+1) * (CHUNK_LOADING_RANGE*2+1) * WORLD_HEIGHT;
+	const size_t _SIZE = ((size_t)Setting::ChunkLoadRange*2+1) * ((size_t)Setting::ChunkLoadRange*2+1) * WORLD_HEIGHT;
 	PreMeshingVector.reserve(_SIZE);
 	PreInitialLightingVector.reserve(_SIZE);
 }
@@ -47,8 +47,8 @@ void World::Update(const glm::ivec3 &center)
 	Timer = ((float)glfwGetTime() - InitialTime) / DAY_TIME;
 	Timer = std::fmod(Timer, 1.0f);
 
-	float radians = GetDayTime() * 6.28318530718f;
-	SunModelMatrix = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(1.0f, 0.0f, 0.0f));
+	float radians = Timer * 6.28318530718f;
+	SunModelMatrix = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(0.0f, 0.0f, 1.0f));
 	SunPosition = glm::vec3(SunModelMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 1.0f));
 
 	//global flags
@@ -80,10 +80,10 @@ void World::Update(const glm::ivec3 &center)
 	{
 		//remove all chunks out of the range
 		for(auto iter = SuperChunk.begin(); iter != SuperChunk.end(); ) {
-			if (iter->first.x < center.x - CHUNK_DELETING_RANGE ||
-				iter->first.x > center.x + CHUNK_DELETING_RANGE ||
-				iter->first.z < center.z - CHUNK_DELETING_RANGE ||
-				iter->first.z > center.z + CHUNK_DELETING_RANGE)
+			if (iter->first.x < center.x - Setting::ChunkDeleteRange ||
+				iter->first.x > center.x + Setting::ChunkDeleteRange ||
+				iter->first.z < center.z - Setting::ChunkDeleteRange ||
+				iter->first.z > center.z + Setting::ChunkDeleteRange)
 			{
 				RenderSet.erase(iter->first);
 				iter = SuperChunk.erase(iter);
@@ -93,8 +93,8 @@ void World::Update(const glm::ivec3 &center)
 		}
 		//generate chunks in the range
 		glm::ivec3 i;
-		for(i.x = center.x - CHUNK_LOADING_RANGE; i.x <= center.x + CHUNK_LOADING_RANGE; ++i.x)
-			for(i.z = center.z - CHUNK_LOADING_RANGE; i.z <= center.z + CHUNK_LOADING_RANGE; ++i.z)
+		for(i.x = center.x - Setting::ChunkLoadRange; i.x <= center.x + Setting::ChunkLoadRange; ++i.x)
+			for(i.z = center.z - Setting::ChunkLoadRange; i.z <= center.z + Setting::ChunkLoadRange; ++i.z)
 				for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
 					if(!ChunkExist(i))
 						SetChunk(i);
@@ -143,14 +143,14 @@ void World::UpdateChunkLoadingList()
 	{
 		PreLoadingVector.clear();
 		glm::ivec2 iter;
-		for(iter.x = Center.x - CHUNK_LOADING_RANGE; iter.x <= Center.x + CHUNK_LOADING_RANGE; ++iter.x)
-			for(iter.y = Center.z - CHUNK_LOADING_RANGE; iter.y <= Center.z + CHUNK_LOADING_RANGE; ++iter.y)
+		for(iter.x = Center.x - Setting::ChunkLoadRange; iter.x <= Center.x + Setting::ChunkLoadRange; ++iter.x)
+			for(iter.y = Center.z - Setting::ChunkLoadRange; iter.y <= Center.z + Setting::ChunkLoadRange; ++iter.y)
 				if(!GetChunk({iter.x, 0, iter.y})->LoadedTerrain && !LoadingInfoSet.count(iter))
 					PreLoadingVector.push_back(iter);
 		std::sort(PreLoadingVector.begin(), PreLoadingVector.end(), cmp2);
 		std::reverse(PreLoadingVector.begin(), PreLoadingVector.end());
 	}
-	while(!PreLoadingVector.empty() && LoadingThreadNum < MAX_THREAD_NUM)
+	while(!PreLoadingVector.empty() && LoadingThreadNum < Setting::LoadingThreadsNum)
 	{
 		LoadingThreadNum ++;
 		threadPool.enqueue(&World::ChunkLoadingWorker, this, PreLoadingVector.back());
@@ -164,15 +164,15 @@ void World::UpdateChunkSunLightingList()
 	{
 		PreInitialLightingVector.clear();
 		glm::ivec2 iter;
-		for(iter.x = Center.x - CHUNK_LOADING_RANGE + 1; iter.x < Center.x + CHUNK_LOADING_RANGE; ++iter.x)
-			for(iter.y = Center.z - CHUNK_LOADING_RANGE + 1; iter.y < Center.z + CHUNK_LOADING_RANGE; ++iter.y)
+		for(iter.x = Center.x - Setting::ChunkLoadRange + 1; iter.x < Center.x + Setting::ChunkLoadRange; ++iter.x)
+			for(iter.y = Center.z - Setting::ChunkLoadRange + 1; iter.y < Center.z + Setting::ChunkLoadRange; ++iter.y)
 				if(!GetChunk({iter.x, 0, iter.y})->InitializedLighting && !InitialLightingInfoSet.count(iter))
 					PreInitialLightingVector.push_back(iter);
 		std::sort(PreInitialLightingVector.begin(), PreInitialLightingVector.end(), cmp2);
 	}
 
 	for(auto iter = PreInitialLightingVector.begin();
-		iter != PreInitialLightingVector.end() && LightingThreadNum < MAX_THREAD_NUM; )
+		iter != PreInitialLightingVector.end() && LightingThreadNum < Setting::LoadingThreadsNum; )
 	{
 		glm::ivec3 i(iter->x, 0, iter->y);
 		bool flag = true;
@@ -203,8 +203,8 @@ void World::UpdateChunkMeshingList()
 	{
 		PreMeshingVector.clear();
 		glm::ivec3 iter;
-		for(iter.x = Center.x - CHUNK_LOADING_RANGE + 1; iter.x < Center.x + CHUNK_LOADING_RANGE; ++iter.x)
-			for(iter.z = Center.z - CHUNK_LOADING_RANGE + 1; iter.z < Center.z + CHUNK_LOADING_RANGE; ++iter.z)
+		for(iter.x = Center.x - Setting::ChunkLoadRange + 1; iter.x < Center.x + Setting::ChunkLoadRange; ++iter.x)
+			for(iter.z = Center.z - Setting::ChunkLoadRange + 1; iter.z < Center.z + Setting::ChunkLoadRange; ++iter.z)
 				for(iter.y = 0; iter.y < WORLD_HEIGHT; ++iter.y)
 					if(!GetChunk(iter)->InitializedMesh && !MeshingInfoSet.count(iter))
 						PreMeshingVector.push_back(iter);
@@ -212,7 +212,7 @@ void World::UpdateChunkMeshingList()
 	}
 
 	for(auto iter = PreMeshingVector.begin();
-		iter != PreMeshingVector.end() && MeshingThreadNum < MAX_THREAD_NUM; )
+		iter != PreMeshingVector.end() && MeshingThreadNum < Setting::LoadingThreadsNum; )
 	{
 		bool flag = true;
 		for (auto i : MeshingLookup)

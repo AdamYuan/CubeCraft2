@@ -91,7 +91,6 @@ void WorldController::Update()
 void WorldController::Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1, 1, 1, 1);
 
 	glm::mat4 ViewMatrix = world.player.GetViewMatrix();
 	glm::mat4 vpMatrix = Matrices.Projection3d * ViewMatrix;
@@ -111,7 +110,7 @@ void WorldController::LogicProcess()
 	static int lastTime = 0;
 	if(glfwGetTime() > lastTime + 1)
 	{
-		lastTime = static_cast<int>(glfwGetTime());
+		lastTime = (int)glfwGetTime();
 		FPS = FramerateManager.GetFps();
 	}
 
@@ -126,7 +125,7 @@ void WorldController::RenderUI()
 	{
 		if(showUI)
 		{
-			ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+			ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
 			if (ImGui::Begin("INFO", nullptr,
 							 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
@@ -148,7 +147,7 @@ void WorldController::RenderUI()
 	}
 	else //game menu
 	{
-		ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+		ImGui::SetNextWindowPosCenter();
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f)); // Transparent background
 		if (ImGui::Begin("MENU", nullptr,
 						 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize

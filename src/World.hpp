@@ -78,7 +78,7 @@ private:
 			TorchLightQueue, TorchLightRemovalQueue;
 
 	//day night cycle
-	float InitialTime, Timer; //0 - 1
+	float InitialTime, Timer; //0.0f - 1.0f
 	glm::mat4 SunModelMatrix;
 	glm::vec3 SunPosition;
 
@@ -146,7 +146,7 @@ public:
 	//these two are for multi-threading
 
 	inline float GetDayTime() const { return Timer; }
-	inline float GetDayLight() const { return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.2f, 1.0f); }
+	inline float GetDayLight() const { return glm::clamp(SunPosition.y * 0.96f + 0.6f, 0.2f, 1.1f); }
 	inline glm::mat4 GetSunModelMatrix() const { return SunModelMatrix; }
 	inline int GetSeed() const { return Seed; }
 	inline std::string GetName() const { return WorldName; }

@@ -39,6 +39,7 @@ void Application::InitWindow()
 
 	UI::Init(Window);
 	Resource::InitResources();
+	Setting::InitSetting();
 }
 
 void Application::Run()
@@ -79,6 +80,7 @@ void Application::Run()
 Application::~Application()
 {
 	UI::Shutdown();
+	Setting::SaveSetting();
 	glfwDestroyWindow(Window);
 }
 

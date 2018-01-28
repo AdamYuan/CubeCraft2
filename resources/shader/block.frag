@@ -34,7 +34,7 @@ void main()
 	vec3 color3 = color.rgb;
 	color3 *= frag_lighting.x * frag_lighting.y * frag_lighting.z;
 	//gamma correction
-	float gamma = 0.8;
+	float gamma = 0.6;
 	color3 = pow(color3, vec3(1.0 / gamma));
 	color3 = mix(color3, sky_color, fog_factor);
 
