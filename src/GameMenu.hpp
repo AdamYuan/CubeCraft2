@@ -22,10 +22,15 @@ private:
 	std::vector<std::string> WorldVector;
 	void MainMenu();
 	void WorldList();
-	void Settings();
+	void EditSettings();
 	void CreateWorldDialog();
 	void DeleteWorldDialog();
+	void EditWorldDialog();
+
 	void UpdateWorldVector();
+
+	void BeginCenterWindow(const char *name);
+	void EndCenterWindow();
 	inline void GoToWorldList()
 	{
 		UpdateWorldVector();

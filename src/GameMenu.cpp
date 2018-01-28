@@ -47,8 +47,10 @@ void GameMenu::Update()
 		CreateWorldDialog();
 	else if(State == MenuState::DeleteWorld)
 		DeleteWorldDialog();
+	else if(State == MenuState::EditWorld)
+		EditWorldDialog();
 	else if(State == MenuState::Settings)
-		Settings();
+		EditSettings();
 
 	UI::Render();
 	glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -57,11 +59,7 @@ void GameMenu::Update()
 
 void GameMenu::MainMenu()
 {
-	ImGui::SetNextWindowPosCenter();
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-	if (ImGui::Begin("MENU", nullptr,
-					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
-					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+	BeginCenterWindow("MENU");
 	{
 		ImGui::Text("CubeCraft");
 		if(ImGui::Button("Start", s_buttonSize))
@@ -70,10 +68,8 @@ void GameMenu::MainMenu()
 			State = MenuState::Settings;
 		if(ImGui::Button("Quit", s_buttonSize))
 			isQuit = true;
-
-		ImGui::End();
 	}
-	ImGui::PopStyleColor();
+	EndCenterWindow();
 }
 
 void GameMenu::WorldList()
@@ -95,6 +91,12 @@ void GameMenu::WorldList()
 			ImGui::SameLine();
 			if(ImGui::Button("Delete world"))
 				State = MenuState::DeleteWorld;
+			ImGui::SameLine();
+			if(ImGui::Button("Edit world"))
+			{
+				strcpy(InputBuf, WorldVector[CurrentIndex].c_str());
+				State = MenuState::EditWorld;
+			}
 			ImGui::SameLine();
 			if(ImGui::Button("Play"))
 				enterGame = true;
@@ -127,11 +129,7 @@ void GameMenu::UpdateWorldVector()
 
 void GameMenu::CreateWorldDialog()
 {
-	ImGui::SetNextWindowPosCenter();
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
-	if (ImGui::Begin("CREATE", nullptr,
-					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
-					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+	BeginCenterWindow("CREATE");
 	{
 		ImGui::InputText("Name", InputBuf, WORLD_NAME_LENGTH);
 		ImGui::InputText("Seed", SeedBuf, WORLD_NAME_LENGTH);
@@ -170,19 +168,13 @@ void GameMenu::CreateWorldDialog()
 		}
 		if(ImGui::Button("Cancel", s_buttonSize))
 			GoToWorldList();
-
-		ImGui::End();
 	}
-	ImGui::PopStyleColor();
+	EndCenterWindow();
 }
 
 void GameMenu::DeleteWorldDialog()
 {
-	ImGui::SetNextWindowPosCenter();
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
-	if (ImGui::Begin("DELETE", nullptr,
-					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
-					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+	BeginCenterWindow("DELETE");
 	{
 		ImGui::Text("Are you sure?");
 		if(ImGui::Button("Delete", s_buttonSize))
@@ -192,31 +184,63 @@ void GameMenu::DeleteWorldDialog()
 		}
 		if(ImGui::Button("Cancel", s_buttonSize))
 			GoToWorldList();
-
-		ImGui::End();
 	}
-	ImGui::PopStyleColor();
+	EndCenterWindow();
 }
 
-void GameMenu::Settings()
+void GameMenu::EditSettings()
 {
-	ImGui::SetNextWindowPosCenter();
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent background
-	if (ImGui::Begin("SETTINGS", nullptr,
-					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
-					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
+	BeginCenterWindow("SETTINGS");
 	{
 		ImGui::SliderInt("Max loading threads", &Setting::LoadingThreadsNum, 1, 64);
 		ImGui::SliderInt("Chunk loading range", &Setting::ChunkLoadRange, 4, 30);
 		ImGui::SliderInt("Chunk deleting range", &Setting::ChunkDeleteRange, Setting::ChunkLoadRange, 50);
-		if(Setting::ChunkDeleteRange < Setting::ChunkLoadRange)
+		if (Setting::ChunkDeleteRange < Setting::ChunkLoadRange)
 			Setting::ChunkDeleteRange = Setting::ChunkLoadRange;
 
-		if(ImGui::Button("Back", s_buttonSize))
+		if (ImGui::Button("Back", s_buttonSize))
 			State = MenuState::Main;
-
-		ImGui::End();
 	}
-	ImGui::PopStyleColor();
+	EndCenterWindow();
 }
 
+void GameMenu::EditWorldDialog()
+{
+	BeginCenterWindow("EDIT");
+	{
+		ImGui::InputText("Name", InputBuf, WORLD_NAME_LENGTH);
+		if (ImGui::Button("Save", s_buttonSize))
+		{
+			auto name = std::string(InputBuf);
+			auto pathName = WORLD_DIR(name);
+			fs::path worldPath(pathName.c_str());
+
+			if(!name.empty() && !fs::exists(worldPath))
+				fs::rename(fs::path(WORLD_DIR(WorldVector[CurrentIndex])), worldPath);
+			else
+				strcpy(InputBuf, "ERROR");
+		}
+		if (ImGui::Button("Back", s_buttonSize))
+		{
+			std::fill(InputBuf, InputBuf + WORLD_NAME_LENGTH, 0);
+			GoToWorldList();
+		}
+	}
+	EndCenterWindow();
+}
+
+
+void GameMenu::BeginCenterWindow(const char *name)
+{
+	ImGui::SetNextWindowPosCenter();
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+	ImGui::Begin(name, nullptr,
+					 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize
+					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar);
+}
+
+void GameMenu::EndCenterWindow()
+{
+	ImGui::End();
+	ImGui::PopStyleColor();
+}
