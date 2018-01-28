@@ -81,7 +81,8 @@ public:
 		Light[index] = (Light[index] & (uint8_t)0x0F) | (val << 4);
 	}
 
-	std::vector<ChunkRenderVertex> Mesh;
+	std::vector<ChunkRenderVertex> MeshVertices;
+	std::vector<unsigned int> MeshIndices;
 };
 using ChunkPtr = Chunk*;
 
@@ -106,7 +107,8 @@ private:
 	DLightLevel Light[EXCHUNK_INFO_SIZE];
 	glm::ivec3 Position;
 
-	std::vector<ChunkRenderVertex> Result;
+	std::vector<ChunkRenderVertex> ResultVertices;
+	std::vector<unsigned int> ResultIndices;
 
 public:
 	explicit ChunkMeshingInfo(ChunkPtr (&chk)[27]);

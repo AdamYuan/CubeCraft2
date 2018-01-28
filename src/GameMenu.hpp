@@ -12,6 +12,7 @@
 struct GLFWwindow;
 
 enum MenuState { Main = 0, WorldSelection, CreateWorld, DeleteWorld, EditWorld, Settings };
+#define WORLD_NAME_LENGTH 32
 class GameMenu
 {
 private:
@@ -39,9 +40,9 @@ private:
 	char InputBuf[WORLD_NAME_LENGTH], SeedBuf[WORLD_NAME_LENGTH];
 public:
 	explicit GameMenu(GLFWwindow *window);
-	bool EnterGame() { return enterGame; }
-	bool IsQuit() { return isQuit; }
-	std::string GetWorldName() { return WorldVector.at(CurrentIndex); }
+	bool EnterGame() const { return enterGame; }
+	bool IsQuit() const { return isQuit; }
+	std::string GetWorldName() const { return WorldVector.at(CurrentIndex); }
 
 	void Update();
 };

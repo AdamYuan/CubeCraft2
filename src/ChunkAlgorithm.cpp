@@ -110,20 +110,25 @@ namespace ChunkAlgorithm
 		return false;
 	}
 
-	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh)
+	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &vertices,
+				   const std::vector<unsigned int> &indices)
 	{
-		chk->VertexBuffer->SetDataVec(mesh);
-		chk->VertexBuffer->SetAttributes(
-										 Resource::ATTR_POSITION, 3,
+		chk->VertexBuffer->SetDataVec(vertices);
+		chk->VertexBuffer->SetIndicesVec(indices);
+		chk->VertexBuffer->SetAttributes(Resource::ATTR_POSITION, 3,
 										 Resource::ATTR_TEXCOORD, 3,
 										 Resource::ATTR_CHUNK_FACE, 1,
 										 Resource::ATTR_CHUNK_LIGHTING, 3);
 	}
 
-	void Meshing(World const *wld, const glm::ivec3 &ChunkPos, std::vector<ChunkRenderVertex> &result)
+	void Meshing(World const *wld, const glm::ivec3 &ChunkPos,
+				 std::vector<ChunkRenderVertex> &resultVertices,
+				 std::vector<unsigned int> &resultIndices)
 	{
 		ChunkPtr thisChunk = wld->GetChunk(ChunkPos);
 		const glm::ivec3 chkBase = ChunkPos * CHUNK_SIZE;
+
+		unsigned currentIndex = 0;
 
 #define getBlock(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetBlock(x, y, z) : wld->GetBlock(chkBase + glm::ivec3(x, y, z)))
 #define getSunLight(x, y, z) (IsValidChunkPosition(x, y, z) ? thisChunk->GetSunLight(x, y, z) : wld->GetSunLight(chkBase + glm::ivec3(x, y, z)))
@@ -315,6 +320,11 @@ namespace ChunkAlgorithm
 								std::swap(v11.V, v10.V);
 							}
 
+							resultVertices.push_back(v00);
+							resultVertices.push_back(v01);
+							resultVertices.push_back(v10);
+							resultVertices.push_back(v11);
+
 							if(QuadLighting.Flip)
 							{
 								//11--------10
@@ -322,13 +332,13 @@ namespace ChunkAlgorithm
 								//|    /    |
 								//| /       |
 								//00--------01
-								result.push_back(v00);
-								result.push_back(v01);
-								result.push_back(v10);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 2);
 
-								result.push_back(v00);
-								result.push_back(v10);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 2);
+								resultIndices.push_back(currentIndex + 3);
 							}
 							else
 							{
@@ -337,14 +347,15 @@ namespace ChunkAlgorithm
 								//|    \    |
 								//|       \ |
 								//00--------01
-								result.push_back(v01);
-								result.push_back(v10);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 2);
+								resultIndices.push_back(currentIndex + 3);
 
-								result.push_back(v00);
-								result.push_back(v01);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 3);
 							}
+							currentIndex += 4;
 
 							for (std::size_t b = 0; b < width; ++b)
 								for (std::size_t a = 0; a < height; ++a) {
@@ -367,10 +378,14 @@ namespace ChunkAlgorithm
 	}
 
 	void MeshingThreaded(const uint8_t (&Grid)[EXCHUNK_INFO_SIZE], const uint8_t (&Light)[EXCHUNK_INFO_SIZE],
-						 const glm::ivec3 &ChunkPos, std::vector<ChunkRenderVertex> &result)
+						 const glm::ivec3 &ChunkPos,
+						 std::vector<ChunkRenderVertex> &resultVertices,
+						 std::vector<unsigned int> &resultIndices)
 	{
 #define getBlockThreaded(x, y, z) (Grid[ExXYZ((x), (y), (z))])
 #define getLightThreaded(x, y, z) (Light[ExXYZ((x), (y), (z))])
+
+		unsigned currentIndex = 0;
 
 		//generate LightingInfo(including AO, sunlight and torchlight)
 		FaceLighting LightingData[CHUNK_INFO_SIZE][6] = {};
@@ -558,6 +573,11 @@ namespace ChunkAlgorithm
 								std::swap(v11.V, v10.V);
 							}
 
+							resultVertices.push_back(v00);
+							resultVertices.push_back(v01);
+							resultVertices.push_back(v10);
+							resultVertices.push_back(v11);
+
 							if(QuadLighting.Flip)
 							{
 								//11--------10
@@ -565,13 +585,13 @@ namespace ChunkAlgorithm
 								//|    /    |
 								//| /       |
 								//00--------01
-								result.push_back(v00);
-								result.push_back(v01);
-								result.push_back(v10);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 2);
 
-								result.push_back(v00);
-								result.push_back(v10);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 2);
+								resultIndices.push_back(currentIndex + 3);
 							}
 							else
 							{
@@ -580,14 +600,15 @@ namespace ChunkAlgorithm
 								//|    \    |
 								//|       \ |
 								//00--------01
-								result.push_back(v01);
-								result.push_back(v10);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 2);
+								resultIndices.push_back(currentIndex + 3);
 
-								result.push_back(v00);
-								result.push_back(v01);
-								result.push_back(v11);
+								resultIndices.push_back(currentIndex);
+								resultIndices.push_back(currentIndex + 1);
+								resultIndices.push_back(currentIndex + 3);
 							}
+							currentIndex += 4;
 
 							for (std::size_t b = 0; b < width; ++b)
 								for (std::size_t a = 0; a < height; ++a) {

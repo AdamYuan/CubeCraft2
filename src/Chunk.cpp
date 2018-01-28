@@ -13,7 +13,7 @@ Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
 									  InitializedMesh(false), InitializedLighting(false),
 									  Position(pos)
 {
-	VertexBuffer = MyGL::NewVertexObject();
+	VertexBuffer = MyGL::NewVertexObject(true);
 }
 
 //Terrain Generation
@@ -140,12 +140,13 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 
 void ChunkMeshingInfo::Process()
 {
-	ChunkAlgorithm::MeshingThreaded(Grid, Light, Position, Result);
+	ChunkAlgorithm::MeshingThreaded(Grid, Light, Position, ResultVertices, ResultIndices);
 }
 
 void ChunkMeshingInfo::ApplyResult(ChunkPtr chk)
 {
-	chk->Mesh = std::move(Result);
+	chk->MeshVertices = std::move(ResultVertices);
+	chk->MeshIndices = std::move(ResultIndices);
 	chk->InitializedMesh = true;
 }
 

@@ -9,10 +9,9 @@ namespace MyGL
 	class VertexObject
 	{
 	private:
-		GLuint VAO, VBO;
-		int Elements = 0, DataSize = 0;
-		void bindAll();
-		void unbindAll();
+		GLuint VAO, VBO, EBO;
+		unsigned Elements, DataLength;
+		bool HaveIndices;
 
 		unsigned getAttrSum() { return 0; }
 		template<class... T>
@@ -30,24 +29,19 @@ namespace MyGL
 
 	public:
 		VertexObject(const VertexObject &) = delete;
-		VertexObject();
+		explicit VertexObject(bool haveIndices);
 		~VertexObject();
 
 		template<class T>
-		void SetDataVec(std::vector<T> vec);
-
+		void SetDataVec(const std::vector<T> &vec);
 		template<class T>
-		void SetDataArr(const T *array, int arrSize);
+		void SetDataArr(const T *array, unsigned int arrLength);
+
+		void SetIndicesVec(const std::vector<unsigned int> &vec);
+		void SetIndicesArr(const unsigned int *array, unsigned int arrLength);
 
 		template<class... T>
-		void SetAttributes(T... args)
-		{
-			bindAll();
-			unsigned sum = getAttrSum(args...);
-			setAttrImpl(sum, 0, args...);
-			unbindAll();
-			Elements = DataSize / sum;
-		}
+		void SetAttributes(T... args);
 
 		void Render(GLenum mode);
 
@@ -58,29 +52,48 @@ namespace MyGL
 
 
 	template<class T>
-	void VertexObject::SetDataVec(std::vector<T> vec)
+	void VertexObject::SetDataVec(const std::vector<T> &vec)
 	{
 		if(vec.empty()) {
-			DataSize = 0;
+			DataLength = 0;
 			return;
 		}
-		bindAll();
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
 		glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(T), &vec[0], GL_STATIC_DRAW);
-		DataSize = (int) (vec.size() * (sizeof(T) / sizeof(float)));
-		unbindAll();
+
+		if(!HaveIndices)
+			DataLength = (unsigned)(vec.size() * (sizeof(T) / sizeof(float)));
 	}
 	template<class T>
-	void VertexObject::SetDataArr(const T *array, int arrSize)
+	void VertexObject::SetDataArr(const T *array, unsigned int arrLength)
 	{
-		if(arrSize == 0) {
-			DataSize = 0;
+		if(arrLength == 0) {
+			DataLength = 0;
 			return;
 		}
-		bindAll();
-		glBufferData(GL_ARRAY_BUFFER, arrSize*sizeof(T), array, GL_STATIC_DRAW);
-		DataSize = arrSize * (sizeof(T) / sizeof(float));
-		unbindAll();
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		glBufferData(GL_ARRAY_BUFFER, arrLength * sizeof(T), array, GL_STATIC_DRAW);
+
+		if(!HaveIndices)
+			DataLength = arrLength * (sizeof(T) / sizeof(float));
 	}
 
-	extern VertexObjectPtr NewVertexObject();
+	template<class... T>
+	void VertexObject::SetAttributes(T... args)
+	{
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		unsigned sum = getAttrSum(args...);
+		setAttrImpl(sum, 0, args...);
+
+		if(!HaveIndices)
+			Elements = DataLength / sum;
+	}
+
+	extern VertexObjectPtr NewVertexObject(bool haveIndices);
 }

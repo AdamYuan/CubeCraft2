@@ -124,11 +124,12 @@ void World::ProcessChunkUpdates()
 			if(!GetChunk(pos)->InitializedMesh)
 				continue;
 
-			std::vector<ChunkRenderVertex> mesh;
-			ChunkAlgorithm::Meshing(this, pos, mesh);
-			ChunkAlgorithm::ApplyMesh(GetChunk(pos), mesh);
+			std::vector<ChunkRenderVertex> meshVertices;
+			std::vector<unsigned int> meshIndices;
+			ChunkAlgorithm::Meshing(this, pos, meshVertices, meshIndices);
+			ChunkAlgorithm::ApplyMesh(GetChunk(pos), meshVertices, meshIndices);
 			//update render set
-			if(!mesh.empty())
+			if(!meshVertices.empty())
 				RenderSet.insert(pos);
 			else
 				RenderSet.erase(pos);
@@ -378,7 +379,7 @@ void World::ChunkMeshingWorker(const glm::ivec3 &pos)
 		if(chk)
 		{
 			info.ApplyResult(chk);
-			if(!chk->Mesh.empty())
+			if(!chk->MeshVertices.empty())
 				RenderAdditionSet.insert(pos);
 		}
 		MeshingThreadNum --;
@@ -412,7 +413,7 @@ void World::ChunkMeshUpdateWorker(const glm::ivec3 &pos)
 		if(chk)
 		{
 			info.ApplyResult(chk);
-			if(chk->Mesh.empty())
+			if(chk->MeshVertices.empty())
 				RenderRemovalSet.insert(pos);
 			else
 				RenderAdditionSet.insert(pos);

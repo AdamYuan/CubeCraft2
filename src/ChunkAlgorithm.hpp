@@ -49,12 +49,16 @@ namespace ChunkAlgorithm
 		return !(trans && neighbour);
 	}
 
-	extern void Meshing(World const *wld, const glm::ivec3 &ChunkPos, std::vector<ChunkRenderVertex> &result);
+	extern void Meshing(World const *wld, const glm::ivec3 &ChunkPos,
+						std::vector<ChunkRenderVertex> &resultVertices,
+						std::vector<unsigned int> &resultIndices);
 	extern void MeshingThreaded(const uint8_t (&Grid)[EXCHUNK_INFO_SIZE],
 								const uint8_t (&Light)[EXCHUNK_INFO_SIZE],
 								const glm::ivec3 &ChunkPos,
-								std::vector<ChunkRenderVertex> &result);
-	extern void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &mesh);
+								std::vector<ChunkRenderVertex> &resultVertices,
+								std::vector<unsigned int> &resultIndices);
+	extern void
+	ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> &vertices, const std::vector<unsigned int> &indices);
 	extern void SunLightBFS(World *wld, std::queue<LightBFSNode> &Queue);
 	extern void SunLightBFSThreaded(const uint8_t (&Grid)[LICHUNK_INFO_SIZE], uint8_t (&Result)[LICHUNK_INFO_SIZE],
 									int Highest, std::queue<LightBFSNode> &Queue);

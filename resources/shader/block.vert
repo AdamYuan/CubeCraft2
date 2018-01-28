@@ -6,6 +6,7 @@ layout(location=3) in vec3 lighting;
 
 uniform mat4 matrix;
 uniform float dayLight;
+uniform vec3 camera;
 
 //x: intensity
 //y: ao
@@ -13,6 +14,7 @@ uniform float dayLight;
 out vec3 frag_lighting;
 out vec3 frag_texcoord;
 out vec3 frag_pos;
+out float fog_height;
 
 const float AOcurve[4] = float[4](0.54, 0.7569, 0.87, 1.0);
 const float SunLightCurve[16] = float[16](
@@ -39,4 +41,9 @@ void main()
 
 	frag_pos = position.xyz;
 	frag_texcoord = coord;
+
+	//fog
+	float dx = distance(position.xz, camera.xz);
+	float dy = position.y - camera.y;
+	fog_height = 0.5f - (dy / sqrt(dx*dx + dy*dy)) / 2.0f;
 }

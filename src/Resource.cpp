@@ -83,19 +83,16 @@ namespace Resource
 												  chSize, chWidth, chSize, -chWidth, -chSize, chWidth,
 												  -chWidth, -chWidth, -chWidth, chWidth, chWidth, -chWidth,
 												  chWidth, -chWidth, -chWidth, chWidth, chWidth, chWidth};
-		CrosshairObject = MyGL::NewVertexObject();
+		CrosshairObject = MyGL::NewVertexObject(false);
 		CrosshairObject->SetDataArr(crosshairVertices, 36);
 		CrosshairObject->SetAttributes(ATTR_POSITION, 2);
 
 		std::vector<uint32_t> sphereIndices;
-		std::vector<glm::vec3> spherePositions, sphereVertices;
+		std::vector<glm::vec3> spherePositions;
 		generateIcosphereMesh(3, sphereIndices, spherePositions);
-		sphereVertices.reserve(sphereIndices.size());
-		for(uint32_t i : sphereIndices)
-			sphereVertices.push_back(spherePositions[i]);
-
-		SkyObject = MyGL::NewVertexObject();
-		SkyObject->SetDataVec(sphereVertices);
+		SkyObject = MyGL::NewVertexObject(true);
+		SkyObject->SetDataVec(spherePositions);
+		SkyObject->SetIndicesVec(sphereIndices);
 		SkyObject->SetAttributes(ATTR_POSITION, 3);
 
 		static constexpr float sunSize = 0.4f;
@@ -107,7 +104,7 @@ namespace Resource
 				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
 				sunSize, -1.0f, sunSize, 1.0f, 1.0f
 		};
-		SunObject = MyGL::NewVertexObject();
+		SunObject = MyGL::NewVertexObject(false);
 		SunObject->SetDataArr(sunVertices, 30);
 		SunObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
@@ -121,7 +118,7 @@ namespace Resource
 				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
 				moonSize, 1.0f, -moonSize, 1.0f, 0.0f
 		};
-		MoonObject = MyGL::NewVertexObject();
+		MoonObject = MyGL::NewVertexObject(false);
 		MoonObject->SetDataArr(moonVertices, 30);
 		MoonObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
@@ -136,7 +133,7 @@ namespace Resource
 				1.0f, -1.0f,  bgTime, 0.4f,
 				1.0f,  1.0f,  bgTime, 1.0f
 		};
-		BgObject = MyGL::NewVertexObject();
+		BgObject = MyGL::NewVertexObject(false);
 		BgObject->SetDataArr(bgVertices, 24);
 		BgObject->SetAttributes(ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
 	}

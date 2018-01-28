@@ -11,7 +11,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 						   const glm::ivec3 &selection)
 {
 	static MyGL::Frustum frustum = {};
-	const float range = CHUNK_SIZE*(Setting::ChunkLoadRange - 1);
+	const float range = CHUNK_SIZE * (Setting::ChunkLoadRange - 2);
 
 	glm::vec3 p_center = (glm::vec3)(World::BlockPosToChunkPos(glm::floor(position)));
 
@@ -45,10 +45,11 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
 			continue;
-		if(!chk->Mesh.empty())
+		if(!chk->MeshVertices.empty())
 		{
-			ChunkAlgorithm::ApplyMesh(chk, chk->Mesh);
-			chk->Mesh.clear(); chk->Mesh.shrink_to_fit();
+			ChunkAlgorithm::ApplyMesh(chk, chk->MeshVertices, chk->MeshIndices);
+			chk->MeshVertices.clear(); chk->MeshVertices.shrink_to_fit();
+			chk->MeshIndices.clear(); chk->MeshIndices.shrink_to_fit();
 		}
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&

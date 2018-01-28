@@ -209,16 +209,12 @@ void GameMenu::EditWorldDialog()
 	BeginCenterWindow("EDIT");
 	{
 		ImGui::InputText("Name", InputBuf, WORLD_NAME_LENGTH);
-		if (ImGui::Button("Save", s_buttonSize))
+		auto name = std::string(InputBuf);
+		auto pathName = WORLD_DIR(name);
+		fs::path worldPath(pathName.c_str());
+		if (!fs::exists(worldPath) && !name.empty() && ImGui::Button("Rename", s_buttonSize))
 		{
-			auto name = std::string(InputBuf);
-			auto pathName = WORLD_DIR(name);
-			fs::path worldPath(pathName.c_str());
-
-			if(!name.empty() && !fs::exists(worldPath))
-				fs::rename(fs::path(WORLD_DIR(WorldVector[CurrentIndex])), worldPath);
-			else
-				strcpy(InputBuf, "ERROR");
+			fs::rename(fs::path(WORLD_DIR(WorldVector[CurrentIndex])), worldPath);
 		}
 		if (ImGui::Button("Back", s_buttonSize))
 		{

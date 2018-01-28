@@ -22,7 +22,6 @@ constexpr int EXCHUNK_INFO_SIZE = EXCHUNK_SIZE*EXCHUNK_SIZE*EXCHUNK_SIZE;
 constexpr int LICHUNK_SIZE = CHUNK_SIZE + 28;
 constexpr int LICHUNK_INFO_SIZE = LICHUNK_SIZE*LICHUNK_SIZE*WORLD_HEIGHT_BLOCK;
 
-#define WORLD_NAME_LENGTH 32
 #define SAVES_DIR "saves/"
 #define WORLD_DIR(x) (std::string(SAVES_DIR) + (x) + "/")
 #define SEED_FILE_NAME "seed"
