@@ -8,23 +8,23 @@ enum Face { Right = 0, Left, Top, Bottom, Front, Back };
 class AABB
 {
 public:
-	glm::vec3 Min, Max;
+	glm::vec3 min_, max_;
 	AABB(const glm::vec3 &_min, const glm::vec3 &_max);
 	inline bool Intersect(const AABB &r) const
 	{
-		return (Min.x < r.Max.x && Max.x > r.Min.x) &&
-			   (Min.y < r.Max.y && Max.y > r.Min.y) &&
-			   (Min.z < r.Max.z && Max.z > r.Min.z);
+		return (min_.x < r.max_.x && max_.x > r.min_.x) &&
+			   (min_.y < r.max_.y && max_.y > r.min_.y) &&
+			   (min_.z < r.max_.z && max_.z > r.min_.z);
 	}
 	inline bool Touch(const AABB &r, float delta) const
 	{
-		return (Min.x <= r.Max.x + delta && Max.x >= r.Min.x - delta) &&
-			   (Min.y <= r.Max.y + delta && Max.y >= r.Min.y - delta) &&
-			   (Min.z <= r.Max.z + delta && Max.z >= r.Min.z - delta);
+		return (min_.x <= r.max_.x + delta && max_.x >= r.min_.x - delta) &&
+			   (min_.y <= r.max_.y + delta && max_.y >= r.min_.y - delta) &&
+			   (min_.z <= r.max_.z + delta && max_.z >= r.min_.z - delta);
 	}
 };
 
-namespace Util
+namespace util
 {
 	inline glm::ivec3 FaceExtend(glm::ivec3 pos, short face)
 	{ pos[face>>1] += 1 - ((face&1)<<1); return pos; }

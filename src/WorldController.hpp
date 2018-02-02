@@ -13,24 +13,24 @@ struct GLFWwindow;
 class WorldController
 {
 private:
-	GLFWwindow *Window;
-	int Width = 720, Height = 480;
-	World world;
-	MyGL::Matrices Matrices;
-	MyGL::FrameRateManager FramerateManager;
+	GLFWwindow *window_;
+	int width_, height_;
+	World world_;
+	MyGL::Matrices matrices_;
+	MyGL::FrameRateManager framerate_manager_;
 
-	float FPS = 0.0f;
-	bool control, showUI, isQuit;
-	static void focusCallback(GLFWwindow* window, int focused);
-	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	static void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
+	float fps_;
+	bool control_, show_ui_, is_quit_;
+	static void FocusCallback(GLFWwindow *window, int focused);
+	static void FramebufferSizeCallback(GLFWwindow *window, int width, int height);
+	static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+	static void ScrollCallback(GLFWwindow *window, double x_offset, double y_offset);
 	void Render();
 	void RenderUI();
 	void LogicProcess();
 
 public:
-	explicit WorldController(GLFWwindow *window, const std::string &worldName);
+	explicit WorldController(GLFWwindow *window, const std::string &world_name);
 	bool IsQuit();
 	void Resize(int width, int height);
 	void Update();

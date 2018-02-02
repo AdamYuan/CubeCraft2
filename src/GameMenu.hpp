@@ -16,11 +16,11 @@ enum MenuState { Main = 0, WorldSelection, CreateWorld, DeleteWorld, EditWorld, 
 class GameMenu
 {
 private:
-	GLFWwindow *Window;
-	bool isQuit, enterGame;
-	MenuState State;
-	size_t CurrentIndex;
-	std::vector<std::string> WorldVector;
+	GLFWwindow *window_;
+	bool is_quit_, enter_game_;
+	MenuState state_;
+	size_t current_index_;
+	std::vector<std::string> world_vector_;
 	void MainMenu();
 	void WorldList();
 	void EditSettings();
@@ -35,14 +35,14 @@ private:
 	inline void GoToWorldList()
 	{
 		UpdateWorldVector();
-		State = MenuState::WorldSelection;
+		state_ = MenuState::WorldSelection;
 	}
-	char InputBuf[WORLD_NAME_LENGTH], SeedBuf[WORLD_NAME_LENGTH];
+	char input_buf_[WORLD_NAME_LENGTH], seed_buf_[WORLD_NAME_LENGTH];
 public:
 	explicit GameMenu(GLFWwindow *window);
-	bool EnterGame() const { return enterGame; }
-	bool IsQuit() const { return isQuit; }
-	std::string GetWorldName() const { return WorldVector.at(CurrentIndex); }
+	bool EnterGame() const { return enter_game_; }
+	bool IsQuit() const { return is_quit_; }
+	std::string GetWorldName() const { return world_vector_[current_index_]; }
 
 	void Update();
 };

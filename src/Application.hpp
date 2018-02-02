@@ -18,12 +18,12 @@
 class Application
 {
 private:
-	GLFWwindow *Window;//must be the first
-	int Width, Height;
-	bool InGame;
+	GLFWwindow *window_;//must be the first
+	int width_, height_;
+	bool in_game_;
 
-	std::unique_ptr<WorldController> worldController;
-	std::unique_ptr<GameMenu> gameMenu;
+	std::unique_ptr<WorldController> world_controller_;
+	std::unique_ptr<GameMenu> game_menu_;
 
 	void InitWindow();
 

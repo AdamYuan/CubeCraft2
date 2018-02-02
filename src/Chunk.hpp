@@ -14,7 +14,7 @@
 #include <glm/glm.hpp>
 
 class WorldData;
-struct ChunkRenderVertex { float X, Y, Z, U, V, Tex, Face, AO, SunLight, TorchLight; };
+struct ChunkRenderVertex { float x, y, z, u, v, tex, face, ao, sun_light, torch_light; };
 
 static inline int XYZ(const glm::ivec3 &pos)
 { return pos.x + (pos.y*CHUNK_SIZE + pos.z)*CHUNK_SIZE; }
@@ -33,66 +33,63 @@ static inline bool IsValidChunkPosition(int x, int y, int z)
 
 struct LightBFSNode
 {
-	glm::ivec3 Pos;
-	DLightLevel Value;
+	glm::ivec3 position;
+	DLightLevel value;
 };
 
 
 class Chunk
 {
 private:
-	Block Grid[CHUNK_INFO_SIZE];
-	DLightLevel Light[CHUNK_INFO_SIZE];
+	Block grid_[CHUNK_INFO_SIZE];
+	DLightLevel light_[CHUNK_INFO_SIZE];
 
 	friend class ChunkLoadingInfo;
 	friend class ChunkMeshingInfo;
 	friend class ChunkInitialLightingInfo;
 public:
-	bool LoadedTerrain, InitializedMesh, InitializedLighting;
-
-	glm::ivec3 Position;
-
-	MyGL::VertexObjectPtr VertexBuffer;
+	bool loaded_terrain_, initialized_mesh_, initialized_lighting_;
+	glm::ivec3 position_;
+	MyGL::VertexObjectPtr vertex_buffers_[2];
+	std::vector<ChunkRenderVertex> mesh_vertices_[2];
+	std::vector<unsigned int> mesh_indices_[2];
 
 	explicit Chunk(const glm::ivec3 &pos);
 
 	inline void SetBlock(const glm::ivec3 &pos, Block b)
-	{ Grid[XYZ(pos)] = b; }
+	{ grid_[XYZ(pos)] = b; }
 	inline Block GetBlock(const glm::ivec3 &pos) const
-	{ return Grid[XYZ(pos)]; }
+	{ return grid_[XYZ(pos)]; }
 	inline Block GetBlock(int x, int y, int z) const
-	{ return Grid[XYZ(x, y, z)]; }
+	{ return grid_[XYZ(x, y, z)]; }
 	inline DLightLevel GetTorchLight(int x, int y, int z) const
-	{ return Light[XYZ(x, y, z)] & (uint8_t)0x0F; }
+	{ return light_[XYZ(x, y, z)] & (uint8_t)0x0F; }
 	inline DLightLevel GetTorchLight(const glm::ivec3 &pos) const
-	{ return Light[XYZ(pos)] & (uint8_t)0x0F; }
+	{ return light_[XYZ(pos)] & (uint8_t)0x0F; }
 	inline void SetTorchLight(const glm::ivec3 &pos, LightLevel val)
 	{
 		int index = XYZ(pos);
-		Light[index] = (Light[index] & (uint8_t)0xF0) | val;
+		light_[index] = (light_[index] & (uint8_t)0xF0) | val;
 	}
 	inline DLightLevel GetSunLight(int x, int y, int z) const
-	{ return (Light[XYZ(x, y, z)] >> 4) & (uint8_t)0x0F; }
+	{ return (light_[XYZ(x, y, z)] >> 4) & (uint8_t)0x0F; }
 	inline DLightLevel GetSunLight(const glm::ivec3 &pos) const
-	{ return (Light[XYZ(pos)] >> 4) & (uint8_t)0x0F; }
+	{ return (light_[XYZ(pos)] >> 4) & (uint8_t)0x0F; }
 	inline void SetSunLight(const glm::ivec3 &pos, LightLevel val)
 	{
 		int index = XYZ(pos);
-		Light[index] = (Light[index] & (uint8_t)0x0F) | (val << 4);
+		light_[index] = (light_[index] & (uint8_t)0x0F) | (val << 4);
 	}
-
-	std::vector<ChunkRenderVertex> MeshVertices;
-	std::vector<unsigned int> MeshIndices;
 };
 using ChunkPtr = Chunk*;
 
 class ChunkLoadingInfo
 {
 private:
-	Block Result[WORLD_HEIGHT * CHUNK_INFO_SIZE];
-	glm::ivec2 Position;
-	int Seed;
-	WorldData &Data;
+	Block result_[WORLD_HEIGHT * CHUNK_INFO_SIZE];
+	glm::ivec2 position_;
+	int seed_;
+	WorldData &world_data_;
 
 public:
 	explicit ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data);
@@ -103,12 +100,12 @@ public:
 class ChunkMeshingInfo
 {
 private:
-	Block Grid[EXCHUNK_INFO_SIZE];
-	DLightLevel Light[EXCHUNK_INFO_SIZE];
-	glm::ivec3 Position;
+	Block grid_[EXCHUNK_INFO_SIZE];
+	DLightLevel light_[EXCHUNK_INFO_SIZE];
+	glm::ivec3 position_;
 
-	std::vector<ChunkRenderVertex> ResultVertices;
-	std::vector<unsigned int> ResultIndices;
+	std::vector<ChunkRenderVertex> result_vertices_[2];
+	std::vector<unsigned int> result_indices_[2];
 
 public:
 	explicit ChunkMeshingInfo(ChunkPtr (&chk)[27]);
@@ -119,12 +116,11 @@ public:
 class ChunkInitialLightingInfo
 {
 private:
-	int Highest;
-	Block Grid[LICHUNK_INFO_SIZE];
-	DLightLevel Result[LICHUNK_INFO_SIZE];
+	Block grid_[LICHUNK_INFO_SIZE];
+	DLightLevel result_[LICHUNK_INFO_SIZE];
 
 	inline bool CanPass(int index)
-	{ return BlockMethods::LightCanPass(Grid[index]); }
+	{ return BlockMethods::LightCanPass(grid_[index]); }
 
 public:
 	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);

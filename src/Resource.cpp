@@ -76,15 +76,15 @@ namespace Resource
 		MoonTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
 
 
-		static constexpr float chSize = 10.0, chWidth = 1.0f;
-		static constexpr float crosshairVertices[] = {-chWidth, -chSize, -chWidth, chSize, chWidth, -chSize,
-												  chWidth, -chSize, -chWidth, chSize, chWidth, chSize,
-												  -chSize, chWidth, chSize, -chWidth, -chSize, -chWidth,
-												  chSize, chWidth, chSize, -chWidth, -chSize, chWidth,
-												  -chWidth, -chWidth, -chWidth, chWidth, chWidth, -chWidth,
-												  chWidth, -chWidth, -chWidth, chWidth, chWidth, chWidth};
+		static constexpr float ch_size = 10.0, ch_width = 1.0f;
+		static constexpr float crosshair_vertices[] = {-ch_width, -ch_size, -ch_width, ch_size, ch_width, -ch_size,
+												  ch_width, -ch_size, -ch_width, ch_size, ch_width, ch_size,
+												  -ch_size, ch_width, ch_size, -ch_width, -ch_size, -ch_width,
+												  ch_size, ch_width, ch_size, -ch_width, -ch_size, ch_width,
+												  -ch_width, -ch_width, -ch_width, ch_width, ch_width, -ch_width,
+												  ch_width, -ch_width, -ch_width, ch_width, ch_width, ch_width};
 		CrosshairObject = MyGL::NewVertexObject(false);
-		CrosshairObject->SetDataArr(crosshairVertices, 36);
+		CrosshairObject->SetDataArr(crosshair_vertices, 36);
 		CrosshairObject->SetAttributes(ATTR_POSITION, 2);
 
 		std::vector<uint32_t> sphereIndices;
@@ -95,46 +95,46 @@ namespace Resource
 		SkyObject->SetIndicesVec(sphereIndices);
 		SkyObject->SetAttributes(ATTR_POSITION, 3);
 
-		static constexpr float sunSize = 0.4f;
-		static constexpr float sunVertices[] = {
-				sunSize, -1.0f, -sunSize, 1.0f, 0.0f,
-				-sunSize, -1.0f, -sunSize, 0.0f, 0.0f,
-				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
-				sunSize, -1.0f, -sunSize, 1.0f, 0.0f,
-				-sunSize, -1.0f, sunSize, 0.0f, 1.0f,
-				sunSize, -1.0f, sunSize, 1.0f, 1.0f
+		static constexpr float sun_size = 0.4f;
+		static constexpr float sun_vertices[] = {
+				sun_size, -1.0f, -sun_size, 1.0f, 0.0f,
+				-sun_size, -1.0f, -sun_size, 0.0f, 0.0f,
+				-sun_size, -1.0f, sun_size, 0.0f, 1.0f,
+				sun_size, -1.0f, -sun_size, 1.0f, 0.0f,
+				-sun_size, -1.0f, sun_size, 0.0f, 1.0f,
+				sun_size, -1.0f, sun_size, 1.0f, 1.0f
 		};
 		SunObject = MyGL::NewVertexObject(false);
-		SunObject->SetDataArr(sunVertices, 30);
+		SunObject->SetDataArr(sun_vertices, 30);
 		SunObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
-		static constexpr float moonSize = sunSize / 4.0f;
-		static constexpr float moonVertices[] = {
-				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
-				-moonSize, 1.0f, -moonSize, 0.0f, 0.0f,
-				moonSize, 1.0f, -moonSize, 1.0f, 0.0f,
+		static constexpr float moon_size = sun_size / 4.0f;
+		static constexpr float moon_vertices[] = {
+				-moon_size, 1.0f, moon_size, 0.0f, 1.0f,
+				-moon_size, 1.0f, -moon_size, 0.0f, 0.0f,
+				moon_size, 1.0f, -moon_size, 1.0f, 0.0f,
 
-				moonSize, 1.0f, moonSize, 1.0f, 1.0f,
-				-moonSize, 1.0f, moonSize, 0.0f, 1.0f,
-				moonSize, 1.0f, -moonSize, 1.0f, 0.0f
+				moon_size, 1.0f, moon_size, 1.0f, 1.0f,
+				-moon_size, 1.0f, moon_size, 0.0f, 1.0f,
+				moon_size, 1.0f, -moon_size, 1.0f, 0.0f
 		};
 		MoonObject = MyGL::NewVertexObject(false);
-		MoonObject->SetDataArr(moonVertices, 30);
+		MoonObject->SetDataArr(moon_vertices, 30);
 		MoonObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 
-		static constexpr float bgTime = 0.8f;
-		static constexpr float bgVertices[] = {
-				-1.0f,  1.0f,  bgTime, 1.0f,
-				-1.0f, -1.0f,  bgTime, 0.4f,
-				1.0f, -1.0f,  bgTime, 0.4f,
+		static constexpr float bg_time = 0.8f;
+		static constexpr float bg_vertices[] = {
+				-1.0f,  1.0f,  bg_time, 1.0f,
+				-1.0f, -1.0f,  bg_time, 0.4f,
+				1.0f, -1.0f,  bg_time, 0.4f,
 
-				-1.0f,  1.0f,  bgTime, 1.0f,
-				1.0f, -1.0f,  bgTime, 0.4f,
-				1.0f,  1.0f,  bgTime, 1.0f
+				-1.0f,  1.0f,  bg_time, 1.0f,
+				1.0f, -1.0f,  bg_time, 0.4f,
+				1.0f,  1.0f,  bg_time, 1.0f
 		};
 		BgObject = MyGL::NewVertexObject(false);
-		BgObject->SetDataArr(bgVertices, 24);
+		BgObject->SetDataArr(bg_vertices, 24);
 		BgObject->SetAttributes(ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
 	}
 }

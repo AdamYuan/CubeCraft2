@@ -29,22 +29,22 @@ typedef uint8_t DLightLevel;
 
 struct BlockProperty
 {
-	char Name[10];
-	bool Transparent, LightCanPass, Hitbox;
-	LightLevel Light;
-	int Textures[6];
+	char name[10];
+	bool transparent, lightCanPass, hitbox;
+	LightLevel light_level;
+	int textures[6];
 };
 
 namespace BlockMethods
 {
 	extern const BlockProperty BlockProperties[BLOCKS_NUM];
 
-	inline const char *GetName(Block block) { return BlockProperties[block].Name; }
-	inline int GetTexture(Block block, Face face) { return BlockProperties[block].Textures[face]; }
-	inline bool IsTransparent(Block block) { return BlockProperties[block].Transparent; }
-	inline bool HaveHitbox(Block block) { return BlockProperties[block].Hitbox; }
-	inline LightLevel GetLightLevel(Block block) { return BlockProperties[block].Light; }
-	inline bool LightCanPass(Block block) { return BlockProperties[block].LightCanPass; }
+	inline const char *GetName(Block block) { return BlockProperties[block].name; }
+	inline int GetTexture(Block block, Face face) { return BlockProperties[block].textures[face]; }
+	inline bool IsTransparent(Block block) { return BlockProperties[block].transparent; }
+	inline bool HaveHitbox(Block block) { return BlockProperties[block].hitbox; }
+	inline LightLevel GetLightLevel(Block block) { return BlockProperties[block].light_level; }
+	inline bool LightCanPass(Block block) { return BlockProperties[block].lightCanPass; }
 	inline AABB GetBlockAABB(const glm::ivec3 &pos) { return {(glm::vec3)pos, (glm::vec3)pos + glm::vec3(1.0f)}; }
 }
 

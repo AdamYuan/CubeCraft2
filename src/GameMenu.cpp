@@ -15,11 +15,11 @@ namespace fs = std::experimental::filesystem;
 
 static const ImVec2 s_buttonSize(250.0f, 0.0f);
 
-GameMenu::GameMenu(GLFWwindow *window) : Window(window),
-										 isQuit(false), enterGame(false), State(MenuState::Main)
+GameMenu::GameMenu(GLFWwindow *window) : window_(window),
+										 is_quit_(false), enter_game_(false), state_(MenuState::Main)
 {
-	std::fill(InputBuf, InputBuf + WORLD_NAME_LENGTH, 0);
-	std::fill(SeedBuf, SeedBuf + WORLD_NAME_LENGTH, 0);
+	std::fill(input_buf_, input_buf_ + WORLD_NAME_LENGTH, 0);
+	std::fill(seed_buf_, seed_buf_ + WORLD_NAME_LENGTH, 0);
 
 	UI::CaptureEvent(window, true);
 
@@ -31,7 +31,7 @@ GameMenu::GameMenu(GLFWwindow *window) : Window(window),
 void GameMenu::Update()
 {
 	int width, height;
-	glfwGetFramebufferSize(Window, &width, &height);
+	glfwGetFramebufferSize(window_, &width, &height);
 	glViewport(0, 0, width, height);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -39,21 +39,21 @@ void GameMenu::Update()
 
 	UI::NewFrame();
 
-	if(State == MenuState::Main)
+	if(state_ == MenuState::Main)
 		MainMenu();
-	else if(State == MenuState::WorldSelection)
+	else if(state_ == MenuState::WorldSelection)
 		WorldList();
-	else if(State == MenuState::CreateWorld)
+	else if(state_ == MenuState::CreateWorld)
 		CreateWorldDialog();
-	else if(State == MenuState::DeleteWorld)
+	else if(state_ == MenuState::DeleteWorld)
 		DeleteWorldDialog();
-	else if(State == MenuState::EditWorld)
+	else if(state_ == MenuState::EditWorld)
 		EditWorldDialog();
-	else if(State == MenuState::Settings)
+	else if(state_ == MenuState::Settings)
 		EditSettings();
 
 	UI::Render();
-	glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 
@@ -65,9 +65,9 @@ void GameMenu::MainMenu()
 		if(ImGui::Button("Start", s_buttonSize))
 			GoToWorldList();
 		if(ImGui::Button("Settings", s_buttonSize))
-			State = MenuState::Settings;
+			state_ = MenuState::Settings;
 		if(ImGui::Button("Quit", s_buttonSize))
-			isQuit = true;
+			is_quit_ = true;
 	}
 	EndCenterWindow();
 }
@@ -82,31 +82,31 @@ void GameMenu::WorldList()
 					 |ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar))
 	{
 		if(ImGui::Button("Back"))
-			State = MenuState::Main;
+			state_ = MenuState::Main;
 		ImGui::SameLine();
 		if(ImGui::Button("Create world"))
-			State = MenuState::CreateWorld;
-		if(!WorldVector.empty())
+			state_ = MenuState::CreateWorld;
+		if(!world_vector_.empty())
 		{
 			ImGui::SameLine();
 			if(ImGui::Button("Delete world"))
-				State = MenuState::DeleteWorld;
+				state_ = MenuState::DeleteWorld;
 			ImGui::SameLine();
 			if(ImGui::Button("Edit world"))
 			{
-				strcpy(InputBuf, WorldVector[CurrentIndex].c_str());
-				State = MenuState::EditWorld;
+				strcpy(input_buf_, world_vector_[current_index_].c_str());
+				state_ = MenuState::EditWorld;
 			}
 			ImGui::SameLine();
 			if(ImGui::Button("Play"))
-				enterGame = true;
+				enter_game_ = true;
 		}
 		ImGui::BeginChild("list", ImVec2(0, 0), true);
 		ImGui::PushItemWidth(-1);
-		for(size_t i=0; i<WorldVector.size(); ++i)
+		for(size_t i=0; i<world_vector_.size(); ++i)
 		{
-			if(ImGui::Selectable(WorldVector[i].c_str(), CurrentIndex == i))
-				CurrentIndex = i;
+			if(ImGui::Selectable(world_vector_[i].c_str(), current_index_ == i))
+				current_index_ = i;
 		}
 		ImGui::PopItemWidth();
 		ImGui::EndChild();
@@ -118,12 +118,12 @@ void GameMenu::WorldList()
 
 void GameMenu::UpdateWorldVector()
 {
-	CurrentIndex = 0;
-	WorldVector.clear();
+	current_index_ = 0;
+	world_vector_.clear();
 	for (auto &p : fs::directory_iterator(fs::path(SAVES_DIR)))
 	{
 		if(fs::is_directory(p.path()))
-			WorldVector.push_back(p.path().filename().string());
+			world_vector_.push_back(p.path().filename().string());
 	}
 }
 
@@ -131,16 +131,16 @@ void GameMenu::CreateWorldDialog()
 {
 	BeginCenterWindow("CREATE");
 	{
-		ImGui::InputText("Name", InputBuf, WORLD_NAME_LENGTH);
-		ImGui::InputText("Seed", SeedBuf, WORLD_NAME_LENGTH);
-		if(*InputBuf && ImGui::Button("Create", s_buttonSize))
+		ImGui::InputText("Name", input_buf_, WORLD_NAME_LENGTH);
+		ImGui::InputText("Seed", seed_buf_, WORLD_NAME_LENGTH);
+		if(*input_buf_ && ImGui::Button("Create", s_buttonSize))
 		{
-			auto name = std::string(InputBuf);
+			auto name = std::string(input_buf_);
 			auto pathName = WORLD_DIR(name);
 			fs::path worldPath(pathName.c_str());
 			if(fs::exists(worldPath))
 			{
-				strcpy(InputBuf, "WORLD EXISTED");
+				strcpy(input_buf_, "WORLD EXISTED");
 			} else
 			{
 				if(fs::create_directory(worldPath))
@@ -148,7 +148,7 @@ void GameMenu::CreateWorldDialog()
 					{
 						//calculate seed and write
 						int seed = 0;
-						for (char i : SeedBuf)
+						for (char i : seed_buf_)
 							if(i)
 							{
 								seed *= 10;
@@ -158,12 +158,12 @@ void GameMenu::CreateWorldDialog()
 						out << seed << std::endl;
 						out.close();
 					}
-					std::fill(InputBuf, InputBuf + WORLD_NAME_LENGTH, 0);
-					std::fill(SeedBuf, SeedBuf + WORLD_NAME_LENGTH, 0);
+					std::fill(input_buf_, input_buf_ + WORLD_NAME_LENGTH, 0);
+					std::fill(seed_buf_, seed_buf_ + WORLD_NAME_LENGTH, 0);
 					GoToWorldList();
 				}
 				else
-					strcpy(InputBuf, "INVALID WORLD NAME");
+					strcpy(input_buf_, "INVALID WORLD NAME");
 			}
 		}
 		if(ImGui::Button("Cancel", s_buttonSize))
@@ -199,7 +199,7 @@ void GameMenu::EditSettings()
 			Setting::ChunkDeleteRange = Setting::ChunkLoadRange;
 
 		if (ImGui::Button("Back", s_buttonSize))
-			State = MenuState::Main;
+			state_ = MenuState::Main;
 	}
 	EndCenterWindow();
 }
@@ -208,17 +208,17 @@ void GameMenu::EditWorldDialog()
 {
 	BeginCenterWindow("EDIT");
 	{
-		ImGui::InputText("Name", InputBuf, WORLD_NAME_LENGTH);
-		auto name = std::string(InputBuf);
+		ImGui::InputText("Name", input_buf_, WORLD_NAME_LENGTH);
+		auto name = std::string(input_buf_);
 		auto pathName = WORLD_DIR(name);
 		fs::path worldPath(pathName.c_str());
 		if (!fs::exists(worldPath) && !name.empty() && ImGui::Button("Rename", s_buttonSize))
 		{
-			fs::rename(fs::path(WORLD_DIR(WorldVector[CurrentIndex])), worldPath);
+			fs::rename(fs::path(WORLD_DIR(world_vector_[current_index_])), worldPath);
 		}
 		if (ImGui::Button("Back", s_buttonSize))
 		{
-			std::fill(InputBuf, InputBuf + WORLD_NAME_LENGTH, 0);
+			std::fill(input_buf_, input_buf_ + WORLD_NAME_LENGTH, 0);
 			GoToWorldList();
 		}
 	}

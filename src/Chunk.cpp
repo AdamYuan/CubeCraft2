@@ -9,23 +9,24 @@
 using namespace std::placeholders; //for std::bind
 
 //static methods
-Chunk::Chunk(const glm::ivec3 &pos) : LoadedTerrain(false),
-									  InitializedMesh(false), InitializedLighting(false),
-									  Position(pos)
+Chunk::Chunk(const glm::ivec3 &pos) : loaded_terrain_(false),
+									  initialized_mesh_(false), initialized_lighting_(false),
+									  position_(pos)
 {
-	VertexBuffer = MyGL::NewVertexObject(true);
+	vertex_buffers_[0] = MyGL::NewVertexObject(true);
+	vertex_buffers_[1] = MyGL::NewVertexObject(true);
 }
 
 //Terrain Generation
 
-ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data) : Position(pos), Seed(seed), Data(data) {}
+ChunkLoadingInfo::ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data) : position_(pos), seed_(seed), world_data_(data) {}
 
 void ChunkLoadingInfo::Process()
 {
-	std::fill(std::begin(Result), std::end(Result), Blocks::Air);
+	std::fill(std::begin(result_), std::end(result_), Blocks::Air);
 
 	FastNoiseSIMD* fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-	fastNoise->SetSeed(Seed);
+	fastNoise->SetSeed(seed_);
 
 	constexpr int _SIZE = CHUNK_SIZE + 4, _SIZE2 = _SIZE * _SIZE;
 
@@ -33,7 +34,7 @@ void ChunkLoadingInfo::Process()
 	int heights[_SIZE*_SIZE], highest = 0;
 	fastNoise->SetFractalOctaves(4);
 	fastNoise->SetFrequency(0.002f);
-	float *heightMap = fastNoise->GetSimplexFractalSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0, _SIZE, _SIZE, 1);
+	float *heightMap = fastNoise->GetSimplexFractalSet(position_.y*CHUNK_SIZE, position_.x*CHUNK_SIZE, 0, _SIZE, _SIZE, 1);
 	for (int i = 0; i < _SIZE2; ++i)
 	{
 		heights[i] = (int)(heightMap[i] * 50.0f + 100.0f);
@@ -48,7 +49,7 @@ void ChunkLoadingInfo::Process()
 	fastNoise->SetFractalOctaves(1);
 	fastNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
 	fastNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance2Cave);
-	float *caveMap = fastNoise->GetCellularSet(0, Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, highest + 1, _SIZE, _SIZE);
+	float *caveMap = fastNoise->GetCellularSet(0, position_.y*CHUNK_SIZE, position_.x*CHUNK_SIZE, highest + 1, _SIZE, _SIZE);
 	for(int i=0; i<CAVEMAP_SIZE; ++i)
 		isCave[i] = caveMap[i] > .86f;
 	FastNoiseSIMD::FreeNoiseSet(caveMap);
@@ -65,7 +66,7 @@ void ChunkLoadingInfo::Process()
 
 				if(y == 0)
 				{
-					Result[ind] = Blocks::Bedrock;
+					result_[ind] = Blocks::Bedrock;
 					continue;
 				}
 
@@ -73,17 +74,17 @@ void ChunkLoadingInfo::Process()
 					continue;
 
 				if (y == heights[ind2_2d])
-					Result[ind] = Blocks::Grass;
+					result_[ind] = Blocks::Grass;
 				else if(y >= heights[ind2_2d] - heights[ind2_2d] / 70)
-					Result[ind] = Blocks::Dirt;
+					result_[ind] = Blocks::Dirt;
 				else
-					Result[ind] = Blocks::Stone;
+					result_[ind] = Blocks::Stone;
 			}
 	}
 
 	//tree generation
 	fastNoise->SetFrequency(1.0f);
-	float *treeMap = fastNoise->GetWhiteNoiseSet(Position.y*CHUNK_SIZE, Position.x*CHUNK_SIZE, 0,
+	float *treeMap = fastNoise->GetWhiteNoiseSet(position_.y*CHUNK_SIZE, position_.x*CHUNK_SIZE, 0,
 												 _SIZE, _SIZE, 1);
 	for (int z = -2, i = 0; z < CHUNK_SIZE + 2; ++z)
 		for (int x = -2; x < CHUNK_SIZE + 2; ++x, ++i)
@@ -107,30 +108,30 @@ void ChunkLoadingInfo::Process()
 						if(_z == z && _x == x)
 							continue;
 						int ind = XYZ(_x, h, _z);
-						if(Result[ind] == Blocks::Air)
-							Result[ind] = Blocks::Leaves;
+						if(result_[ind] == Blocks::Air)
+							result_[ind] = Blocks::Leaves;
 					}
 			}
 			if(x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
 			{
 				for(int h = heights[i] + 1; h <= heights[i] + treeHeight; ++h)
-					Result[XYZ(x, h, z)] = Blocks::Wood;
-				Result[XYZ(x, heights[i], z)] = Blocks::Dirt;
+					result_[XYZ(x, h, z)] = Blocks::Wood;
+				result_[XYZ(x, heights[i], z)] = Blocks::Dirt;
 			}
 		}
 	FastNoiseSIMD::FreeNoiseSet(treeMap);
 
-	Data.LoadBlocks(Position, Result);
+	world_data_.LoadBlocks(position_, result_);
 }
 
 void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
 	for(int i=0; i<WORLD_HEIGHT; ++i) {
-		std::copy(this->Result + i*CHUNK_INFO_SIZE,
-				  this->Result + i*CHUNK_INFO_SIZE + CHUNK_INFO_SIZE,
-				  chk[i]->Grid);
+		std::copy(this->result_ + i*CHUNK_INFO_SIZE,
+				  this->result_ + i*CHUNK_INFO_SIZE + CHUNK_INFO_SIZE,
+				  chk[i]->grid_);
 
-		chk[i]->LoadedTerrain = true;
+		chk[i]->loaded_terrain_ = true;
 	}
 }
 
@@ -140,14 +141,16 @@ void ChunkLoadingInfo::ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT])
 
 void ChunkMeshingInfo::Process()
 {
-	ChunkAlgorithm::MeshingThreaded(Grid, Light, Position, ResultVertices, ResultIndices);
+	ChunkAlgorithm::MeshingThreaded(grid_, light_, position_, result_vertices_, result_indices_);
 }
 
 void ChunkMeshingInfo::ApplyResult(ChunkPtr chk)
 {
-	chk->MeshVertices = std::move(ResultVertices);
-	chk->MeshIndices = std::move(ResultIndices);
-	chk->InitializedMesh = true;
+	chk->mesh_vertices_[0] = std::move(result_vertices_[0]);
+	chk->mesh_vertices_[1] = std::move(result_vertices_[1]);
+	chk->mesh_indices_[0] = std::move(result_indices_[0]);
+	chk->mesh_indices_[1] = std::move(result_indices_[1]);
+	chk->initialized_mesh_ = true;
 }
 
 ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
@@ -167,191 +170,191 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	//   \  1   10  19
 	//    \   2   11  20
 	//     z
-	Position = chk[13]->Position;
+	position_ = chk[13]->position_;
 
-	int Obj, Index, Index2, ExIndex, Y, ExY;
-#define SET Grid[ExIndex] = chk[Obj]->Grid[Index]; Light[ExIndex] = chk[Obj]->Light[Index]
-#define COPY std::copy(chk[Obj]->Grid + Index, chk[Obj]->Grid + Index2, Grid + ExIndex);\
-	std::copy(chk[Obj]->Light + Index, chk[Obj]->Light + Index2, Light + ExIndex)
+	int obj, index, index2, ex_index, y, ex_y;
+#define SET grid_[ex_index] = chk[obj]->grid_[index]; light_[ex_index] = chk[obj]->light_[index]
+#define COPY std::copy(chk[obj]->grid_ + index, chk[obj]->grid_ + index2, grid_ + ex_index);\
+	std::copy(chk[obj]->light_ + index, chk[obj]->light_ + index2, light_ + ex_index)
 
-	for(Y = 0, ExY = 0; Y < CHUNK_SIZE; ++Y, ++ExY)
+	for(y = 0, ex_y = 0; y < CHUNK_SIZE; ++y, ++ex_y)
 	{
-		Obj = 3;
-		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(-1, ExY, -1);
+		obj = 3;
+		index = XYZ(CHUNK_SIZE-1, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(-1, ex_y, -1);
 		SET;
 
-		Obj = 5;
-		Index = XYZ(CHUNK_SIZE-1, Y, 0);
-		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
+		obj = 5;
+		index = XYZ(CHUNK_SIZE-1, y, 0);
+		ex_index = ExXYZ(-1, ex_y, CHUNK_SIZE);
 		SET;
 
-		Obj = 23;
-		Index = XYZ(0, Y, 0);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
+		obj = 23;
+		index = XYZ(0, y, 0);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, CHUNK_SIZE);
 		SET;
 
-		Obj = 21;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
+		obj = 21;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, -1);
 		SET;
 
-		Obj = 12;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(0, ExY, -1);
+		obj = 12;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		index2 = XYZ(CHUNK_SIZE, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(0, ex_y, -1);
 		COPY;
 
-		Obj = 14;
-		Index = XYZ(0, Y, 0);
-		Index2 = XYZ(CHUNK_SIZE, Y, 0);
-		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
+		obj = 14;
+		index = XYZ(0, y, 0);
+		index2 = XYZ(CHUNK_SIZE, y, 0);
+		ex_index = ExXYZ(0, ex_y, CHUNK_SIZE);
 		COPY;
 
 		for(int z=0; z<CHUNK_SIZE; ++z)
 		{
-			Obj = 4;
-			Index = XYZ(CHUNK_SIZE-1, Y, z);
-			ExIndex = ExXYZ(-1, ExY, z);
+			obj = 4;
+			index = XYZ(CHUNK_SIZE-1, y, z);
+			ex_index = ExXYZ(-1, ex_y, z);
 			SET;
 
-			Obj = 22;
-			Index = XYZ(0, Y, z);
-			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
+			obj = 22;
+			index = XYZ(0, y, z);
+			ex_index = ExXYZ(CHUNK_SIZE, ex_y, z);
 			SET;
 
-			Obj = 13;
-			Index = XYZ(0, Y, z);
-			Index2 = XYZ(CHUNK_SIZE, Y, z);
-			ExIndex = ExXYZ(0, ExY, z);
+			obj = 13;
+			index = XYZ(0, y, z);
+			index2 = XYZ(CHUNK_SIZE, y, z);
+			ex_index = ExXYZ(0, ex_y, z);
 			COPY;
 		}
 	}
 
-	if(Position.y != WORLD_HEIGHT - 1)
+	if(position_.y != WORLD_HEIGHT - 1)
 	{
-		Y = 0, ExY = CHUNK_SIZE;
+		y = 0, ex_y = CHUNK_SIZE;
 
-		Obj = 6;
-		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(-1, ExY, -1);
+		obj = 6;
+		index = XYZ(CHUNK_SIZE-1, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(-1, ex_y, -1);
 		SET;
 
-		Obj = 8;
-		Index = XYZ(CHUNK_SIZE-1, Y, 0);
-		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
+		obj = 8;
+		index = XYZ(CHUNK_SIZE-1, y, 0);
+		ex_index = ExXYZ(-1, ex_y, CHUNK_SIZE);
 		SET;
 
-		Obj = 26;
-		Index = XYZ(0, Y, 0);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
+		obj = 26;
+		index = XYZ(0, y, 0);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, CHUNK_SIZE);
 		SET;
 
-		Obj = 24;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
+		obj = 24;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, -1);
 		SET;
 
-		Obj = 15;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(0, ExY, -1);
+		obj = 15;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		index2 = XYZ(CHUNK_SIZE, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(0, ex_y, -1);
 		COPY;
 
-		Obj = 17;
-		Index = XYZ(0, Y, 0);
-		Index2 = XYZ(CHUNK_SIZE, Y, 0);
-		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
+		obj = 17;
+		index = XYZ(0, y, 0);
+		index2 = XYZ(CHUNK_SIZE, y, 0);
+		ex_index = ExXYZ(0, ex_y, CHUNK_SIZE);
 		COPY;
 
 		for(int z=0; z<CHUNK_SIZE; ++z)
 		{
-			Obj = 7;
-			Index = XYZ(CHUNK_SIZE-1, Y, z);
-			ExIndex = ExXYZ(-1, ExY, z);
+			obj = 7;
+			index = XYZ(CHUNK_SIZE-1, y, z);
+			ex_index = ExXYZ(-1, ex_y, z);
 			SET;
 
-			Obj = 25;
-			Index = XYZ(0, Y, z);
-			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
+			obj = 25;
+			index = XYZ(0, y, z);
+			ex_index = ExXYZ(CHUNK_SIZE, ex_y, z);
 			SET;
 
-			Obj = 16;
-			Index = XYZ(0, Y, z);
-			Index2 = XYZ(CHUNK_SIZE, Y, z);
-			ExIndex = ExXYZ(0, ExY, z);
-			COPY;
-		}
-	}
-	else
-	{
-		std::fill(Grid + ExXYZ(-1, CHUNK_SIZE, -1), Grid + EXCHUNK_INFO_SIZE, Blocks::Air);
-		std::fill(Light + ExXYZ(-1, CHUNK_SIZE, -1), Light + EXCHUNK_INFO_SIZE, 0xf0);
-	}
-
-	if(Position.y != 0)
-	{
-		Y = CHUNK_SIZE - 1, ExY = -1;
-
-		Obj = 0;
-		Index = XYZ(CHUNK_SIZE-1, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(-1, ExY, -1);
-		SET;
-
-		Obj = 2;
-		Index = XYZ(CHUNK_SIZE-1, Y, 0);
-		ExIndex = ExXYZ(-1, ExY, CHUNK_SIZE);
-		SET;
-
-		Obj = 20;
-		Index = XYZ(0, Y, 0);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, CHUNK_SIZE);
-		SET;
-
-		Obj = 18;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(CHUNK_SIZE, ExY, -1);
-		SET;
-
-		Obj = 9;
-		Index = XYZ(0, Y, CHUNK_SIZE-1);
-		Index2 = XYZ(CHUNK_SIZE, Y, CHUNK_SIZE-1);
-		ExIndex = ExXYZ(0, ExY, -1);
-		COPY;
-
-		Obj = 11;
-		Index = XYZ(0, Y, 0);
-		Index2 = XYZ(CHUNK_SIZE, Y, 0);
-		ExIndex = ExXYZ(0, ExY, CHUNK_SIZE);
-		COPY;
-
-		for(int z=0; z<CHUNK_SIZE; ++z)
-		{
-			Obj = 1;
-			Index = XYZ(CHUNK_SIZE-1, Y, z);
-			ExIndex = ExXYZ(-1, ExY, z);
-			SET;
-
-			Obj = 19;
-			Index = XYZ(0, Y, z);
-			ExIndex = ExXYZ(CHUNK_SIZE, ExY, z);
-			SET;
-
-			Obj = 10;
-			Index = XYZ(0, Y, z);
-			Index2 = XYZ(CHUNK_SIZE, Y, z);
-			ExIndex = ExXYZ(0, ExY, z);
+			obj = 16;
+			index = XYZ(0, y, z);
+			index2 = XYZ(CHUNK_SIZE, y, z);
+			ex_index = ExXYZ(0, ex_y, z);
 			COPY;
 		}
 	}
 	else
 	{
-		std::fill(Grid, Grid + EXCHUNK_SIZE * EXCHUNK_SIZE, Blocks::Air);
-		std::copy(Light + ExXYZ(-1, 0, -1), Light + ExXYZ(-1, 1, -1), Light);
+		std::fill(grid_ + ExXYZ(-1, CHUNK_SIZE, -1), grid_ + EXCHUNK_INFO_SIZE, Blocks::Air);
+		std::fill(light_ + ExXYZ(-1, CHUNK_SIZE, -1), light_ + EXCHUNK_INFO_SIZE, 0xf0);
+	}
+
+	if(position_.y != 0)
+	{
+		y = CHUNK_SIZE - 1, ex_y = -1;
+
+		obj = 0;
+		index = XYZ(CHUNK_SIZE-1, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(-1, ex_y, -1);
+		SET;
+
+		obj = 2;
+		index = XYZ(CHUNK_SIZE-1, y, 0);
+		ex_index = ExXYZ(-1, ex_y, CHUNK_SIZE);
+		SET;
+
+		obj = 20;
+		index = XYZ(0, y, 0);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, CHUNK_SIZE);
+		SET;
+
+		obj = 18;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(CHUNK_SIZE, ex_y, -1);
+		SET;
+
+		obj = 9;
+		index = XYZ(0, y, CHUNK_SIZE-1);
+		index2 = XYZ(CHUNK_SIZE, y, CHUNK_SIZE-1);
+		ex_index = ExXYZ(0, ex_y, -1);
+		COPY;
+
+		obj = 11;
+		index = XYZ(0, y, 0);
+		index2 = XYZ(CHUNK_SIZE, y, 0);
+		ex_index = ExXYZ(0, ex_y, CHUNK_SIZE);
+		COPY;
+
+		for(int z=0; z<CHUNK_SIZE; ++z)
+		{
+			obj = 1;
+			index = XYZ(CHUNK_SIZE-1, y, z);
+			ex_index = ExXYZ(-1, ex_y, z);
+			SET;
+
+			obj = 19;
+			index = XYZ(0, y, z);
+			ex_index = ExXYZ(CHUNK_SIZE, ex_y, z);
+			SET;
+
+			obj = 10;
+			index = XYZ(0, y, z);
+			index2 = XYZ(CHUNK_SIZE, y, z);
+			ex_index = ExXYZ(0, ex_y, z);
+			COPY;
+		}
+	}
+	else
+	{
+		std::fill(grid_, grid_ + EXCHUNK_SIZE * EXCHUNK_SIZE, Blocks::Air);
+		std::copy(light_ + ExXYZ(-1, 0, -1), light_ + ExXYZ(-1, 1, -1), light_);
 	}
 }
 
-ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]) : Highest(0)
+ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 {
 	for(int h = 0; h < WORLD_HEIGHT; ++h)
 	{
@@ -368,31 +371,31 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 			for(int z=-14; z<0; ++z)
 			{
 				int _z = z + CHUNK_SIZE;
-				std::copy(chk[arr[0]]->Grid + XYZ(CHUNK_SIZE-14, y, _z),
-						  chk[arr[0]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[3]]->Grid + XYZ(0, y, _z),
-						  chk[arr[3]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[6]]->Grid + XYZ(0, y, _z),
-						  chk[arr[6]]->Grid + XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[0]]->grid_ + XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[0]]->grid_ + XYZ(CHUNK_SIZE, y, _z), grid_ + LiXYZ(-14, height, z));
+				std::copy(chk[arr[3]]->grid_ + XYZ(0, y, _z),
+						  chk[arr[3]]->grid_ + XYZ(CHUNK_SIZE, y, _z), grid_ + LiXYZ(0, height, z));
+				std::copy(chk[arr[6]]->grid_ + XYZ(0, y, _z),
+						  chk[arr[6]]->grid_ + XYZ(14, y, _z), grid_ + LiXYZ(CHUNK_SIZE, height, z));
 			}
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
-				std::copy(chk[arr[1]]->Grid + XYZ(CHUNK_SIZE-14, y, z),
-						  chk[arr[1]]->Grid + XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[4]]->Grid + XYZ(0, y, z),
-						  chk[arr[4]]->Grid + XYZ(CHUNK_SIZE, y, z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[7]]->Grid + XYZ(0, y, z),
-						  chk[arr[7]]->Grid + XYZ(14, y, z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[1]]->grid_ + XYZ(CHUNK_SIZE-14, y, z),
+						  chk[arr[1]]->grid_ + XYZ(CHUNK_SIZE, y, z), grid_ + LiXYZ(-14, height, z));
+				std::copy(chk[arr[4]]->grid_ + XYZ(0, y, z),
+						  chk[arr[4]]->grid_ + XYZ(CHUNK_SIZE, y, z), grid_ + LiXYZ(0, height, z));
+				std::copy(chk[arr[7]]->grid_ + XYZ(0, y, z),
+						  chk[arr[7]]->grid_ + XYZ(14, y, z), grid_ + LiXYZ(CHUNK_SIZE, height, z));
 			}
 			for(int z=CHUNK_SIZE; z<CHUNK_SIZE+14; ++z)
 			{
 				int _z = z - CHUNK_SIZE;
-				std::copy(chk[arr[2]]->Grid + XYZ(CHUNK_SIZE-14, y, _z),
-						  chk[arr[2]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(-14, height, z));
-				std::copy(chk[arr[5]]->Grid + XYZ(0, y, _z),
-						  chk[arr[5]]->Grid + XYZ(CHUNK_SIZE, y, _z), Grid + LiXYZ(0, height, z));
-				std::copy(chk[arr[8]]->Grid + XYZ(0, y, _z),
-						  chk[arr[8]]->Grid + XYZ(14, y, _z), Grid + LiXYZ(CHUNK_SIZE, height, z));
+				std::copy(chk[arr[2]]->grid_ + XYZ(CHUNK_SIZE-14, y, _z),
+						  chk[arr[2]]->grid_ + XYZ(CHUNK_SIZE, y, _z), grid_ + LiXYZ(-14, height, z));
+				std::copy(chk[arr[5]]->grid_ + XYZ(0, y, _z),
+						  chk[arr[5]]->grid_ + XYZ(CHUNK_SIZE, y, _z), grid_ + LiXYZ(0, height, z));
+				std::copy(chk[arr[8]]->grid_ + XYZ(0, y, _z),
+						  chk[arr[8]]->grid_ + XYZ(14, y, _z), grid_ + LiXYZ(CHUNK_SIZE, height, z));
 			}
 		}
 	}
@@ -401,39 +404,40 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 void ChunkInitialLightingInfo::Process()
 {
 	//Get Highest Layer
+	int highest = 0;
 	constexpr int LICHUNK_SIZE_2 = LICHUNK_SIZE*LICHUNK_SIZE;
 	for(int i=LICHUNK_INFO_SIZE - 1; i>=0; i--)
 		if(!CanPass(i))
 		{
-			Highest = i / LICHUNK_SIZE_2;
+			highest = i / LICHUNK_SIZE_2;
 			break;
 		}
 
-	std::fill(Result, Result + (Highest+1) * LICHUNK_SIZE_2, 0x00);
-	std::fill(Result + (Highest+1) * LICHUNK_SIZE_2, Result + LICHUNK_INFO_SIZE, 0xF0);
+	std::fill(result_, result_ + (highest+1) * LICHUNK_SIZE_2, 0x00);
+	std::fill(result_ + (highest+1) * LICHUNK_SIZE_2, result_ + LICHUNK_INFO_SIZE, 0xF0);
 
-	std::queue<LightBFSNode> Queue;
+	std::queue<LightBFSNode> que;
 	glm::ivec3 pos;
 
-	pos.y = Highest;
+	pos.y = highest;
 	for(pos.x = -14; pos.x < CHUNK_SIZE + 14; ++pos.x)
 		for(pos.z = -14; pos.z < CHUNK_SIZE + 14; ++pos.z)
 		{
 			int index = LiXYZ(pos);
 			if(!CanPass(index))
 				continue;
-			Result[index] = 15 << 4;
-			Queue.push({pos, 15});
+			result_[index] = 15 << 4;
+			que.push({pos, 15});
 		}
 
-	ChunkAlgorithm::SunLightBFSThreaded(Grid, Result, Highest, Queue);
+	ChunkAlgorithm::SunLightBFSThreaded(grid_, result_, highest, que);
 
 	for(int i=0; i<LICHUNK_INFO_SIZE; ++i)
 	{
-		const LightLevel level = BlockMethods::GetLightLevel(Grid[i]);
+		const LightLevel level = BlockMethods::GetLightLevel(grid_[i]);
 		if(level != 0)
 		{
-			Result[i] = (Result[i] & (uint8_t)0xF0) | level;
+			result_[i] = (result_[i] & (uint8_t)0xF0) | level;
 
 			int _i = i;
 			pos.y = _i / LICHUNK_SIZE_2;
@@ -441,11 +445,11 @@ void ChunkInitialLightingInfo::Process()
 			pos.z = _i / LICHUNK_SIZE - 14;
 			pos.x = _i % LICHUNK_SIZE - 14;
 
-			Queue.push({pos, level});
+			que.push({pos, level});
 		}
 	}
 
-	ChunkAlgorithm::TorchLightBFSThreaded(Grid, Result, Queue);
+	ChunkAlgorithm::TorchLightBFSThreaded(grid_, result_, que);
 }
 
 void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
@@ -457,10 +461,10 @@ void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 			int height = h*CHUNK_SIZE + y;
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
-				std::copy(Result + LiXYZ(0, height, z), Result + LiXYZ(CHUNK_SIZE, height, z),
-						  chk[h]->Light + XYZ(0, y, z));
+				std::copy(result_ + LiXYZ(0, height, z), result_ + LiXYZ(CHUNK_SIZE, height, z),
+						  chk[h]->light_ + XYZ(0, y, z));
 			}
 		}
-		chk[h]->InitializedLighting = true;
+		chk[h]->initialized_lighting_ = true;
 	}
 }

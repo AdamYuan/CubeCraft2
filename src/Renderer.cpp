@@ -7,7 +7,7 @@
 #include "ChunkAlgorithm.hpp"
 #include <MyGL/Frustum.hpp>
 
-void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const glm::vec3 &position,
+void Renderer::RenderWorld(const World &wld, const glm::mat4 &vp_matrix, const glm::vec3 &position,
 						   const glm::ivec3 &selection)
 {
 	static MyGL::Frustum frustum = {};
@@ -15,7 +15,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 
 	glm::vec3 p_center = (glm::vec3)(World::BlockPosToChunkPos(glm::floor(position)));
 
-	frustum.CalculatePlanes(vpMatrix);
+	frustum.CalculatePlanes(vp_matrix);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -32,7 +32,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 
 	Resource::ChunkShader->PassInt(Resource::ChunkShader_sampler, 0);
 	Resource::ChunkShader->PassInt(Resource::ChunkShader_skySampler, 1);
-	Resource::ChunkShader->PassMat4(Resource::ChunkShader_matrix, vpMatrix);
+	Resource::ChunkShader->PassMat4(Resource::ChunkShader_matrix, vp_matrix);
 
 	Resource::ChunkShader->PassFloat(Resource::ChunkShader_viewDistance, range);
 	Resource::ChunkShader->PassFloat(Resource::ChunkShader_dayTime, wld.GetDayTime());
@@ -40,38 +40,61 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vpMatrix, const gl
 	Resource::ChunkShader->PassVec3(Resource::ChunkShader_camera, position);
 	Resource::ChunkShader->PassVec3(Resource::ChunkShader_selection, selection);
 
-	for(const glm::ivec3 &pos : wld.RenderSet)
+	for(const glm::ivec3 &pos : wld.render_set_[0])
 	{
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
 			continue;
-		if(!chk->MeshVertices.empty())
+		if(!chk->mesh_vertices_[0].empty())
 		{
-			ChunkAlgorithm::ApplyMesh(chk, chk->MeshVertices, chk->MeshIndices);
-			chk->MeshVertices.clear(); chk->MeshVertices.shrink_to_fit();
-			chk->MeshIndices.clear(); chk->MeshIndices.shrink_to_fit();
+			ChunkAlgorithm::ApplyMesh(chk, false, chk->mesh_vertices_, chk->mesh_indices_);
+			chk->mesh_vertices_[0].clear(); chk->mesh_vertices_[0].shrink_to_fit();
+			chk->mesh_indices_[0].clear(); chk->mesh_indices_[0].shrink_to_fit();
 		}
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
 			glm::distance((glm::vec3)pos, p_center) < (float)Setting::ChunkLoadRange + 1)
-			chk->VertexBuffer->Render(GL_TRIANGLES);
+			chk->vertex_buffers_[0]->Render(GL_TRIANGLES);
 	}
+
+	//glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	for(const glm::ivec3 &pos : wld.render_set_[1])
+	{
+		ChunkPtr chk = wld.GetChunk(pos);
+		if(!chk)
+			continue;
+		if(!chk->mesh_vertices_[1].empty())
+		{
+			ChunkAlgorithm::ApplyMesh(chk, true, chk->mesh_vertices_, chk->mesh_indices_);
+			chk->mesh_vertices_[1].clear(); chk->mesh_vertices_[1].shrink_to_fit();
+			chk->mesh_indices_[1].clear(); chk->mesh_indices_[1].shrink_to_fit();
+		}
+		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
+		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
+			glm::distance((glm::vec3)pos, p_center) < (float)Setting::ChunkLoadRange + 1)
+			chk->vertex_buffers_[1]->Render(GL_TRIANGLES);
+	}
+	glDisable(GL_BLEND);
+	//glDepthMask(GL_TRUE);
+
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 }
 
-void Renderer::RenderCrosshair(const glm::mat4 &vpMatrix)
+void Renderer::RenderCrosshair(const glm::mat4 &vp_matrix)
 {
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT);
 	Resource::LineShader->Use();
-	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vpMatrix);
+	Resource::LineShader->PassMat4(Resource::LineShader_matrix, vp_matrix);
 	Resource::CrosshairObject->Render(GL_TRIANGLES);
 	glDisable(GL_COLOR_LOGIC_OP);
 }
 
-void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sunModelMatrix, float dayTime)
+void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sun_model_matrix, float day_time)
 {
 	glm::mat4 vpMatrix = projection * glm::mat4(view);
 	glEnable(GL_CULL_FACE);
@@ -88,7 +111,7 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	Resource::SkyShader->Use();
 	Resource::SkyShader->PassMat4(Resource::SkyShader_matrix, vpMatrix);
 	Resource::SkyShader->PassInt(Resource::SkyShader_sampler, 0);
-	Resource::SkyShader->PassFloat(Resource::SkyShader_dayTime, dayTime);
+	Resource::SkyShader->PassFloat(Resource::SkyShader_dayTime, day_time);
 
 	Resource::SkyObject->Render(GL_TRIANGLES);
 
@@ -99,17 +122,17 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	Resource::SunShader->Use();
-	Resource::SunShader->PassMat4(Resource::SunShader_matrix, vpMatrix * sunModelMatrix);
+	Resource::SunShader->PassMat4(Resource::SunShader_matrix, vpMatrix * sun_model_matrix);
 	Resource::SunShader->PassInt(Resource::SunShader_sampler, 0);
 
 	glActiveTexture(GL_TEXTURE0);
-	if(dayTime >= 0.2 && dayTime <= 0.8)
+	if(day_time >= 0.2 && day_time <= 0.8)
 	{
 		Resource::SunTexture->Bind();
 		Resource::SunObject->Render(GL_TRIANGLES);
 	}
 
-	if(dayTime <= 0.3 || dayTime >= 0.7)
+	if(day_time <= 0.3 || day_time >= 0.7)
 	{
 		Resource::MoonTexture->Bind();
 		Resource::MoonObject->Render(GL_TRIANGLES);

@@ -12,9 +12,9 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player(World &wld) : Position(Cam.Position), flying(false),
-							 BoundingBox({-0.25, -1.375, -0.25}, {0.25, 0.25, 0.25}),
-							 wld(&wld), UsingBlock(1)
+Player::Player(World &wld) : position_(Cam.Position), flying_(false),
+							 kBoundingBox({-0.25, -1.375, -0.25}, {0.25, 0.25, 0.25}),
+							 wld(&wld), using_block_(1)
 {
 
 }
@@ -29,7 +29,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		rightFirst = true;
 		if(leftFirst || glfwGetTime() - lastTime >= INTERVAL)
 		{
-			wld->SetBlock(Selection, Blocks::Air, true);
+			wld->SetBlock(selection_, Blocks::Air, true);
 			lastTime = glfwGetTime();
 			leftFirst = false;
 		}
@@ -38,9 +38,9 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 	{
 		leftFirst = true;
 		if((rightFirst || glfwGetTime() - lastTime >= INTERVAL) &&
-				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(NewBlockSelection)))
+				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(new_block_selection_)))
 		{
-			wld->SetBlock(NewBlockSelection, UsingBlock, true);
+			wld->SetBlock(new_block_selection_, using_block_, true);
 			lastTime = glfwGetTime();
 			rightFirst = false;
 		}
@@ -71,7 +71,7 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 	if(glfwGetKey(win, GLFW_KEY_D))
 		Cam.MoveForward(dist, -90);
 
-	if(flying)
+	if(flying_)
 	{
 		jumping = false;
 		if(glfwGetKey(win, GLFW_KEY_SPACE))
@@ -80,7 +80,7 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 			Cam.MoveUp(-dist);
 	}
 	//jumping
-	if(!flying && glfwGetKey(win, GLFW_KEY_SPACE))
+	if(!flying_ && glfwGetKey(win, GLFW_KEY_SPACE))
 	{
 		glm::vec3 vec = oldPos;
 		//check player is on a solid block
@@ -89,7 +89,7 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 	}
 
 	glm::vec3 velocity = Cam.Position - oldPos;
-	if(!flying && velocity != glm::vec3(0.0f))
+	if(!flying_ && velocity != glm::vec3(0.0f))
 		velocity = glm::normalize(velocity) * dist;
 	Cam.Position = oldPos;
 
@@ -101,19 +101,19 @@ bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 {
 	pos[axis] += velocity;
 
-	AABB now(BoundingBox.Min + pos, BoundingBox.Max + pos);
+	AABB now(kBoundingBox.min_ + pos, kBoundingBox.max_ + pos);
 
-	glm::ivec3 Min = glm::floor(now.Min);
-	glm::ivec3 Max = glm::floor(now.Max);
+	glm::ivec3 pos_min = glm::floor(now.min_);
+	glm::ivec3 pos_max = glm::floor(now.max_);
 
 	int u = (axis + 1) % 3, v = (axis + 2) % 3;
 
 	glm::ivec3 iter;
 	bool positive = velocity > 0;
-	iter[axis] = positive ? Max[axis] : Min[axis];
+	iter[axis] = positive ? pos_max[axis] : pos_min[axis];
 
-	for(iter[u] = Min[u]; iter[u] <= Max[u]; ++iter[u])
-		for(iter[v] = Min[v]; iter[v] <= Max[v]; ++iter[v])
+	for(iter[u] = pos_min[u]; iter[u] <= pos_max[u]; ++iter[u])
+		for(iter[v] = pos_min[v]; iter[v] <= pos_max[v]; ++iter[v])
 		{
 			AABB box = BlockMethods::GetBlockAABB(iter);
 			if (now.Intersect(box) &&
@@ -121,7 +121,7 @@ bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 			{
 				//set the right position
 				pos[axis] = (float)(iter[axis] + !positive) -
-							(positive ? BoundingBox.Max[axis] : BoundingBox.Min[axis]);
+							(positive ? kBoundingBox.max_[axis] : kBoundingBox.min_[axis]);
 				return false;
 			}
 		}
@@ -169,7 +169,7 @@ bool Player::MoveAxis(int axis, float velocity)
 void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 {
 	static double lastTime = glfwGetTime();
-	if(flying)
+	if(flying_)
 	{
 		lastTime = glfwGetTime();
 		return;
@@ -207,7 +207,7 @@ void Player::Control(bool focus, GLFWwindow *win, int width, int height, const M
 {
 	glm::ivec3 chunkPos = GetChunkPosition();
 	ChunkPtr chk = wld->GetChunk(chunkPos);
-	bool flag = (chk && chk->LoadedTerrain) || (chunkPos.y < 0 || chunkPos.y >= WORLD_HEIGHT);
+	bool flag = (chk && chk->loaded_terrain_) || (chunkPos.y < 0 || chunkPos.y >= WORLD_HEIGHT);
 	if(flag)
 	{
 		//positions
@@ -220,7 +220,7 @@ void Player::Control(bool focus, GLFWwindow *win, int width, int height, const M
 
 	}
 	//update matrix
-	ViewMatrix = Cam.GetViewMatrix();
+	view_matrix_ = Cam.GetViewMatrix();
 
 	if(focus)
 		UpdateSelection(width, height, projection);
@@ -257,11 +257,11 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 	glm::ivec3 step = glm::sign(direction);
 	// See description above. The initial values depend on the fractional
 	// part of the origin.
-	glm::vec3 tMax = glm::vec3(intBound(origin.x, direction.x),
-							   intBound(origin.y, direction.y),
-							   intBound(origin.z, direction.z));
+	glm::vec3 t_max = glm::vec3(IntBound(origin.x, direction.x),
+								IntBound(origin.y, direction.y),
+								IntBound(origin.z, direction.z));
 	// The change in t when taking a step (always positive).
-	glm::vec3 tDelta = (glm::vec3)step / direction;
+	glm::vec3 t_delta = (glm::vec3)step / direction;
 	// Buffer for reporting faces to the callback.
 	glm::ivec3 face;
 
@@ -274,8 +274,8 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 		// Invoke the callback, unless we are not *yet* within the bounds of the
 		// world.
 		if (BlockMethods::HaveHitbox(wld->GetBlock(xyz))) {
-			Selection = xyz;
-			NewBlockSelection = Selection + face;
+			selection_ = xyz;
+			new_block_selection_ = selection_ + face;
 			return;
 		}
 
@@ -283,39 +283,39 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 		// X axis, and similarly for Y and Z. Therefore, choosing the least tMax
 		// chooses the closest cube boundary. Only the first case of the four
 		// has been commented in detail.
-		if (tMax.x < tMax.y) {
-			if (tMax.x < tMax.z) {
-				if (tMax.x > radius) break;
+		if (t_max.x < t_max.y) {
+			if (t_max.x < t_max.z) {
+				if (t_max.x > radius) break;
 				// Update which cube we are now in.
 				xyz.x += step.x;
 				// Adjust tMaxX to the next X-oriented boundary crossing.
-				tMax.x += tDelta.x;
+				t_max.x += t_delta.x;
 				// Record the normal vector of the cube face we entered.
 				face[0] = -step.x;
 				face[1] = 0;
 				face[2] = 0;
 			} else {
-				if (tMax.z > radius) break;
+				if (t_max.z > radius) break;
 				xyz.z += step.z;
-				tMax.z += tDelta.z;
+				t_max.z += t_delta.z;
 				face[0] = 0;
 				face[1] = 0;
 				face[2] = -step.z;
 			}
 		} else {
-			if (tMax.y < tMax.z) {
-				if (tMax.y > radius) break;
+			if (t_max.y < t_max.z) {
+				if (t_max.y > radius) break;
 				xyz.y += step.y;
-				tMax.y += tDelta.y;
+				t_max.y += t_delta.y;
 				face[0] = 0;
 				face[1] = -step.y;
 				face[2] = 0;
 			} else {
 				// Identical to the second case, repeated for simplicity in
 				// the conditionals.
-				if (tMax.z > radius) break;
+				if (t_max.z > radius) break;
 				xyz.z += step.z;
-				tMax.z += tDelta.z;
+				t_max.z += t_delta.z;
 				face[0] = 0;
 				face[1] = 0;
 				face[2] = -step.z;
@@ -323,5 +323,5 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 		}
 	}
 
-	NewBlockSelection = Selection = glm::ivec3(INT_MAX);
+	new_block_selection_ = selection_ = glm::ivec3(INT_MAX);
 }

@@ -4,7 +4,7 @@
 #include "Resource.hpp"
 #include "UI.hpp"
 
-Application::Application() : Width(720), Height(480), InGame(false)
+Application::Application() : width_(720), height_(480), in_game_(false)
 {
 	InitWindow();
 }
@@ -20,15 +20,15 @@ void Application::InitWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
-	Window = glfwCreateWindow(Width, Height, "CubeCraft2", nullptr, nullptr);
+	window_ = glfwCreateWindow(width_, height_, "CubeCraft2", nullptr, nullptr);
 
-	if(Window == nullptr)
+	if(window_ == nullptr)
 	{
 		printf("ERROR WHEN CREATING WINDOW");
 		exit(EXIT_FAILURE);
 	}
 
-	glfwMakeContextCurrent(Window);
+	glfwMakeContextCurrent(window_);
 
 	glewExperimental = GL_TRUE;
 	if(glewInit() != GLEW_OK)
@@ -37,42 +37,42 @@ void Application::InitWindow()
 		exit(EXIT_FAILURE);
 	}
 
-	UI::Init(Window);
+	UI::Init(window_);
 	Resource::InitResources();
 	Setting::InitSetting();
 }
 
 void Application::Run()
 {
-	gameMenu = std::make_unique<GameMenu>(Window);
-	while(!glfwWindowShouldClose(Window))
+	game_menu_ = std::make_unique<GameMenu>(window_);
+	while(!glfwWindowShouldClose(window_))
 	{
-		if(InGame)
+		if(in_game_)
 		{
-			worldController->Update();
+			world_controller_->Update();
 
-			if(worldController->IsQuit())
+			if(world_controller_->IsQuit())
 			{
-				worldController.reset();
-				gameMenu = std::make_unique<GameMenu>(Window);
-				InGame = false;
+				world_controller_.reset();
+				game_menu_ = std::make_unique<GameMenu>(window_);
+				in_game_ = false;
 			}
 		}
 		else
 		{
-			gameMenu->Update();
-			if(gameMenu->EnterGame())
+			game_menu_->Update();
+			if(game_menu_->EnterGame())
 			{
-				std::string worldName = gameMenu->GetWorldName();
-				gameMenu.reset();
-				worldController = std::make_unique<WorldController>(Window, worldName);
-				InGame = true;
+				std::string worldName = game_menu_->GetWorldName();
+				game_menu_.reset();
+				world_controller_ = std::make_unique<WorldController>(window_, worldName);
+				in_game_ = true;
 			}
-			else if(gameMenu->IsQuit()) //close game
-				glfwSetWindowShouldClose(Window, true);
+			else if(game_menu_->IsQuit()) //close game
+				glfwSetWindowShouldClose(window_, true);
 		}
 
-		glfwSwapBuffers(Window);
+		glfwSwapBuffers(window_);
 		glfwPollEvents();
 	}
 }
@@ -81,6 +81,6 @@ Application::~Application()
 {
 	UI::Shutdown();
 	Setting::SaveSetting();
-	glfwDestroyWindow(Window);
+	glfwDestroyWindow(window_);
 }
 
