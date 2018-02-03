@@ -124,7 +124,7 @@ void WorldData::LoadWorld(World &world)
 		Player &player = world.player_;
 		data_file >> player.position_.x >> player.position_.y >> player.position_.z
 				 >> player.flying_
-				 >> player.Cam.Yaw >> player.Cam.Pitch
+				 >> player.camera_.Yaw >> player.camera_.Pitch
 				 >> player.using_block_;
 
 		data_file.close();
@@ -146,6 +146,6 @@ void WorldData::SaveWorld(World &world)
 	data_file << world.timer_ << ' '
 			 << player.position_.x << ' ' << player.position_.y << ' ' << player.position_.z << ' '
 		 	 << player.flying_ << ' '
-			 << player.Cam.Yaw << ' ' << player.Cam.Pitch << ' '
+			 << player.camera_.Yaw << ' ' << player.camera_.Pitch << ' '
 			 << player.using_block_ << std::endl;
 }

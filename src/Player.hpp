@@ -30,8 +30,8 @@ private:
 		return (ds > 0 ? (s == 0.0f ? 1.0f : glm::ceil(s)) - s : s - glm::floor(s)) / glm::abs(ds);
 	}
 
-	World *wld;
-	bool jumping = false;
+	World *world_;
+	bool jumping_ = false;
 
 	void KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate);
 	void MouseControl(GLFWwindow *win, int width, int height);
@@ -39,19 +39,17 @@ private:
 	void UpdatePhysics(const MyGL::FrameRateManager &framerate);
 
 public:
-
 	glm::vec3 &position_;
-
 	uint8_t using_block_;
+	bool flying_;
+	MyGL::Camera camera_;
 
-	//all the move function will return false if the movement is blocked
+	//all the move functions will return false if the movement is blocked
 
 	explicit Player(World &wld);
-	bool flying_;
 
 	void Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
 					 const glm::mat4 &projection);
-
 
 	bool Move(const glm::vec3 &velocity);
 	bool MoveAxis(int axis, float velocity);
@@ -59,13 +57,11 @@ public:
 	glm::ivec3 GetChunkPosition() const;
 
 	inline AABB GetBoundingBox() const
-	{ return {kBoundingBox.min_ + Cam.Position, kBoundingBox.max_ + Cam.Position}; }
+	{ return {kBoundingBox.min_ + camera_.Position, kBoundingBox.max_ + camera_.Position}; }
 	inline glm::mat4 GetViewMatrix()
 	{ return view_matrix_; }
 	inline glm::ivec3 GetSelection(bool add_direction_vector)
 	{ return add_direction_vector ? new_block_selection_ : selection_; }
-
-	MyGL::Camera Cam;
 };
 
 

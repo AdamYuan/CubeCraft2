@@ -53,15 +53,19 @@ private:
 	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
 
-	glm::ivec3 last_center_, center_;
-	bool pos_changed_;
+	glm::ivec3 center_;
+	bool xz_pos_changed_, pos_changed_;
 
 	inline bool cmp2_impl(const glm::ivec2 &l, const glm::ivec2 &r)
 	{ return glm::length((glm::vec2)l - glm::vec2(center_.x, center_.z)) < glm::length((glm::vec2)r - glm::vec2(center_.x, center_.z)); }
 	inline bool cmp3_impl(const glm::ivec3 &l, const glm::ivec3 &r)
 	{ return glm::length((glm::vec3)l - (glm::vec3)center_) < glm::length((glm::vec3)r - (glm::vec3)center_); }
-	std::function<bool(const glm::ivec2&, const glm::ivec2&)> cmp2;
-	std::function<bool(const glm::ivec3&, const glm::ivec3&)> cmp3;
+	inline bool rcmp2_impl(const glm::ivec2 &l, const glm::ivec2 &r)
+	{ return glm::length((glm::vec2)l - glm::vec2(center_.x, center_.z)) > glm::length((glm::vec2)r - glm::vec2(center_.x, center_.z)); }
+	inline bool rcmp3_impl(const glm::ivec3 &l, const glm::ivec3 &r)
+	{ return glm::length((glm::vec3)l - (glm::vec3)center_) > glm::length((glm::vec3)r - (glm::vec3)center_); }
+	std::function<bool(const glm::ivec2&, const glm::ivec2&)> cmp2, rcmp2;
+	std::function<bool(const glm::ivec3&, const glm::ivec3&)> cmp3, rcmp3;
 
 	//multi threading stuff
 	std::atomic_uint running_threads_;
@@ -85,12 +89,14 @@ private:
 	//data saving
 	WorldData world_data_;
 
+	Player player_;
+	std::unordered_set<glm::ivec3> render_set_[2], render_addition_set_[2], render_removal_set_[2];
+	std::vector<glm::ivec3> transparent_render_vector_;
+	int render_order_update_counter_;
+
 	friend class WorldData;
 
 public:
-	Player player_;
-	std::unordered_set<glm::ivec3> render_set_[2], render_addition_set_[2], render_removal_set_[2];
-	//these two are for multi-threading
 
 	explicit World(const std::string &name);
 	~World();
@@ -150,7 +156,10 @@ public:
 	inline float GetDayLight() const { return glm::clamp(sun_position_.y * 0.96f + 0.6f, 0.2f, 1.1f); }
 	inline glm::mat4 GetSunModelMatrix() const { return sun_model_matrix_; }
 	inline int GetSeed() const { return seed_; }
-	inline std::string GetName() const { return name_; }
+	inline const std::string &GetName() const { return name_; }
+	inline Player &GetPlayer() { return player_; }
+	inline const std::unordered_set<glm::ivec3> &GetOpaqueRenderSet() const { return render_set_[0]; };
+	inline const std::vector<glm::ivec3> &GetTransparentRenderVector() const { return transparent_render_vector_; }
 };
 
 

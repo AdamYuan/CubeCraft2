@@ -9,11 +9,14 @@
 
 World::World(const std::string &name)
 		: thread_pool_((size_t)Setting::LoadingThreadsNum),
-		  running_threads_(0), pos_changed_(false),
-		  world_data_(name), player_(*this), last_center_(INT_MAX),
-		  cmp2(std::bind(&World::cmp2_impl, this, std::placeholders::_1, std::placeholders::_2)),
-		  cmp3(std::bind(&World::cmp3_impl, this, std::placeholders::_1, std::placeholders::_2))
+		  running_threads_(0), xz_pos_changed_(false), pos_changed_(false),
+		  world_data_(name), player_(*this), center_(INT_MAX), render_order_update_counter_(0)
 {
+	cmp2 = std::bind(&World::cmp2_impl, this, std::placeholders::_1, std::placeholders::_2);
+	cmp3 = std::bind(&World::cmp3_impl, this, std::placeholders::_1, std::placeholders::_2);
+	rcmp2 = std::bind(&World::rcmp2_impl, this, std::placeholders::_1, std::placeholders::_2);
+	rcmp3 = std::bind(&World::rcmp3_impl, this, std::placeholders::_1, std::placeholders::_2);
+
 	name_ = name;
 	loading_thread_num_ = lighting_thread_num_ = meshing_thread_num_ = 0;
 	glm::ivec3 _;
@@ -52,62 +55,74 @@ void World::Update(const glm::ivec3 &center)
 	sun_position_ = glm::vec3(sun_model_matrix_ * glm::vec4(0.0f, -1.0f, 0.0f, 1.0f));
 
 	//global flags
-	pos_changed_ = false;
-	center_ = center;
-
-	if(center.x != last_center_.x || center.z != last_center_.z)
+	xz_pos_changed_ = false, pos_changed_ = false;
+	if(center != center_)
 	{
 		pos_changed_ = true;
-		last_center_ = center;
+		if(center.x != center_.x || center.z != center_.z)
+			xz_pos_changed_ = true;
+
+		center_ = center;
 	}
 
-	//set lock
-	std::lock_guard<std::mutex> lk(mutex_);
-
-	for(short t=0; t<=1; ++t)
 	{
-		if(!render_addition_set_[t].empty())
-		{
-			render_set_[t].insert(render_addition_set_[t].begin(), render_addition_set_[t].end());
-			render_addition_set_[t].clear();
-		}
-		if(!render_removal_set_[t].empty())
-		{
-			for(const auto &i : render_removal_set_[t])
-				render_set_[t].erase(i);
-			render_removal_set_[t].clear();
-		}
-	}
+		//set lock
+		std::lock_guard<std::mutex> lk(mutex_);
 
-	if(pos_changed_)
-	{
-		//remove all chunks out of the range
-		for(auto iter = chunk_map_.begin(); iter != chunk_map_.end(); ) {
-			if (iter->first.x < center.x - Setting::ChunkDeleteRange ||
-				iter->first.x > center.x + Setting::ChunkDeleteRange ||
-				iter->first.z < center.z - Setting::ChunkDeleteRange ||
-				iter->first.z > center.z + Setting::ChunkDeleteRange)
+		for(short t=0; t<=1; ++t)
+		{
+			if(!render_addition_set_[t].empty())
 			{
-				render_set_[0].erase(iter->first);
-				render_set_[1].erase(iter->first);
-				iter = chunk_map_.erase(iter);
+				render_set_[t].insert(render_addition_set_[t].begin(), render_addition_set_[t].end());
+				render_addition_set_[t].clear();
 			}
-			else
-				++iter;
+			if(!render_removal_set_[t].empty())
+			{
+				for(const auto &i : render_removal_set_[t])
+					render_set_[t].erase(i);
+				render_removal_set_[t].clear();
+			}
 		}
-		//generate chunks in the range
-		glm::ivec3 i;
-		for(i.x = center.x - Setting::ChunkLoadRange; i.x <= center.x + Setting::ChunkLoadRange; ++i.x)
-			for(i.z = center.z - Setting::ChunkLoadRange; i.z <= center.z + Setting::ChunkLoadRange; ++i.z)
-				for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
-					if(!ChunkExist(i))
-						SetChunk(i);
-	}
 
-	ProcessChunkUpdates();
-	UpdateChunkLoadingList();
-	UpdateChunkSunLightingList();
-	UpdateChunkMeshingList();
+		if(render_order_update_counter_ == RENDER_ORDER_UPDATE_FREQUENCY)
+		{
+			transparent_render_vector_ = std::vector<glm::ivec3>(render_set_[1].begin(), render_set_[1].end());
+			std::sort(transparent_render_vector_.begin(), transparent_render_vector_.end(), rcmp3);
+			render_order_update_counter_ = 0;
+		}
+		else
+			render_order_update_counter_ ++;
+
+		if(xz_pos_changed_)
+		{
+			//remove all chunks out of the range
+			for(auto iter = chunk_map_.begin(); iter != chunk_map_.end(); ) {
+				if (iter->first.x < center.x - Setting::ChunkDeleteRange ||
+					iter->first.x > center.x + Setting::ChunkDeleteRange ||
+					iter->first.z < center.z - Setting::ChunkDeleteRange ||
+					iter->first.z > center.z + Setting::ChunkDeleteRange)
+				{
+					render_set_[0].erase(iter->first);
+					render_set_[1].erase(iter->first);
+					iter = chunk_map_.erase(iter);
+				}
+				else
+					++iter;
+			}
+			//generate chunks in the range
+			glm::ivec3 i;
+			for(i.x = center.x - Setting::ChunkLoadRange; i.x <= center.x + Setting::ChunkLoadRange; ++i.x)
+				for(i.z = center.z - Setting::ChunkLoadRange; i.z <= center.z + Setting::ChunkLoadRange; ++i.z)
+					for(i.y = 0; i.y < WORLD_HEIGHT; ++i.y)
+						if(!ChunkExist(i))
+							SetChunk(i);
+		}
+
+		ProcessChunkUpdates();
+		UpdateChunkLoadingList();
+		UpdateChunkSunLightingList();
+		UpdateChunkMeshingList();
+	}
 }
 
 void World::ProcessChunkUpdates()
@@ -149,7 +164,7 @@ void World::ProcessChunkUpdates()
 
 void World::UpdateChunkLoadingList()
 {
-	if(pos_changed_)
+	if(xz_pos_changed_)
 	{
 		pre_loading_vector_.clear();
 		glm::ivec2 iter;
@@ -157,8 +172,7 @@ void World::UpdateChunkLoadingList()
 			for(iter.y = center_.z - Setting::ChunkLoadRange; iter.y <= center_.z + Setting::ChunkLoadRange; ++iter.y)
 				if(!GetChunk({iter.x, 0, iter.y})->loaded_terrain_ && !loading_info_set_.count(iter))
 					pre_loading_vector_.push_back(iter);
-		std::sort(pre_loading_vector_.begin(), pre_loading_vector_.end(), cmp2);
-		std::reverse(pre_loading_vector_.begin(), pre_loading_vector_.end());
+		std::sort(pre_loading_vector_.begin(), pre_loading_vector_.end(), rcmp2);
 	}
 	while(!pre_loading_vector_.empty() && loading_thread_num_ < Setting::LoadingThreadsNum)
 	{
@@ -170,7 +184,7 @@ void World::UpdateChunkLoadingList()
 
 void World::UpdateChunkSunLightingList()
 {
-	if(pos_changed_)
+	if(xz_pos_changed_)
 	{
 		pre_initial_lighting_vector_.clear();
 		glm::ivec2 iter;
@@ -209,7 +223,7 @@ void World::UpdateChunkSunLightingList()
 void World::UpdateChunkMeshingList()
 {
 	//mesh initialize
-	if(pos_changed_)
+	if(xz_pos_changed_)
 	{
 		pre_meshing_vector_.clear();
 		glm::ivec3 iter;
@@ -218,8 +232,10 @@ void World::UpdateChunkMeshingList()
 				for(iter.y = 0; iter.y < WORLD_HEIGHT; ++iter.y)
 					if(!GetChunk(iter)->initialized_mesh_ && !meshing_info_set_.count(iter))
 						pre_meshing_vector_.push_back(iter);
-		std::sort(pre_meshing_vector_.begin(), pre_meshing_vector_.end(), cmp3);
 	}
+	if(pos_changed_)
+		std::sort(pre_meshing_vector_.begin(), pre_meshing_vector_.end(), cmp3);
+
 
 	for(auto iter = pre_meshing_vector_.begin();
 		iter != pre_meshing_vector_.end() && meshing_thread_num_ < Setting::LoadingThreadsNum; )
@@ -446,12 +462,12 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool check_update)
 	if(!chk)
 		return;
 
-	uint8_t lastSunLight = chk->GetSunLight(related_pos),
-			lastBlock = chk->GetBlock(related_pos),
-			lastTorchLight = chk->GetTorchLight(related_pos);
-	LightLevel torchlightNow = BlockMethods::GetLightLevel(blk);
+	uint8_t last_sunlight = chk->GetSunLight(related_pos),
+			last_block = chk->GetBlock(related_pos),
+			last_torchlight = chk->GetTorchLight(related_pos);
+	LightLevel torchlight_now = BlockMethods::GetLightLevel(blk);
 
-	if(lastBlock == blk)
+	if(last_block == blk)
 		return;
 
 	chk->SetBlock(related_pos, blk);
@@ -462,13 +478,13 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool check_update)
 		AddRelatedChunks(pos, mesh_directly_update_set_);
 
 		//update lighting
-		if(BlockMethods::LightCanPass(blk) != BlockMethods::LightCanPass(lastBlock))
+		if(BlockMethods::LightCanPass(blk) != BlockMethods::LightCanPass(last_block))
 		{
 			if(!BlockMethods::LightCanPass(blk))
 			{
-				if(lastSunLight)//have sunlight
+				if(last_sunlight)//have sunlight
 				{
-					sun_light_removal_queue_.push({pos, lastSunLight});
+					sun_light_removal_queue_.push({pos, last_sunlight});
 					chk->SetSunLight(related_pos, 0);
 				}
 			}
@@ -479,14 +495,14 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool check_update)
 					glm::ivec3 neighbour = util::FaceExtend(pos, face);
 					LightLevel light;
 
-					if(!lastSunLight)
+					if(!last_sunlight)
 					{
 						light = GetSunLight(neighbour);
 						if(light)
 							sun_light_queue_.push({neighbour, light});
 					}
 
-					if(!lastTorchLight)
+					if(!last_torchlight)
 					{
 						light = GetTorchLight(neighbour);
 						if(light)
@@ -494,17 +510,17 @@ void World::SetBlock(const glm::ivec3 &pos, Block blk, bool check_update)
 					}
 				}
 			}
-			if(torchlightNow != lastTorchLight)
+			if(torchlight_now != last_torchlight)
 			{
-				if(torchlightNow < lastTorchLight && lastTorchLight)
+				if(torchlight_now < last_torchlight && last_torchlight)
 				{
-					torch_light_removal_queue_.push({pos, lastTorchLight});
+					torch_light_removal_queue_.push({pos, last_torchlight});
 					chk->SetTorchLight(related_pos, 0);
 				}
-				if(torchlightNow)
+				if(torchlight_now)
 				{
-					torch_light_queue_.push({pos, torchlightNow});
-					chk->SetTorchLight(related_pos, torchlightNow);
+					torch_light_queue_.push({pos, torchlight_now});
+					chk->SetTorchLight(related_pos, torchlight_now);
 				}
 			}
 		}

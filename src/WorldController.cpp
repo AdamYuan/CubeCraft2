@@ -29,7 +29,7 @@ void WorldController::KeyCallback(GLFWwindow *window, int key, int scancode, int
 			target->control_ = !target->control_;
 		}
 		else if(key == GLFW_KEY_F)
-			target->world_.player_.flying_ = !target->world_.player_.flying_;
+			target->world_.GetPlayer().flying_ = !target->world_.GetPlayer().flying_;
 		else if(key == GLFW_KEY_U)
 			target->show_ui_ = !target->show_ui_;
 	}
@@ -40,7 +40,7 @@ void WorldController::ScrollCallback(GLFWwindow *window, double x_offset, double
 
 	auto y = (int)y_offset;
 
-	uint8_t &usingBlock = target->world_.player_.using_block_;
+	uint8_t &usingBlock = target->world_.GetPlayer().using_block_;
 	usingBlock -= y;
 	if(usingBlock >= BLOCKS_NUM)
 		usingBlock = 1;
@@ -92,12 +92,12 @@ void WorldController::Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 view_matrix = world_.player_.GetViewMatrix();
+	glm::mat4 view_matrix = world_.GetPlayer().GetViewMatrix();
 	glm::mat4 vp_matrix = matrices_.Projection3d * view_matrix;
 
 	Renderer::RenderSky(glm::mat3(view_matrix), matrices_.Projection3d,
 						world_.GetSunModelMatrix(), world_.GetDayTime());
-	Renderer::RenderWorld(world_, vp_matrix, world_.player_.position_, world_.player_.GetSelection(false));
+	Renderer::RenderWorld(world_, vp_matrix, world_.GetPlayer().position_, world_.GetPlayer().GetSelection(false));
 	if(control_)
 		Renderer::RenderCrosshair(matrices_.Matrix2dCenter);
 }
@@ -114,8 +114,8 @@ void WorldController::LogicProcess()
 		fps_ = framerate_manager_.GetFps();
 	}
 
-	world_.player_.Control(control_, window_, width_, height_, framerate_manager_, matrices_.Projection3d);
-	world_.Update(world_.player_.GetChunkPosition());
+	world_.GetPlayer().Control(control_, window_, width_, height_, framerate_manager_, matrices_.Projection3d);
+	world_.Update(world_.GetPlayer().GetChunkPosition());
 }
 
 void WorldController::RenderUI()
@@ -134,11 +134,11 @@ void WorldController::RenderUI()
 				ImGui::Text("fps: %f", fps_);
 				ImGui::Text("world info: (name: %s, seed: %d)", world_.GetName().c_str(), world_.GetSeed());
 				ImGui::Text("running threads: %u", world_.GetRunningThreadNum());
-				ImGui::Text("position: %s", glm::to_string(world_.player_.position_).c_str());
-				ImGui::Text("chunk position: %s", glm::to_string(world_.player_.GetChunkPosition()).c_str());
+				ImGui::Text("position: %s", glm::to_string(world_.GetPlayer().position_).c_str());
+				ImGui::Text("chunk position: %s", glm::to_string(world_.GetPlayer().GetChunkPosition()).c_str());
 				ImGui::Text("time: %f", world_.GetDayTime());
-				ImGui::Text("flying [F]: %s", world_.player_.flying_ ? "true" : "false");
-				ImGui::Text("using block: %s", BlockMethods::GetName(world_.player_.using_block_));
+				ImGui::Text("flying [F]: %s", world_.GetPlayer().flying_ ? "true" : "false");
+				ImGui::Text("using block: %s", BlockMethods::GetName(world_.GetPlayer().using_block_));
 
 				ImGui::End();
 			}

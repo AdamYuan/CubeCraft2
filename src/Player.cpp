@@ -12,9 +12,9 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player(World &wld) : position_(Cam.Position), flying_(false),
+Player::Player(World &wld) : position_(camera_.Position), flying_(false),
 							 kBoundingBox({-0.25, -1.375, -0.25}, {0.25, 0.25, 0.25}),
-							 wld(&wld), using_block_(1)
+							 world_(&wld), using_block_(1)
 {
 
 }
@@ -29,7 +29,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		rightFirst = true;
 		if(leftFirst || glfwGetTime() - lastTime >= INTERVAL)
 		{
-			wld->SetBlock(selection_, Blocks::Air, true);
+			world_->SetBlock(selection_, Blocks::Air, true);
 			lastTime = glfwGetTime();
 			leftFirst = false;
 		}
@@ -40,7 +40,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 		if((rightFirst || glfwGetTime() - lastTime >= INTERVAL) &&
 				!GetBoundingBox().Intersect(BlockMethods::GetBlockAABB(new_block_selection_)))
 		{
-			wld->SetBlock(new_block_selection_, using_block_, true);
+			world_->SetBlock(new_block_selection_, using_block_, true);
 			lastTime = glfwGetTime();
 			rightFirst = false;
 		}
@@ -50,7 +50,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 
 	double x, y;
 	glfwGetCursorPos(win, &x, &y);
-	Cam.ProcessMouseMovement((float) (width / 2 - x), (float) (height / 2 - y),
+	camera_.ProcessMouseMovement((float) (width / 2 - x), (float) (height / 2 - y),
 							 MOUSE_SENSITIVITY);
 	glfwSetCursorPos(win, width / 2, height / 2);
 }
@@ -60,24 +60,24 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 
 	float dist = framerate.GetMovementDistance(WALK_SPEED);
 
-	glm::vec3 oldPos = Cam.Position;
+	glm::vec3 oldPos = camera_.Position;
 
 	if(glfwGetKey(win, GLFW_KEY_W))
-		Cam.MoveForward(dist, 0);
+		camera_.MoveForward(dist, 0);
 	if(glfwGetKey(win, GLFW_KEY_S))
-		Cam.MoveForward(dist, 180);
+		camera_.MoveForward(dist, 180);
 	if(glfwGetKey(win, GLFW_KEY_A))
-		Cam.MoveForward(dist, 90);
+		camera_.MoveForward(dist, 90);
 	if(glfwGetKey(win, GLFW_KEY_D))
-		Cam.MoveForward(dist, -90);
+		camera_.MoveForward(dist, -90);
 
 	if(flying_)
 	{
-		jumping = false;
+		jumping_ = false;
 		if(glfwGetKey(win, GLFW_KEY_SPACE))
-			Cam.MoveUp(dist);
+			camera_.MoveUp(dist);
 		if(glfwGetKey(win, GLFW_KEY_LEFT_SHIFT))
-			Cam.MoveUp(-dist);
+			camera_.MoveUp(-dist);
 	}
 	//jumping
 	if(!flying_ && glfwGetKey(win, GLFW_KEY_SPACE))
@@ -85,13 +85,13 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 		glm::vec3 vec = oldPos;
 		//check player is on a solid block
 		if(!HitTest(vec, 1, -0.001f))
-			jumping = true;
+			jumping_ = true;
 	}
 
-	glm::vec3 velocity = Cam.Position - oldPos;
+	glm::vec3 velocity = camera_.Position - oldPos;
 	if(!flying_ && velocity != glm::vec3(0.0f))
 		velocity = glm::normalize(velocity) * dist;
-	Cam.Position = oldPos;
+	camera_.Position = oldPos;
 
 	Move(velocity);
 }
@@ -117,7 +117,7 @@ bool Player::HitTest(glm::vec3 &pos, int axis, float velocity)
 		{
 			AABB box = BlockMethods::GetBlockAABB(iter);
 			if (now.Intersect(box) &&
-				BlockMethods::HaveHitbox(wld->GetBlock(iter)))
+				BlockMethods::HaveHitbox(world_->GetBlock(iter)))
 			{
 				//set the right position
 				pos[axis] = (float)(iter[axis] + !positive) -
@@ -159,11 +159,11 @@ bool Player::MoveAxis(int axis, float velocity)
 	//prevent collision missing when moving fast
 	while(velocity > HIT_TEST_STEP)
 	{
-		if(!HitTest(Cam.Position, axis, HIT_TEST_STEP * sign))
+		if(!HitTest(camera_.Position, axis, HIT_TEST_STEP * sign))
 			return false;
 		velocity -= HIT_TEST_STEP;
 	}
-	return HitTest(Cam.Position, axis, velocity * sign);
+	return HitTest(camera_.Position, axis, velocity * sign);
 }
 
 void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
@@ -175,38 +175,38 @@ void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 		return;
 	}
 
-	if(jumping)
+	if(jumping_)
 		if(!MoveAxis(1, framerate.GetMovementDistance(JUMP_DIST)))
-			jumping = false;
+			jumping_ = false;
 
 	static bool firstFall = false;
 
 	float dis = GRAVITY * (float)(glfwGetTime() - lastTime);
-	float y = Cam.Position.y;
+	float y = camera_.Position.y;
 	if (!MoveAxis(1, -framerate.GetMovementDistance(dis)))
 	{
 		lastTime = glfwGetTime();
-		jumping = false;
+		jumping_ = false;
 		firstFall = true;
 	}
 	else if(firstFall)
 	{
 		//not fall at first
 		firstFall = false;
-		Cam.Position.y = y;
+		camera_.Position.y = y;
 	}
 }
 
 glm::ivec3 Player::GetChunkPosition() const
 {
-	return World::BlockPosToChunkPos(glm::floor(Cam.Position));
+	return World::BlockPosToChunkPos(glm::floor(camera_.Position));
 }
 
 void Player::Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
 					 const glm::mat4 &projection)
 {
 	glm::ivec3 chunkPos = GetChunkPosition();
-	ChunkPtr chk = wld->GetChunk(chunkPos);
+	ChunkPtr chk = world_->GetChunk(chunkPos);
 	bool flag = (chk && chk->loaded_terrain_) || (chunkPos.y < 0 || chunkPos.y >= WORLD_HEIGHT);
 	if(flag)
 	{
@@ -220,7 +220,7 @@ void Player::Control(bool focus, GLFWwindow *win, int width, int height, const M
 
 	}
 	//update matrix
-	view_matrix_ = Cam.GetViewMatrix();
+	view_matrix_ = camera_.GetViewMatrix();
 
 	if(focus)
 		UpdateSelection(width, height, projection);
@@ -230,7 +230,7 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 {
 	float radius = 10.0f;
 
-	glm::vec3 origin = Cam.Position;
+	glm::vec3 origin = camera_.Position;
 	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
 	// by John Amanatides and Andrew Woo, 1987
 	// <http://www.cse.yorku.ca/~amana/research/grid.pdf>
@@ -252,7 +252,7 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 	// Cube containing origin point.
 	glm::vec3 xyz = glm::floor(origin);
 	// Break out direction vector.
-	glm::vec3 direction = Cam.GetLookDirection();
+	glm::vec3 direction = camera_.GetLookDirection();
 	// Direction to increment x,y,z when stepping.
 	glm::ivec3 step = glm::sign(direction);
 	// See description above. The initial values depend on the fractional
@@ -273,7 +273,7 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 	{
 		// Invoke the callback, unless we are not *yet* within the bounds of the
 		// world.
-		if (BlockMethods::HaveHitbox(wld->GetBlock(xyz))) {
+		if (BlockMethods::HaveHitbox(world_->GetBlock(xyz))) {
 			selection_ = xyz;
 			new_block_selection_ = selection_ + face;
 			return;

@@ -40,7 +40,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vp_matrix, const g
 	Resource::ChunkShader->PassVec3(Resource::ChunkShader_camera, position);
 	Resource::ChunkShader->PassVec3(Resource::ChunkShader_selection, selection);
 
-	for(const glm::ivec3 &pos : wld.render_set_[0])
+	for(const glm::ivec3 &pos : wld.GetOpaqueRenderSet())
 	{
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
@@ -60,7 +60,7 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vp_matrix, const g
 	//glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	for(const glm::ivec3 &pos : wld.render_set_[1])
+	for(const glm::ivec3 &pos : wld.GetTransparentRenderVector())
 	{
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
@@ -96,7 +96,7 @@ void Renderer::RenderCrosshair(const glm::mat4 &vp_matrix)
 
 void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, const glm::mat4 &sun_model_matrix, float day_time)
 {
-	glm::mat4 vpMatrix = projection * glm::mat4(view);
+	glm::mat4 vp_matrix = projection * glm::mat4(view);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_CCW);
 
@@ -109,7 +109,7 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	Resource::SkyTexture->Bind();
 
 	Resource::SkyShader->Use();
-	Resource::SkyShader->PassMat4(Resource::SkyShader_matrix, vpMatrix);
+	Resource::SkyShader->PassMat4(Resource::SkyShader_matrix, vp_matrix);
 	Resource::SkyShader->PassInt(Resource::SkyShader_sampler, 0);
 	Resource::SkyShader->PassFloat(Resource::SkyShader_dayTime, day_time);
 
@@ -122,7 +122,7 @@ void Renderer::RenderSky(const glm::mat3 &view, const glm::mat4 &projection, con
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	Resource::SunShader->Use();
-	Resource::SunShader->PassMat4(Resource::SunShader_matrix, vpMatrix * sun_model_matrix);
+	Resource::SunShader->PassMat4(Resource::SunShader_matrix, vp_matrix * sun_model_matrix);
 	Resource::SunShader->PassInt(Resource::SunShader_sampler, 0);
 
 	glActiveTexture(GL_TEXTURE0);
