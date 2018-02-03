@@ -112,6 +112,7 @@ typedef int SIMDi;
 #ifdef _WIN32
 #define SIMD_ALLOCATE_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
+#include <cstdlib>
 #define SIMD_ALLOCATE_SET(floatP, floatCount) posix_memalign((void**)&floatP, MEMORY_ALIGNMENT, (floatCount)* sizeof(float))
 #endif
 #else
@@ -175,10 +176,10 @@ static SIMDf VECTORCALL FUNC(DIV)(SIMDf a, SIMDf b)
 #define SIMDf_MAX(a,b) vmaxq_f32(a,b)
 #define SIMDf_INV_SQRT(a) vrsqrteq_f32(a)
 
-#define SIMDf_LESS_THAN(a,b) vreinterpretq_f32_u32(vcltq_f32(a,b))
-#define SIMDf_GREATER_THAN(a,b) vreinterpretq_f32_u32(vcgtq_f32(a,b))
-#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_f32_u32(vcleq_f32(a,b))
-#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_f32_u32(vcgeq_f32(a,b))
+#define SIMDf_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_f32(a,b))
+#define SIMDf_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_f32(a,b))
+#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_s32_u32(vcleq_f32(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_s32_u32(vcgeq_f32(a,b))
 
 #define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
@@ -189,7 +190,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 {
 	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
 
-	return vsubq_f32(fval, SIMDf_AND(SIMDf_LESS_THAN(a, fval), SIMDf_NUM(1)));
+	return vsubq_f32(fval,
+	                 SIMDf_CAST_TO_FLOAT(vandq_s32(SIMDf_LESS_THAN(a, fval),
+	                                               SIMDi_CAST_TO_INT(SIMDf_NUM(1)))));
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 #else
@@ -198,7 +201,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #endif
 
 #define SIMDf_ABS(a) vabsq_f32(a)
-#define SIMDf_BLENDV(a,b,mask) vbslq_f32(mask,b,a)
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_s32(mask),b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
 #define SIMDi_SUB(a,b) vsubq_s32(a,b)
@@ -1831,7 +1834,7 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 #define CELLULAR_DISTANCE2_SINGLE(distanceFunc, returnFunc)\
 static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z, SIMDf cellJitter, int index0, int index1)\
 {\
-	SIMDf distance[4] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
+	SIMDf distance[FN_CELLULAR_INDEX_MAX+1] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
 	\
 	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\

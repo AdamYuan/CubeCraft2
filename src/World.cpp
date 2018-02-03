@@ -8,17 +8,20 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 World::World(const std::string &name)
-		: thread_pool_((size_t)Setting::LoadingThreadsNum),
-		  running_threads_(0), xz_pos_changed_(false), pos_changed_(false),
-		  world_data_(name), player_(*this), center_(INT_MAX), render_order_update_counter_(0)
+		: worker_pool_((size_t)Setting::LoadingThreadsNum), copy_pool_((size_t)Setting::LoadingThreadsNum),
+		  world_data_(name), player_(*this)
 {
+	running_threads_ = render_order_update_counter_ = 0;
+	loading_thread_num_ = lighting_thread_num_ = meshing_thread_num_ = 0;
+	name_ = name;
+	xz_pos_changed_ = pos_changed_ = false;
+	center_ = glm::ivec3(INT_MAX);
+
 	cmp2 = std::bind(&World::cmp2_impl, this, std::placeholders::_1, std::placeholders::_2);
 	cmp3 = std::bind(&World::cmp3_impl, this, std::placeholders::_1, std::placeholders::_2);
 	rcmp2 = std::bind(&World::rcmp2_impl, this, std::placeholders::_1, std::placeholders::_2);
 	rcmp3 = std::bind(&World::rcmp3_impl, this, std::placeholders::_1, std::placeholders::_2);
 
-	name_ = name;
-	loading_thread_num_ = lighting_thread_num_ = meshing_thread_num_ = 0;
 	glm::ivec3 _;
 	int index = 0;
 	for(_.x = -1; _.x <= 1; ++_.x)
@@ -30,7 +33,7 @@ World::World(const std::string &name)
 
 	const size_t _SIZE = ((size_t)Setting::ChunkLoadRange*2+1) * ((size_t)Setting::ChunkLoadRange*2+1) * WORLD_HEIGHT;
 	pre_meshing_vector_.reserve(_SIZE);
-	pre_initial_lighting_vector_.reserve(_SIZE);
+	pre_lighting_vector_.reserve(_SIZE);
 }
 
 World::~World()
@@ -146,8 +149,8 @@ void World::ProcessChunkUpdates()
 			std::vector<ChunkRenderVertex> mesh_vertices[2];
 			std::vector<unsigned int> mesh_indices[2];
 			ChunkAlgorithm::Meshing(this, pos, mesh_vertices, mesh_indices);
-			ChunkAlgorithm::ApplyMesh(GetChunk(pos), 0, mesh_vertices, mesh_indices);
-			ChunkAlgorithm::ApplyMesh(GetChunk(pos), 1, mesh_vertices, mesh_indices);
+			ChunkAlgorithm::ApplyMesh(GetChunk(pos), false, mesh_vertices, mesh_indices);
+			ChunkAlgorithm::ApplyMesh(GetChunk(pos), true, mesh_vertices, mesh_indices);
 			//update render set
 
 			for(short t=0; t<=1; ++t)
@@ -177,7 +180,7 @@ void World::UpdateChunkLoadingList()
 	while(!pre_loading_vector_.empty() && loading_thread_num_ < Setting::LoadingThreadsNum)
 	{
 		loading_thread_num_ ++;
-		thread_pool_.enqueue(&World::ChunkLoadingWorker, this, pre_loading_vector_.back());
+		worker_pool_.enqueue(&World::ChunkLoadingWorker, this, pre_loading_vector_.back());
 		pre_loading_vector_.pop_back();
 	}
 }
@@ -186,17 +189,17 @@ void World::UpdateChunkSunLightingList()
 {
 	if(xz_pos_changed_)
 	{
-		pre_initial_lighting_vector_.clear();
+		pre_lighting_vector_.clear();
 		glm::ivec2 iter;
 		for(iter.x = center_.x - Setting::ChunkLoadRange + 1; iter.x < center_.x + Setting::ChunkLoadRange; ++iter.x)
 			for(iter.y = center_.z - Setting::ChunkLoadRange + 1; iter.y < center_.z + Setting::ChunkLoadRange; ++iter.y)
-				if(!GetChunk({iter.x, 0, iter.y})->initialized_lighting_ && !initial_lighting_info_set_.count(iter))
-					pre_initial_lighting_vector_.push_back(iter);
-		std::sort(pre_initial_lighting_vector_.begin(), pre_initial_lighting_vector_.end(), cmp2);
+				if(!GetChunk({iter.x, 0, iter.y})->initialized_lighting_ && !lighting_info_set_.count(iter))
+					pre_lighting_vector_.push_back(iter);
+		std::sort(pre_lighting_vector_.begin(), pre_lighting_vector_.end(), cmp2);
 	}
 
-	for(auto iter = pre_initial_lighting_vector_.begin();
-		iter != pre_initial_lighting_vector_.end() && lighting_thread_num_ < Setting::LoadingThreadsNum; )
+	for(auto iter = pre_lighting_vector_.begin();
+		iter != pre_lighting_vector_.end() && lighting_thread_num_ < Setting::LoadingThreadsNum; )
 	{
 		glm::ivec3 i(iter->x, 0, iter->y);
 		bool flag = true;
@@ -209,11 +212,11 @@ void World::UpdateChunkSunLightingList()
 
 		if(flag)
 		{
-			initial_lighting_info_set_.insert(*iter);
-			thread_pool_.enqueue(&World::ChunkInitialLightingWorker, this, *iter);
+			lighting_info_set_.insert(*iter);
+			worker_pool_.enqueue(&World::ChunkLightingWorker, this, *iter);
 			lighting_thread_num_ ++;
 
-			iter = pre_initial_lighting_vector_.erase(iter);
+			iter = pre_lighting_vector_.erase(iter);
 		}
 		else
 			++iter;
@@ -255,7 +258,7 @@ void World::UpdateChunkMeshingList()
 		if(flag)
 		{
 			meshing_info_set_.insert(*iter);
-			thread_pool_.enqueue(&World::ChunkMeshingWorker, this, *iter);
+			worker_pool_.enqueue(&World::ChunkMeshingWorker, this, *iter);
 			meshing_thread_num_ ++;
 
 			iter = pre_meshing_vector_.erase(iter);
@@ -277,7 +280,7 @@ void World::UpdateChunkMeshingList()
 				continue;
 
 			mesh_update_info_set_.insert(pos);
-			thread_pool_.enqueue(&World::ChunkMeshUpdateWorker, this, pos);
+			worker_pool_.enqueue(&World::ChunkMeshUpdateWorker, this, pos);
 		}
 		mesh_threaded_update_set_.clear();
 	}
@@ -316,7 +319,7 @@ void World::ChunkLoadingWorker(const glm::ivec2 &pos)
 	}
 }
 
-void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
+void World::ChunkLightingWorker(const glm::ivec2 &pos)
 {
 	ChunkPtr copy_arr[WORLD_HEIGHT * 9], result_arr[WORLD_HEIGHT];
 
@@ -346,7 +349,7 @@ void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
 	}
 
 	running_threads_ ++;
-	ChunkInitialLightingInfo info(copy_arr);
+	ChunkLightingInfo info(copy_arr);
 	info.Process();
 	running_threads_ --;
 
@@ -361,7 +364,7 @@ void World::ChunkInitialLightingWorker(const glm::ivec2 &pos)
 
 			info.ApplyLighting(result_arr);
 		}
-		initial_lighting_info_set_.erase(pos);
+		lighting_info_set_.erase(pos);
 		lighting_thread_num_ --;
 	}
 }

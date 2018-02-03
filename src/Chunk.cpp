@@ -6,8 +6,6 @@
 #include "ChunkAlgorithm.hpp"
 #include "WorldData.hpp"
 
-using namespace std::placeholders; //for std::bind
-
 //static methods
 Chunk::Chunk(const glm::ivec3 &pos) : loaded_terrain_(false),
 									  initialized_mesh_(false), initialized_lighting_(false),
@@ -354,7 +352,7 @@ ChunkMeshingInfo::ChunkMeshingInfo(ChunkPtr (&chk)[27])
 	}
 }
 
-ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
+ChunkLightingInfo::ChunkLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9])
 {
 	for(int h = 0; h < WORLD_HEIGHT; ++h)
 	{
@@ -401,7 +399,7 @@ ChunkInitialLightingInfo::ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT 
 	}
 }
 
-void ChunkInitialLightingInfo::Process()
+void ChunkLightingInfo::Process()
 {
 	//Get Highest Layer
 	int highest = 0;
@@ -452,7 +450,7 @@ void ChunkInitialLightingInfo::Process()
 	ChunkAlgorithm::TorchLightBFSThreaded(grid_, result_, que);
 }
 
-void ChunkInitialLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
+void ChunkLightingInfo::ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT])
 {
 	for(int h=0; h<WORLD_HEIGHT; ++h)
 	{

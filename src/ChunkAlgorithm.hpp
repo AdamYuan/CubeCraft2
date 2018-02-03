@@ -45,6 +45,12 @@ namespace ChunkAlgorithm
 		return !(trans && neighbour);
 	}
 
+	extern void MeshingImpl(const glm::ivec3 &chunk_pos,
+							const std::function<uint8_t(int, int, int)> &get_block_func,
+							const std::function<uint8_t(int, int, int)> &get_sunlight_func,
+							const std::function<uint8_t(int, int, int)> &get_torchlight_func,
+							std::vector<ChunkRenderVertex> (&result_vertices)[2],
+							std::vector<unsigned int> (&result_indices)[2]);
 	extern void Meshing(World const *wld, const glm::ivec3 &chunk_pos,
 						std::vector<ChunkRenderVertex> (&result_vertices)[2],
 						std::vector<unsigned int> (&result_indices)[2]);

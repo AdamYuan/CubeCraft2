@@ -46,7 +46,7 @@ private:
 
 	friend class ChunkLoadingInfo;
 	friend class ChunkMeshingInfo;
-	friend class ChunkInitialLightingInfo;
+	friend class ChunkLightingInfo;
 public:
 	bool loaded_terrain_, initialized_mesh_, initialized_lighting_;
 	glm::ivec3 position_;
@@ -113,7 +113,7 @@ public:
 	void ApplyResult(ChunkPtr chk);
 };
 
-class ChunkInitialLightingInfo
+class ChunkLightingInfo
 {
 private:
 	Block grid_[LICHUNK_INFO_SIZE];
@@ -123,7 +123,7 @@ private:
 	{ return BlockMethods::LightCanPass(grid_[index]); }
 
 public:
-	explicit ChunkInitialLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
+	explicit ChunkLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
 	void Process();
 	void ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
