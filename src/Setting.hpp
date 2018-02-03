@@ -4,7 +4,7 @@
 #define CHUNK_SIZE 32 //should be greater than 14
 #define WORLD_HEIGHT 8
 
-#define DAY_TIME 2048.0f //seconds
+#define DAY_TIME 4096.0f //seconds
 
 #define GRAVITY 4.0f
 #define WALK_SPEED 0.7f
