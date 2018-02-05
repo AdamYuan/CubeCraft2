@@ -45,19 +45,12 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vp_matrix, const g
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
 			continue;
-		if(!chk->mesh_vertices_[0].empty())
-		{
-			ChunkAlgorithm::ApplyMesh(chk, false, chk->mesh_vertices_, chk->mesh_indices_);
-			chk->mesh_vertices_[0].clear(); chk->mesh_vertices_[0].shrink_to_fit();
-			chk->mesh_indices_[0].clear(); chk->mesh_indices_[0].shrink_to_fit();
-		}
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
 			glm::distance((glm::vec3)pos, p_center) < (float)Setting::ChunkLoadRange + 1)
 			chk->vertex_buffers_[0]->Render(GL_TRIANGLES);
 	}
 
-	//glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	for(const glm::ivec3 &pos : wld.GetTransparentRenderVector())
@@ -65,20 +58,12 @@ void Renderer::RenderWorld(const World &wld, const glm::mat4 &vp_matrix, const g
 		ChunkPtr chk = wld.GetChunk(pos);
 		if(!chk)
 			continue;
-		if(!chk->mesh_vertices_[1].empty())
-		{
-			ChunkAlgorithm::ApplyMesh(chk, true, chk->mesh_vertices_, chk->mesh_indices_);
-			chk->mesh_vertices_[1].clear(); chk->mesh_vertices_[1].shrink_to_fit();
-			chk->mesh_indices_[1].clear(); chk->mesh_indices_[1].shrink_to_fit();
-		}
 		glm::vec3 center((glm::vec3)(pos * CHUNK_SIZE) + glm::vec3(CHUNK_SIZE/2));
 		if (frustum.CubeInFrustum(center, CHUNK_SIZE/2) &&
 			glm::distance((glm::vec3)pos, p_center) < (float)Setting::ChunkLoadRange + 1)
 			chk->vertex_buffers_[1]->Render(GL_TRIANGLES);
 	}
 	glDisable(GL_BLEND);
-	//glDepthMask(GL_TRUE);
-
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);

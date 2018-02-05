@@ -110,15 +110,18 @@ namespace ChunkAlgorithm
 		return false;
 	}
 
-	void ApplyMesh(Chunk *chk, bool trans, const std::vector<ChunkRenderVertex> (&vertices)[2],
+	void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> (&vertices)[2],
 				   const std::vector<unsigned int> (&indices)[2])
 	{
-		chk->vertex_buffers_[trans]->SetDataVec(vertices[trans]);
-		chk->vertex_buffers_[trans]->SetIndicesVec(indices[trans]);
-		chk->vertex_buffers_[trans]->SetAttributes(Resource::ATTR_POSITION, 3,
-												 Resource::ATTR_TEXCOORD, 3,
-												 Resource::ATTR_CHUNK_FACE, 1,
-												 Resource::ATTR_CHUNK_LIGHTING, 3);
+		for(short t=0; t<=1; ++t)
+		{
+			chk->vertex_buffers_[t]->SetDataVec(vertices[t]);
+			chk->vertex_buffers_[t]->SetIndicesVec(indices[t]);
+			chk->vertex_buffers_[t]->SetAttributes(Resource::ATTR_POSITION, 3,
+												   Resource::ATTR_TEXCOORD, 3,
+												   Resource::ATTR_CHUNK_FACE, 1,
+												   Resource::ATTR_CHUNK_LIGHTING, 3);
+		}
 	}
 
 	void Meshing(World const *wld, const glm::ivec3 &chunk_pos,

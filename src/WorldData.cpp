@@ -128,6 +128,8 @@ void WorldData::LoadWorld(World &world)
 				 >> player.using_block_;
 
 		data_file.close();
+
+		std::cout << "OPEN" << std::endl;
 	}
 
 	world.initial_time_ = (float)glfwGetTime() - world.timer_ * DAY_TIME;

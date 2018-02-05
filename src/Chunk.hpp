@@ -51,8 +51,6 @@ public:
 	bool loaded_terrain_, initialized_mesh_, initialized_lighting_;
 	glm::ivec3 position_;
 	MyGL::VertexObjectPtr vertex_buffers_[2];
-	std::vector<ChunkRenderVertex> mesh_vertices_[2];
-	std::vector<unsigned int> mesh_indices_[2];
 
 	explicit Chunk(const glm::ivec3 &pos);
 
@@ -83,7 +81,15 @@ public:
 };
 using ChunkPtr = Chunk*;
 
-class ChunkLoadingInfo
+class ChunkInfo
+{
+public:
+	std::atomic_bool done_;
+	virtual void Process() = 0;
+	ChunkInfo() : done_(false) {}
+};
+
+class ChunkLoadingInfo : public ChunkInfo
 {
 private:
 	Block result_[WORLD_HEIGHT * CHUNK_INFO_SIZE];
@@ -93,11 +99,11 @@ private:
 
 public:
 	explicit ChunkLoadingInfo(const glm::ivec2 &pos, int seed, WorldData &data);
-	void Process();
+	void Process() override;
 	void ApplyTerrain(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 
-class ChunkMeshingInfo
+class ChunkMeshingInfo : public ChunkInfo
 {
 private:
 	Block grid_[EXCHUNK_INFO_SIZE];
@@ -109,11 +115,11 @@ private:
 
 public:
 	explicit ChunkMeshingInfo(ChunkPtr (&chk)[27]);
-	void Process();
-	void ApplyResult(ChunkPtr chk);
+	void Process() override;
+	void ApplyMesh(ChunkPtr chk);
 };
 
-class ChunkLightingInfo
+class ChunkLightingInfo : public ChunkInfo
 {
 private:
 	Block grid_[LICHUNK_INFO_SIZE];
@@ -124,7 +130,7 @@ private:
 
 public:
 	explicit ChunkLightingInfo(ChunkPtr (&chk)[WORLD_HEIGHT * 9]);
-	void Process();
+	void Process() override;
 	void ApplyLighting(ChunkPtr (&chk)[WORLD_HEIGHT]);
 };
 

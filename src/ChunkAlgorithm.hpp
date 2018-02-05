@@ -59,7 +59,7 @@ namespace ChunkAlgorithm
 								const glm::ivec3 &chunk_pos,
 								std::vector<ChunkRenderVertex> (&result_vertices)[2],
 								std::vector<unsigned int> (&result_indices)[2]);
-	extern void ApplyMesh(Chunk *chk, bool trans, const std::vector<ChunkRenderVertex> (&vertices)[2],
+	extern void ApplyMesh(Chunk *chk, const std::vector<ChunkRenderVertex> (&vertices)[2],
 						  const std::vector<unsigned int> (&indices)[2]);
 	extern void SunLightBFS(World *wld, std::queue<LightBFSNode> &que);
 	extern void SunLightBFSThreaded(const uint8_t (&grid)[LICHUNK_INFO_SIZE], uint8_t (&result)[LICHUNK_INFO_SIZE],

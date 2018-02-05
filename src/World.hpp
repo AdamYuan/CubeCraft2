@@ -36,13 +36,27 @@ private:
 
 	//threading
 	ThreadPool worker_pool_, copy_pool_;
-	int loading_thread_num_, lighting_thread_num_, meshing_thread_num_;
-	std::unordered_set<glm::ivec2> loading_info_set_, lighting_info_set_;
-	std::vector<glm::ivec2> pre_loading_vector_, pre_lighting_vector_;
-	std::unordered_set<glm::ivec3> meshing_info_set_, mesh_update_info_set_;
+
+	//loading
+	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLoadingInfo>> loading_info_map_;
+	std::vector<glm::ivec2> loading_vector_;
+	//light initialize
+	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLightingInfo>> lighting_info_map_;
+	std::list<glm::ivec2> lighting_list_;
+	std::vector<glm::ivec2> pre_lighting_vector_;
+	//mesh initialize
+	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> meshing_info_map_;
+	std::list<glm::ivec3> meshing_list_;
 	std::vector<glm::ivec3> pre_meshing_vector_;
+	//mesh update
+	std::unordered_map<glm::ivec3, std::unique_ptr<ChunkMeshingInfo>> mesh_update_info_map_;
+	std::vector<glm::ivec3> mesh_update_vector_;
+
+	std::vector<std::thread> threads_;
+	std::condition_variable condition_var_;
 	std::atomic_uint running_threads_;
 	std::mutex mutex_;
+	std::atomic_bool running_;
 
 	//global flags
 	glm::ivec3 center_;
@@ -64,7 +78,7 @@ private:
 	Player player_;
 
 	//render lists
-	std::unordered_set<glm::ivec3> render_set_[2], render_addition_set_[2], render_removal_set_[2];
+	std::unordered_set<glm::ivec3> render_set_[2];
 	std::vector<glm::ivec3> transparent_render_vector_;
 	int render_order_update_counter_;
 
@@ -76,10 +90,10 @@ private:
 	void UpdateChunkSunLightingList();
 	void UpdateChunkMeshingList();
 
-	void ChunkLoadingWorker(const glm::ivec2 &pos);
-	void ChunkLightingWorker(const glm::ivec2 &pos);
-	void ChunkMeshingWorker(const glm::ivec3 &pos);
-	void ChunkMeshUpdateWorker(const glm::ivec3 &pos);
+	void LoadingWorker();
+	void LightingWorker();
+	void MeshingWorker();
+	void MeshUpdateWorker();
 
 	inline bool cmp2_impl(const glm::ivec2 &l, const glm::ivec2 &r)
 	{ return glm::length(glm::vec2(l) - glm::vec2(center_.x, center_.z)) < glm::length(glm::vec2(r) - glm::vec2(center_.x, center_.z)); }
