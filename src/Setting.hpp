@@ -7,7 +7,8 @@
 #define DAY_TIME 4096.0f //seconds
 
 #define GRAVITY 4.0f
-#define WALK_SPEED 3.7f
+#define WALK_SPEED 0.5f
+#define FLY_SPEED 1.0f
 #define JUMP_DIST 1.0f
 
 #define WALK_FOVY 60

@@ -7,9 +7,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-World::World(const std::string &name)
-		: worker_pool_((size_t)Setting::LoadingThreadsNum), copy_pool_((size_t)Setting::LoadingThreadsNum),
-		  world_data_(name), player_(*this)
+World::World(const std::string &name) : world_data_(name), player_(*this)
 {
 	running_threads_ = render_order_update_counter_ = 0;
 	running_ = true;

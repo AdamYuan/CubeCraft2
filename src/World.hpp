@@ -23,7 +23,6 @@
 #include <unordered_set>
 #include <atomic>
 #include <functional>
-#include <ThreadPool.h>
 
 class World
 {
@@ -33,9 +32,6 @@ private:
 	std::unordered_map<glm::ivec3, std::unique_ptr<Chunk>> chunk_map_;
 
 	glm::ivec3 meshing_lookup_array_[27];
-
-	//threading
-	ThreadPool worker_pool_, copy_pool_;
 
 	//loading
 	std::unordered_map<glm::ivec2, std::unique_ptr<ChunkLoadingInfo>> loading_info_map_;
