@@ -6,12 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2")
 
 #add source files
-file(GLOB SOURCE_FILES main.cpp src/*.cpp dep/*/*.cpp)
+file(GLOB SOURCE_FILES main.cpp dep/GL/gl3w.c src/*.cpp dep/*/*.cpp)
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} dep/mygl2/texture.cpp)
+
 include_directories(dep)
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-target_link_libraries(${PROJECT_NAME} stdc++fs)
-
+target_link_libraries(${PROJECT_NAME} stdc++fs ${CMAKE_DL_LIBS})
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)
@@ -20,12 +20,6 @@ if (OPENGL_FOUND)
 endif()
 
 find_package(glm 0.9.8 REQUIRED)
-
-find_package(GLEW 2 REQUIRED)
-if (GLEW_FOUND)
-	include_directories(${GLEW_INCLUDE_DIR})
-	target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARY})
-endif()
 
 find_package(Threads REQUIRED)
 if(THREADS_FOUND)

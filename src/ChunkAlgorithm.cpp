@@ -115,9 +115,9 @@ namespace ChunkAlgorithm
 	{
 		for(short t=0; t<=1; ++t)
 		{
-			chk->vertex_buffers_[t]->SetDataVec(vertices[t]);
-			chk->vertex_buffers_[t]->SetIndicesVec(indices[t]);
-			chk->vertex_buffers_[t]->SetAttributes(Resource::ATTR_POSITION, 3,
+			chk->vertex_buffers_[t].SetData(vertices[t], GL_STATIC_DRAW);
+			chk->vertex_buffers_[t].SetIndices(indices[t], GL_STATIC_DRAW);
+			chk->vertex_buffers_[t].SetAttributes(Resource::ATTR_POSITION, 3,
 												   Resource::ATTR_TEXCOORD, 3,
 												   Resource::ATTR_CHUNK_FACE, 1,
 												   Resource::ATTR_CHUNK_LIGHTING, 3);

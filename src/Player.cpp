@@ -12,7 +12,7 @@
 
 #define MOUSE_SENSITIVITY 0.17f
 
-Player::Player(World &wld) : position_(camera_.Position), flying_(false),
+Player::Player(World &wld) : position_(camera_.Position()), flying_(false),
 							 kBoundingBox({-0.25, -1.375, -0.25}, {0.25, 0.25, 0.25}),
 							 world_(&wld), using_block_(1)
 {
@@ -50,17 +50,17 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 
 	double x, y;
 	glfwGetCursorPos(win, &x, &y);
-	camera_.ProcessMouseMovement((float) (width / 2 - x), (float) (height / 2 - y),
+	camera_.MouseControl((float) (width / 2 - x), (float) (height / 2 - y),
 							 MOUSE_SENSITIVITY);
 	glfwSetCursorPos(win, width / 2, height / 2);
 }
 
-void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate)
+void Player::KeyControl(GLFWwindow *win, const mygl2::Framerate &framerate)
 {
 
-	float dist = framerate.GetMovementDistance(flying_ ? FLY_SPEED : WALK_SPEED);
+	float dist = framerate.GetDelta() * (flying_ ? FLY_SPEED : WALK_SPEED);
 
-	glm::vec3 oldPos = camera_.Position;
+	glm::vec3 oldPos = camera_.GetPosition();
 
 	if(glfwGetKey(win, GLFW_KEY_W))
 		camera_.MoveForward(dist, 0);
@@ -88,10 +88,10 @@ void Player::KeyControl(GLFWwindow *win, const MyGL::FrameRateManager &framerate
 			jumping_ = true;
 	}
 
-	glm::vec3 velocity = camera_.Position - oldPos;
+	glm::vec3 velocity = camera_.GetPosition() - oldPos;
 	if(!flying_ && velocity != glm::vec3(0.0f))
 		velocity = glm::normalize(velocity) * dist;
-	camera_.Position = oldPos;
+	camera_.Position() = oldPos;
 
 	Move(velocity);
 }
@@ -159,14 +159,14 @@ bool Player::MoveAxis(int axis, float velocity)
 	//prevent collision missing when moving fast
 	while(velocity > HIT_TEST_STEP)
 	{
-		if(!HitTest(camera_.Position, axis, HIT_TEST_STEP * sign))
+		if(!HitTest(camera_.Position(), axis, HIT_TEST_STEP * sign))
 			return false;
 		velocity -= HIT_TEST_STEP;
 	}
-	return HitTest(camera_.Position, axis, velocity * sign);
+	return HitTest(camera_.Position(), axis, velocity * sign);
 }
 
-void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
+void Player::UpdatePhysics(const mygl2::Framerate &framerate)
 {
 	static double lastTime = glfwGetTime();
 	if(flying_)
@@ -176,14 +176,14 @@ void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 	}
 
 	if(jumping_)
-		if(!MoveAxis(1, framerate.GetMovementDistance(JUMP_DIST)))
+		if(!MoveAxis(1, JUMP_DIST * framerate.GetDelta()))
 			jumping_ = false;
 
 	static bool firstFall = false;
 
 	float dis = GRAVITY * (float)(glfwGetTime() - lastTime);
-	float y = camera_.Position.y;
-	if (!MoveAxis(1, -framerate.GetMovementDistance(dis)))
+	float y = camera_.GetPosition().y;
+	if (!MoveAxis(1, -dis * framerate.GetDelta()))
 	{
 		lastTime = glfwGetTime();
 		jumping_ = false;
@@ -193,16 +193,16 @@ void Player::UpdatePhysics(const MyGL::FrameRateManager &framerate)
 	{
 		//not fall at first
 		firstFall = false;
-		camera_.Position.y = y;
+		camera_.Position().y = y;
 	}
 }
 
 glm::ivec3 Player::GetChunkPosition() const
 {
-	return World::BlockPosToChunkPos(glm::floor(camera_.Position));
+	return World::BlockPosToChunkPos(glm::floor(camera_.GetPosition()));
 }
 
-void Player::Control(bool focus, GLFWwindow *win, int width, int height, const MyGL::FrameRateManager &framerate,
+void Player::Control(bool focus, GLFWwindow *win, int width, int height, const mygl2::Framerate &framerate,
 					 const glm::mat4 &projection)
 {
 	glm::ivec3 chunkPos = GetChunkPosition();
@@ -220,7 +220,7 @@ void Player::Control(bool focus, GLFWwindow *win, int width, int height, const M
 
 	}
 	//update matrix
-	view_matrix_ = camera_.GetViewMatrix();
+	view_matrix_ = camera_.GetMatrix();
 
 	if(focus)
 		UpdateSelection(width, height, projection);
@@ -230,7 +230,7 @@ void Player::UpdateSelection(int width, int height, const glm::mat4 &projection)
 {
 	float radius = 10.0f;
 
-	glm::vec3 origin = camera_.Position;
+	glm::vec3 origin = camera_.GetPosition();
 	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
 	// by John Amanatides and Andrew Woo, 1987
 	// <http://www.cse.yorku.ca/~amana/research/grid.pdf>

@@ -124,12 +124,10 @@ void WorldData::LoadWorld(World &world)
 		Player &player = world.player_;
 		data_file >> player.position_.x >> player.position_.y >> player.position_.z
 				 >> player.flying_
-				 >> player.camera_.Yaw >> player.camera_.Pitch
+				 >> player.camera_.Yaw() >> player.camera_.Pitch()
 				 >> player.using_block_;
 
 		data_file.close();
-
-		std::cout << "OPEN" << std::endl;
 	}
 
 	world.initial_time_ = (float)glfwGetTime() - world.timer_ * DAY_TIME;
@@ -148,6 +146,6 @@ void WorldData::SaveWorld(World &world)
 	data_file << world.timer_ << ' '
 			 << player.position_.x << ' ' << player.position_.y << ' ' << player.position_.z << ' '
 		 	 << player.flying_ << ' '
-			 << player.camera_.Yaw << ' ' << player.camera_.Pitch << ' '
+			 << player.camera_.Yaw() << ' ' << player.camera_.Pitch() << ' '
 			 << player.using_block_ << std::endl;
 }

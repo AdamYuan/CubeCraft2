@@ -17,7 +17,7 @@ namespace Setting
 
 	void LoadDefault()
 	{
-		LoadingThreadsNum = std::max(1u, std::thread::hardware_concurrency() - 1);
+		LoadingThreadsNum = std::thread::hardware_concurrency();
 		ChunkLoadRange = 10;
 		ChunkDeleteRange = 15;
 	}

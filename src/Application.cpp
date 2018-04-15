@@ -1,5 +1,5 @@
 #include <iostream>
-#include <GL/glew.h>
+#include <GL/gl3w.h>
 #include "Application.hpp"
 #include "Resource.hpp"
 #include "UI.hpp"
@@ -30,12 +30,7 @@ void Application::InitWindow()
 
 	glfwMakeContextCurrent(window_);
 
-	glewExperimental = GL_TRUE;
-	if(glewInit() != GLEW_OK)
-	{
-		printf("ERROR WHEN INITIALIZE GLEW");
-		exit(EXIT_FAILURE);
-	}
+	gl3wInit();
 
 	UI::Init(window_);
 	Resource::InitResources();

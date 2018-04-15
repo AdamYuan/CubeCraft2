@@ -11,8 +11,8 @@ Chunk::Chunk(const glm::ivec3 &pos) : loaded_terrain_(false),
 									  initialized_mesh_(false), initialized_lighting_(false),
 									  position_(pos)
 {
-	vertex_buffers_[0] = MyGL::NewVertexObject(true);
-	vertex_buffers_[1] = MyGL::NewVertexObject(true);
+	vertex_buffers_[0].Initialize();
+	vertex_buffers_[1].Initialize();
 }
 
 //Terrain Generation

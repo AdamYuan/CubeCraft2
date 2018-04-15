@@ -281,9 +281,9 @@ void World::UpdateChunkMeshingList()
 			{
 				ChunkPtr chk = GetChunk(iter->first);
 				iter->second->ApplyMesh(chk);
-				if(!chk->vertex_buffers_[0]->Empty())
+				if(!chk->vertex_buffers_[0].Empty())
 					render_set_[0].insert(iter->first);
-				if(!chk->vertex_buffers_[1]->Empty())
+				if(!chk->vertex_buffers_[1].Empty())
 					render_set_[1].insert(iter->first);
 			}
 			iter = meshing_info_map_.erase(iter);
@@ -351,7 +351,7 @@ void World::UpdateChunkMeshingList()
 				iter->second->ApplyMesh(chk);
 				for(short t=0; t<=1; ++t)
 				{
-					if(chk->vertex_buffers_[t]->Empty())
+					if(chk->vertex_buffers_[t].Empty())
 						render_set_[t].erase(iter->first);
 					else
 						render_set_[t].insert(iter->first);
@@ -383,86 +383,32 @@ void World::UpdateChunkMeshingList()
 		mesh_threaded_update_set_.clear();
 	}
 }
-
-
-void World::LoadingWorker()
-{
-	glm::ivec2 pos;
-	while(running_)
-	{
-		std::unique_lock<std::mutex> lk(mutex_);
-		condition_var_.wait(lk, [this] { return !running_ || (running_threads_ < Setting::LoadingThreadsNum && !loading_vector_.empty());});
-		if(!running_)
-			return;
-		pos = loading_vector_.back();
-		loading_vector_.pop_back();
-		lk.unlock();
-
-		running_threads_ ++;
-		loading_info_map_.at(pos)->Process();
-		running_threads_ --;
-	}
+//define workers
+#define WORKER_FUNC_IMPL(FUNC_NAME, POS_TYPE, VECTOR_NAME, MAP_NAME)\
+void World::FUNC_NAME ()\
+{\
+	POS_TYPE pos;\
+	while(true)\
+	{\
+		std::unique_lock<std::mutex> lk(mutex_);\
+		condition_var_.wait(lk, [this] { return !running_ || (running_threads_ < Setting::LoadingThreadsNum && !(VECTOR_NAME).empty());});\
+		if(!running_)\
+			return;\
+		pos = (VECTOR_NAME).back();\
+        (VECTOR_NAME).pop_back();\
+		lk.unlock();\
+		running_threads_ ++;\
+        (MAP_NAME).at(pos)->Process();\
+		running_threads_ --;\
+	}\
 }
 
-void World::LightingWorker()
-{
-	glm::ivec2 pos;
-	while(running_)
-	{
-		std::unique_lock<std::mutex> lk(mutex_);
-		condition_var_.wait(lk, [this]{return !running_ ||
-											  (running_threads_ < Setting::LoadingThreadsNum && !lighting_list_.empty());});
-		if(!running_)
-			return;
-		pos = lighting_list_.back();
-		lighting_list_.pop_back();
-		lk.unlock();
+WORKER_FUNC_IMPL(LoadingWorker, glm::ivec2, loading_vector_, loading_info_map_)
+WORKER_FUNC_IMPL(LightingWorker, glm::ivec2, lighting_list_, lighting_info_map_)
+WORKER_FUNC_IMPL(MeshingWorker, glm::ivec3, meshing_list_, meshing_info_map_)
+WORKER_FUNC_IMPL(MeshUpdateWorker, glm::ivec3, mesh_update_vector_, mesh_update_info_map_)
 
-		running_threads_ ++;
-		lighting_info_map_.at(pos)->Process();
-		running_threads_ --;
-	}
-}
-
-void World::MeshingWorker()
-{
-	glm::ivec3 pos;
-	while(running_)
-	{
-		std::unique_lock<std::mutex> lk(mutex_);
-		condition_var_.wait(lk, [this]{return !running_ ||
-											  (running_threads_ < Setting::LoadingThreadsNum && !meshing_list_.empty());});
-		if(!running_)
-			return;
-		pos = meshing_list_.back();
-		meshing_list_.pop_back();
-		lk.unlock();
-
-		running_threads_ ++;
-		meshing_info_map_.at(pos)->Process();
-		running_threads_ --;
-	}
-}
-
-void World::MeshUpdateWorker()
-{
-	glm::ivec3 pos;
-	while(running_)
-	{
-		std::unique_lock<std::mutex> lk(mutex_);
-		condition_var_.wait(lk, [this]{return !running_ ||
-											  (running_threads_ < Setting::LoadingThreadsNum && !mesh_update_vector_.empty());});
-		if(!running_)
-			return;
-		pos = mesh_update_vector_.back();
-		mesh_update_vector_.pop_back();
-		lk.unlock();
-
-		running_threads_ ++;
-		mesh_update_info_map_.at(pos)->Process();
-		running_threads_ --;
-	}
-}
+#undef WORKER_FUNC_IMPL
 
 void World::SetBlock(const glm::ivec3 &pos, Block blk, bool check_update)
 {

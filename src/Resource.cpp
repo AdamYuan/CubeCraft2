@@ -2,16 +2,17 @@
 #include "Block.hpp"
 #include <unordered_map>
 
-#define TEXTURE_PATH(str) std::string("resources/texture/") + str
-#define SHADER_PATH(str) std::string("resources/shader/") + str
+#define TEXTURE_PATH(str) "resources/texture/"#str
+#define SHADER_PATH(str) "resources/shader/"#str
 
 extern void generateIcosphereMesh(size_t lod, std::vector<uint32_t>& indices, std::vector<glm::vec3>& positions);
 
 namespace Resource
 {
-	MyGL::ShaderPtr ChunkShader, LineShader, SkyShader, SunShader, BgShader;
-	MyGL::TexturePtr ChunkTexture, SkyTexture, SunTexture, MoonTexture;
-	MyGL::VertexObjectPtr CrosshairObject, SkyObject, SunObject, MoonObject, BgObject;
+	mygl2::Shader ChunkShader, LineShader, SkyShader, SunShader, BgShader;
+	mygl2::Texture2D SkyTexture, SunTexture, MoonTexture;
+	mygl2::Texture2DArray ChunkTexture;
+	mygl2::VertexBuffer CrosshairObject, SkyObject, SunObject, MoonObject, BgObject;
 
 	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix, ChunkShader_selection;
 	GLint LineShader_matrix;
@@ -22,58 +23,62 @@ namespace Resource
 
 	void InitResources()
 	{
-		ChunkShader = MyGL::NewShader();
-		ChunkShader->LoadFromFile(SHADER_PATH("block.frag"), GL_FRAGMENT_SHADER);
-		ChunkShader->LoadFromFile(SHADER_PATH("block.vert"), GL_VERTEX_SHADER);
-		ChunkShader_sampler = ChunkShader->GetUniform("sampler");
-		ChunkShader_skySampler = ChunkShader->GetUniform("skySampler");
-		ChunkShader_camera = ChunkShader->GetUniform("camera");
-		ChunkShader_viewDistance = ChunkShader->GetUniform("viewDistance");
-		ChunkShader_matrix = ChunkShader->GetUniform("matrix");
-		ChunkShader_dayLight = ChunkShader->GetUniform("dayLight");
-		ChunkShader_dayTime = ChunkShader->GetUniform("dayTime");
-		ChunkShader_selection = ChunkShader->GetUniform("selection");
+		ChunkShader.Initialize();
+		ChunkShader.LoadFromFile(SHADER_PATH(block.frag), GL_FRAGMENT_SHADER);
+		ChunkShader.LoadFromFile(SHADER_PATH(block.vert), GL_VERTEX_SHADER);
+		ChunkShader_sampler = ChunkShader.GetUniform("sampler");
+		ChunkShader_skySampler = ChunkShader.GetUniform("skySampler");
+		ChunkShader_camera = ChunkShader.GetUniform("camera");
+		ChunkShader_viewDistance = ChunkShader.GetUniform("viewDistance");
+		ChunkShader_matrix = ChunkShader.GetUniform("matrix");
+		ChunkShader_dayLight = ChunkShader.GetUniform("dayLight");
+		ChunkShader_dayTime = ChunkShader.GetUniform("dayTime");
+		ChunkShader_selection = ChunkShader.GetUniform("selection");
 
-		LineShader = MyGL::NewShader();
-		LineShader->LoadFromFile(SHADER_PATH("line.frag"), GL_FRAGMENT_SHADER);
-		LineShader->LoadFromFile(SHADER_PATH("line.vert"), GL_VERTEX_SHADER);
-		LineShader_matrix = LineShader->GetUniform("matrix");
+		LineShader.Initialize();
+		LineShader.LoadFromFile(SHADER_PATH(line.frag), GL_FRAGMENT_SHADER);
+		LineShader.LoadFromFile(SHADER_PATH(line.vert), GL_VERTEX_SHADER);
+		LineShader_matrix = LineShader.GetUniform("matrix");
 
-		SkyShader = MyGL::NewShader();
-		SkyShader->LoadFromFile(SHADER_PATH("sky.frag"), GL_FRAGMENT_SHADER);
-		SkyShader->LoadFromFile(SHADER_PATH("sky.vert"), GL_VERTEX_SHADER);
-		SkyShader_matrix = SkyShader->GetUniform("matrix");
-		SkyShader_dayTime = SkyShader->GetUniform("dayTime");
-		SkyShader_sampler = SkyShader->GetUniform("sampler");
+		SkyShader.Initialize();
+		SkyShader.LoadFromFile(SHADER_PATH(sky.frag), GL_FRAGMENT_SHADER);
+		SkyShader.LoadFromFile(SHADER_PATH(sky.vert), GL_VERTEX_SHADER);
+		SkyShader_matrix = SkyShader.GetUniform("matrix");
+		SkyShader_dayTime = SkyShader.GetUniform("dayTime");
+		SkyShader_sampler = SkyShader.GetUniform("sampler");
 
-		SunShader = MyGL::NewShader();
-		SunShader->LoadFromFile(SHADER_PATH("sun.frag"), GL_FRAGMENT_SHADER);
-		SunShader->LoadFromFile(SHADER_PATH("sun.vert"), GL_VERTEX_SHADER);
-		SunShader_matrix = SunShader->GetUniform("matrix");
-		SunShader_sampler = SunShader->GetUniform("sampler");
+		SunShader.Initialize();
+		SunShader.LoadFromFile(SHADER_PATH(sun.frag), GL_FRAGMENT_SHADER);
+		SunShader.LoadFromFile(SHADER_PATH(sun.vert), GL_VERTEX_SHADER);
+		SunShader_matrix = SunShader.GetUniform("matrix");
+		SunShader_sampler = SunShader.GetUniform("sampler");
 
-		BgShader = MyGL::NewShader();
-		BgShader->LoadFromFile(SHADER_PATH("bg.frag"), GL_FRAGMENT_SHADER);
-		BgShader->LoadFromFile(SHADER_PATH("bg.vert"), GL_VERTEX_SHADER);
-		BgShader_matrix = BgShader->GetUniform("matrix");
-		BgShader_sampler = BgShader->GetUniform("sampler");
+		BgShader.Initialize();
+		BgShader.LoadFromFile(SHADER_PATH(bg.frag), GL_FRAGMENT_SHADER);
+		BgShader.LoadFromFile(SHADER_PATH(bg.vert), GL_VERTEX_SHADER);
+		BgShader_matrix = BgShader.GetUniform("matrix");
+		BgShader_sampler = BgShader.GetUniform("sampler");
 
-		ChunkTexture = MyGL::NewTexture();
-		ChunkTexture->Load2dArray(TEXTURE_PATH("blocks.png"), BLOCKS_TEXTURE_NUM);
-		ChunkTexture->SetParameters(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST, GL_REPEAT);
-		ChunkTexture->BuildMipmap();
+		ChunkTexture.Initialize();
+		ChunkTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(blocks.png), BLOCKS_TEXTURE_NUM).GetInfo());
+		ChunkTexture.SetSizeFilter(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
+		ChunkTexture.SetWrapFilter(GL_REPEAT);
+		ChunkTexture.GenerateMipmap();
 
-		SkyTexture = MyGL::NewTexture();
-		SkyTexture->Load2d(TEXTURE_PATH("sky.png"));
-		SkyTexture->SetParameters(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
+		SkyTexture.Initialize();
+		SkyTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(sky.png)).GetInfo());
+		SkyTexture.SetSizeFilter(GL_LINEAR, GL_LINEAR);
+		SkyTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
-		SunTexture = MyGL::NewTexture();
-		SunTexture->Load2d(TEXTURE_PATH("sun.png"));
-		SunTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
+		SunTexture.Initialize();
+		SunTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(sun.png)).GetInfo());
+		SunTexture.SetSizeFilter(GL_NEAREST, GL_NEAREST);
+		SunTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
-		MoonTexture = MyGL::NewTexture();
-		MoonTexture->Load2d(TEXTURE_PATH("moon.png"));
-		MoonTexture->SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
+		MoonTexture.Initialize();
+		MoonTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(moon.png)).GetInfo());
+		MoonTexture.SetSizeFilter(GL_NEAREST, GL_NEAREST);
+		MoonTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
 
 		static constexpr float ch_size = 10.0, ch_width = 1.0f;
@@ -83,17 +88,17 @@ namespace Resource
 												  ch_size, ch_width, ch_size, -ch_width, -ch_size, ch_width,
 												  -ch_width, -ch_width, -ch_width, ch_width, ch_width, -ch_width,
 												  ch_width, -ch_width, -ch_width, ch_width, ch_width, ch_width};
-		CrosshairObject = MyGL::NewVertexObject(false);
-		CrosshairObject->SetDataArr(crosshair_vertices, 36);
-		CrosshairObject->SetAttributes(ATTR_POSITION, 2);
+		CrosshairObject.Initialize();
+		CrosshairObject.SetData(crosshair_vertices, 36, GL_STATIC_DRAW);
+		CrosshairObject.SetAttributes(ATTR_POSITION, 2);
 
 		std::vector<uint32_t> sphereIndices;
 		std::vector<glm::vec3> spherePositions;
 		generateIcosphereMesh(3, sphereIndices, spherePositions);
-		SkyObject = MyGL::NewVertexObject(true);
-		SkyObject->SetDataVec(spherePositions);
-		SkyObject->SetIndicesVec(sphereIndices);
-		SkyObject->SetAttributes(ATTR_POSITION, 3);
+		SkyObject.Initialize();
+		SkyObject.SetData(spherePositions, GL_STATIC_DRAW);
+		SkyObject.SetIndices(sphereIndices, GL_STATIC_DRAW);
+		SkyObject.SetAttributes(ATTR_POSITION, 3);
 
 		static constexpr float sun_size = 0.4f;
 		static constexpr float sun_vertices[] = {
@@ -104,9 +109,9 @@ namespace Resource
 				-sun_size, -1.0f, sun_size, 0.0f, 1.0f,
 				sun_size, -1.0f, sun_size, 1.0f, 1.0f
 		};
-		SunObject = MyGL::NewVertexObject(false);
-		SunObject->SetDataArr(sun_vertices, 30);
-		SunObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+		SunObject.Initialize();
+		SunObject.SetData(sun_vertices, 30, GL_STATIC_DRAW);
+		SunObject.SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 		static constexpr float moon_size = sun_size / 4.0f;
 		static constexpr float moon_vertices[] = {
@@ -118,9 +123,9 @@ namespace Resource
 				-moon_size, 1.0f, moon_size, 0.0f, 1.0f,
 				moon_size, 1.0f, -moon_size, 1.0f, 0.0f
 		};
-		MoonObject = MyGL::NewVertexObject(false);
-		MoonObject->SetDataArr(moon_vertices, 30);
-		MoonObject->SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
+		MoonObject.Initialize();
+		MoonObject.SetData(moon_vertices, 30, GL_STATIC_DRAW);
+		MoonObject.SetAttributes(ATTR_POSITION, 3, ATTR_TEXCOORD, 2);
 
 
 		static constexpr float bg_time = 0.8f;
@@ -133,9 +138,9 @@ namespace Resource
 				1.0f, -1.0f,  bg_time, 0.4f,
 				1.0f,  1.0f,  bg_time, 1.0f
 		};
-		BgObject = MyGL::NewVertexObject(false);
-		BgObject->SetDataArr(bg_vertices, 24);
-		BgObject->SetAttributes(ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
+		BgObject.Initialize();
+		BgObject.SetData(bg_vertices, 24, GL_STATIC_DRAW);
+		BgObject.SetAttributes(ATTR_POSITION, 2, ATTR_TEXCOORD, 2);
 	}
 }
 

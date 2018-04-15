@@ -6,16 +6,16 @@
 
 #define DAY_TIME 4096.0f //seconds
 
-#define GRAVITY 4.0f
-#define WALK_SPEED 0.5f
-#define FLY_SPEED 1.0f
-#define JUMP_DIST 1.0f
+#define GRAVITY 20.f
+#define WALK_SPEED 5.f
+#define FLY_SPEED 10.f
+#define JUMP_DIST 6.6f
 
 #define WALK_FOVY 60
 
 #define RENDER_ORDER_UPDATE_FREQUENCY 20 //frames
 
-constexpr int WORLD_HEIGHT_BLOCK = WORLD_HEIGHT * CHUNK_SIZE;
+constexpr int WORLD_HEIGHT_BLOCK = WORLD_HEIGHT*CHUNK_SIZE;
 
 constexpr int CHUNK_INFO_SIZE = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
 

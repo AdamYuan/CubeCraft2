@@ -49,7 +49,7 @@ void WorldController::ScrollCallback(GLFWwindow *window, double x_offset, double
 }
 
 WorldController::WorldController(GLFWwindow *window, const std::string &world_name) :
-		window_(window), world_(world_name), control_(true), show_ui_(true), is_quit_(false), fps_(0.0f)
+		window_(window), world_(world_name), control_(true), show_ui_(true), is_quit_(false)
 {
 	glfwSetWindowUserPointer(window, (void*)this);
 
@@ -93,28 +93,20 @@ void WorldController::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glm::mat4 view_matrix = world_.GetPlayer().GetViewMatrix();
-	glm::mat4 vp_matrix = matrices_.Projection3d * view_matrix;
+	glm::mat4 vp_matrix = matrices_.GetProjection() * view_matrix;
 
-	Renderer::RenderSky(glm::mat3(view_matrix), matrices_.Projection3d,
+	Renderer::RenderSky(glm::mat3(view_matrix), matrices_.GetProjection(),
 						world_.GetSunModelMatrix(), world_.GetDayTime());
 	Renderer::RenderWorld(world_, vp_matrix, world_.GetPlayer().position_, world_.GetPlayer().GetSelection(false));
 	if(control_)
-		Renderer::RenderCrosshair(matrices_.Matrix2dCenter);
+		Renderer::RenderCrosshair(matrices_.GetOrthoCenter());
 }
 
 void WorldController::LogicProcess()
 {
 	//update frame rate info
-	framerate_manager_.UpdateFrameRateInfo();
-
-	static int last_time = 0;
-	if(glfwGetTime() > last_time + 1)
-	{
-		last_time = (int)glfwGetTime();
-		fps_ = framerate_manager_.GetFps();
-	}
-
-	world_.GetPlayer().Control(control_, window_, width_, height_, framerate_manager_, matrices_.Projection3d);
+	framerate_.Update();
+	world_.GetPlayer().Control(control_, window_, width_, height_, framerate_, matrices_.GetProjection());
 	world_.Update(world_.GetPlayer().GetChunkPosition());
 }
 
@@ -131,7 +123,7 @@ void WorldController::RenderUI()
 							 ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize
 							 |ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings))
 			{
-				ImGui::Text("fps: %f", fps_);
+				ImGui::Text("fps: %f", framerate_.GetFps());
 				ImGui::Text("world info: (name: %s, seed: %d)", world_.GetName().c_str(), world_.GetSeed());
 				ImGui::Text("running threads: %u", world_.GetRunningThreadNum());
 				ImGui::Text("position: %s", glm::to_string(world_.GetPlayer().position_).c_str());
@@ -173,7 +165,8 @@ void WorldController::Resize(int width, int height)
 	width_ = width;
 	height_ = height;
 	glViewport(0, 0, width, height);
-	matrices_.UpdateMatrices(width, height, WALK_FOVY);
+	matrices_.UpdateProjection(width, height, WALK_FOVY);
+	matrices_.UpdateOrtho(width, height);
 
 	if(control_)
 		glfwSetCursorPos(window_, width / 2, height / 2);
