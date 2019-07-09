@@ -6,7 +6,7 @@
 #define WORLDCONTROLLER_HPP
 
 #include <string>
-#include <mygl2/utils/matrices.hpp>
+#include <mygl3/utils/matrices.hpp>
 #include "World.hpp"
 
 struct GLFWwindow;
@@ -16,8 +16,8 @@ private:
 	GLFWwindow *window_;
 	int width_, height_;
 	World world_;
-	mygl2::Matrices matrices_;
-	mygl2::Framerate framerate_;
+	mygl3::Matrices matrices_;
+	mygl3::Framerate framerate_;
 
 	bool control_, show_ui_, is_quit_;
 	static void FocusCallback(GLFWwindow *window, int focused);

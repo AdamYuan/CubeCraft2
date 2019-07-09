@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2")
 
 #add source files
 file(GLOB SOURCE_FILES main.cpp dep/GL/gl3w.c src/*.cpp dep/*/*.cpp)
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} dep/mygl2/texture.cpp)
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 include_directories(dep)
 

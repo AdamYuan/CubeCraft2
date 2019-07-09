@@ -5,8 +5,8 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
-#include <mygl2/utils/camera.hpp>
-#include <mygl2/utils/framerate.hpp>
+#include <mygl3/utils/camera.hpp>
+#include <mygl3/utils/framerate.hpp>
 #include <GLFW/glfw3.h>
 
 #include "Util.hpp"
@@ -33,22 +33,22 @@ private:
 	World *world_;
 	bool jumping_ = false;
 
-	void KeyControl(GLFWwindow *win, const mygl2::Framerate &framerate);
+	void KeyControl(GLFWwindow *win, const mygl3::Framerate &framerate);
 	void MouseControl(GLFWwindow *win, int width, int height);
 	void UpdateSelection(int width, int height, const glm::mat4 &projection);
-	void UpdatePhysics(const mygl2::Framerate &framerate);
+	void UpdatePhysics(const mygl3::Framerate &framerate);
 
 public:
 	glm::vec3 &position_;
 	uint8_t using_block_;
 	bool flying_;
-	mygl2::Camera camera_;
+	mygl3::Camera camera_;
 
 	//all the move functions will return false if the movement is blocked
 
 	explicit Player(World &wld);
 
-	void Control(bool focus, GLFWwindow *win, int width, int height, const mygl2::Framerate &framerate,
+	void Control(bool focus, GLFWwindow *win, int width, int height, const mygl3::Framerate &framerate,
 					 const glm::mat4 &projection);
 
 	bool Move(const glm::vec3 &velocity);

@@ -55,7 +55,7 @@ void Player::MouseControl(GLFWwindow *win, int width, int height)
 	glfwSetCursorPos(win, width / 2, height / 2);
 }
 
-void Player::KeyControl(GLFWwindow *win, const mygl2::Framerate &framerate)
+void Player::KeyControl(GLFWwindow *win, const mygl3::Framerate &framerate)
 {
 
 	float dist = framerate.GetDelta() * (flying_ ? FLY_SPEED : WALK_SPEED);
@@ -166,7 +166,7 @@ bool Player::MoveAxis(int axis, float velocity)
 	return HitTest(camera_.Position(), axis, velocity * sign);
 }
 
-void Player::UpdatePhysics(const mygl2::Framerate &framerate)
+void Player::UpdatePhysics(const mygl3::Framerate &framerate)
 {
 	static double lastTime = glfwGetTime();
 	if(flying_)
@@ -202,7 +202,7 @@ glm::ivec3 Player::GetChunkPosition() const
 	return World::BlockPosToChunkPos(glm::floor(camera_.GetPosition()));
 }
 
-void Player::Control(bool focus, GLFWwindow *win, int width, int height, const mygl2::Framerate &framerate,
+void Player::Control(bool focus, GLFWwindow *win, int width, int height, const mygl3::Framerate &framerate,
 					 const glm::mat4 &projection)
 {
 	glm::ivec3 chunkPos = GetChunkPosition();

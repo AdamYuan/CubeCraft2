@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include <mygl2/vertexbuffer.hpp>
-#include <mygl2/utils/framerate.hpp>
-#include <mygl2/utils/frustum.hpp>
+#include <mygl3/vertexobject.hpp>
+#include <mygl3/utils/framerate.hpp>
+#include <mygl3/utils/frustum.hpp>
 
 
 #include "Player.hpp"

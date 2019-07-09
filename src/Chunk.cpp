@@ -13,6 +13,14 @@ Chunk::Chunk(const glm::ivec3 &pos) : loaded_terrain_(false),
 {
 	vertex_buffers_[0].Initialize();
 	vertex_buffers_[1].Initialize();
+	vertex_buffers_[0].SetAttributes(Resource::ATTR_POSITION, 3,
+									 Resource::ATTR_TEXCOORD, 3,
+									 Resource::ATTR_CHUNK_FACE, 1,
+									 Resource::ATTR_CHUNK_LIGHTING, 3);
+	vertex_buffers_[1].SetAttributes(Resource::ATTR_POSITION, 3,
+									 Resource::ATTR_TEXCOORD, 3,
+									 Resource::ATTR_CHUNK_FACE, 1,
+									 Resource::ATTR_CHUNK_LIGHTING, 3);
 }
 
 //Terrain Generation

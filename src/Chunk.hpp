@@ -9,7 +9,7 @@
 #include "Block.hpp"
 #include "Setting.hpp"
 
-#include <mygl2/vertexbuffer.hpp>
+#include <mygl3/vertexobject.hpp>
 
 #include <glm/glm.hpp>
 
@@ -50,7 +50,7 @@ private:
 public:
 	bool loaded_terrain_, initialized_mesh_, initialized_lighting_;
 	glm::ivec3 position_;
-	mygl2::VertexBuffer vertex_buffers_[2];
+	mygl3::VertexObject<true> vertex_buffers_[2];
 
 	explicit Chunk(const glm::ivec3 &pos);
 

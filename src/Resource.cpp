@@ -9,10 +9,11 @@ extern void generateIcosphereMesh(size_t lod, std::vector<uint32_t>& indices, st
 
 namespace Resource
 {
-	mygl2::Shader ChunkShader, LineShader, SkyShader, SunShader, BgShader;
-	mygl2::Texture2D SkyTexture, SunTexture, MoonTexture;
-	mygl2::Texture2DArray ChunkTexture;
-	mygl2::VertexBuffer CrosshairObject, SkyObject, SunObject, MoonObject, BgObject;
+	mygl3::Shader ChunkShader, LineShader, SkyShader, SunShader, BgShader;
+	mygl3::Texture2D SkyTexture, SunTexture, MoonTexture;
+	mygl3::Texture2DArray ChunkTexture;
+	mygl3::VertexObject<false> CrosshairObject, SunObject, MoonObject, BgObject;
+	mygl3::VertexObject<true> SkyObject;
 
 	GLint ChunkShader_sampler, ChunkShader_skySampler, ChunkShader_camera, ChunkShader_viewDistance, ChunkShader_dayTime, ChunkShader_dayLight, ChunkShader_matrix, ChunkShader_selection;
 	GLint LineShader_matrix;
@@ -60,23 +61,22 @@ namespace Resource
 		BgShader_sampler = BgShader.GetUniform("sampler");
 
 		ChunkTexture.Initialize();
-		ChunkTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(blocks.png), BLOCKS_TEXTURE_NUM).GetInfo());
+		ChunkTexture.Load(mygl3::ImageLoader(TEXTURE_PATH(blocks.png), BLOCKS_TEXTURE_NUM).GetInfo(), true);
 		ChunkTexture.SetSizeFilter(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
 		ChunkTexture.SetWrapFilter(GL_REPEAT);
-		ChunkTexture.GenerateMipmap();
 
 		SkyTexture.Initialize();
-		SkyTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(sky.png)).GetInfo());
+		SkyTexture.Load(mygl3::ImageLoader(TEXTURE_PATH(sky.png)).GetInfo());
 		SkyTexture.SetSizeFilter(GL_LINEAR, GL_LINEAR);
 		SkyTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
 		SunTexture.Initialize();
-		SunTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(sun.png)).GetInfo());
+		SunTexture.Load(mygl3::ImageLoader(TEXTURE_PATH(sun.png)).GetInfo());
 		SunTexture.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 		SunTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
 		MoonTexture.Initialize();
-		MoonTexture.Load(mygl2::ImageLoader(TEXTURE_PATH(moon.png)).GetInfo());
+		MoonTexture.Load(mygl3::ImageLoader(TEXTURE_PATH(moon.png)).GetInfo());
 		MoonTexture.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 		MoonTexture.SetWrapFilter(GL_CLAMP_TO_EDGE);
 
